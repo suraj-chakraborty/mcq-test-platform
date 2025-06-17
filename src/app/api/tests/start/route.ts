@@ -75,52 +75,52 @@ async function parseGeminiResponse(responseText: string) {
   }));
 }
 
-async function generateQuestionsFromPdf(content: string, referenceContent?: string) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+// async function generateQuestionsFromPdf(content: string, referenceContent?: string) {
+//   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-  let prompt = `Generate 10 multiple choice questions based on the following content. Each question should have 4 options and one correct answer. Format the response as a JSON array of objects with the following structure:
-  {
-    "question": "question text",
-    "options": ["option1", "option2", "option3", "option4"],
-    "correctAnswer": "correct option"
-  }
+//   let prompt = `Generate 10 multiple choice questions based on the following content. Each question should have 4 options and one correct answer. Format the response as a JSON array of objects with the following structure:
+//   {
+//     "question": "question text",
+//     "options": ["option1", "option2", "option3", "option4"],
+//     "correctAnswer": "correct option"
+//   }
 
-  Content:
-  ${content}`;
+//   Content:
+//   ${content}`;
 
-  if (referenceContent) {
-    prompt += `\n\nUse this reference content to determine the pattern and difficulty level:
-    ${referenceContent}`;
-  }
+//   if (referenceContent) {
+//     prompt += `\n\nUse this reference content to determine the pattern and difficulty level:
+//     ${referenceContent}`;
+//   }
 
-  try {
-    const result = await model.generateContent(prompt);
-    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Failed to get response from Gemini');
-    }
+//   try {
+//     const result = await model.generateContent(prompt);
+//     if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+//       throw new Error('Failed to get response from Gemini');
+//     }
     
-    const text = result.candidates[0].content.parts[0].text;
-    // Remove markdown formatting if present
-    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-    const rawQuestions = JSON.parse(cleanText);
+//     const text = result.candidates[0].content.parts[0].text;
+//     // Remove markdown formatting if present
+//     const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+//     const rawQuestions = JSON.parse(cleanText);
 
-    const formattedQuestions = rawQuestions.map((q: any) => ({
-      question: q.question,
-      options: q.options,
-      correctAnswer: q.options.indexOf(q.correctAnswer),
-    }));
+//     const formattedQuestions = rawQuestions.map((q: any) => ({
+//       question: q.question,
+//       options: q.options,
+//       correctAnswer: q.options.indexOf(q.correctAnswer),
+//     }));
 
-    return {
-      title: 'PDF-Based Test',
-      description: 'Test generated from your uploaded PDF content.',
-      duration: 30,
-      questions: formattedQuestions,
-    };
-  } catch (err) {
-    console.error('Error generating questions from PDF:', err);
-    throw new Error('Failed to generate questions from PDF content');
-  }
-}
+//     return {
+//       title: 'PDF-Based Test',
+//       description: 'Test generated from your uploaded PDF content.',
+//       duration: 30,
+//       questions: formattedQuestions,
+//     };
+//   } catch (err) {
+//     console.error('Error generating questions from PDF:', err);
+//     throw new Error('Failed to generate questions from PDF content');
+//   }
+// }
 
 
 async function generateGeneralKnowledgeQuestions() {
@@ -217,12 +217,14 @@ export async function POST(request: Request) {
 
     let testData;
 
+    type PredefinedTestType = keyof typeof predefinedTests;
+
     if (type === 'current-affairs') {
       testData = await generateCurrentAffairsQuestions();
     } else if (type === 'general-knowledge') {
       testData = await generateGeneralKnowledgeQuestions();
-      } else if (predefinedTests[type]){
-      testData = predefinedTests[test]
+    } else if ((type as PredefinedTestType) in predefinedTests) {
+      testData = predefinedTests[type as PredefinedTestType];
     } else if (pdfIds && Array.isArray(pdfIds) && pdfIds.length > 0) {
       // Handle PDF-based test
       const pdfs = await Pdf.find({
@@ -252,7 +254,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid test type or PDF IDs' }, { status: 400 });
     }
 
-    const test = await Test.create({
+    const test:any = await Test.create({
       ...testData,
       userId: session.user.id,
       totalMarks: testData.questions.length,

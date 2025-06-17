@@ -5,6 +5,15 @@ import connectDB from '@/app/lib/mongodb';
 import PDFTest from '@/app/models/PDFTest';
 import TestAttempt from '@/app/models/TestAttempt';
 
+
+    interface AnswerMap {
+      [index: number]: string;
+    }
+
+    interface Question {
+      correctAnswer: string;
+    }
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,8 +35,12 @@ export async function POST(request: Request) {
 
     // Calculate score
     let correctAnswers = 0;
-    test.questions.forEach((question, index) => {
-      if (answers[index] === question.correctAnswer) {
+
+    const questions: Question[] = test.questions;
+    const userAnswers: AnswerMap = answers;
+
+    questions.forEach((question: Question, index: number) => {
+      if (userAnswers[index] === question.correctAnswer) {
         correctAnswers++;
       }
     });

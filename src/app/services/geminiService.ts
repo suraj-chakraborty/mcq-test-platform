@@ -9,7 +9,7 @@ interface MCQQuestion {
   explanation: string;
 }
 
-export async function generateMCQs(content: string, numQuestions: number = 5): Promise<MCQQuestion[]> {
+export async function generateMCQs(content: string, numQuestions: number = 10): Promise<MCQQuestion[]> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 

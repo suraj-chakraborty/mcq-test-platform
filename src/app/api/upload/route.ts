@@ -21,7 +21,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: Request) {
   try {
-    console.log("Received upload request");
+    // console.log("Received upload request");
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -29,9 +29,9 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData();
-    console.log("formData",formData)
+    // console.log("formData",formData)
     const file = formData.get('file') as File;
-    console.log("file", file)
+    // console.log("file", file)
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });

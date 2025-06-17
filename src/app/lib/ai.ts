@@ -12,7 +12,7 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 export async function generateMCQs(pdfText: string): Promise<MCQQuestion[]> {
 
   const prompt = `
-You are a teaching assistant. Based on the following PDF content, generate 3 multiple-choice questions (MCQs). Each question should have:
+You are a teaching assistant. Based on the following PDF content, generate 10 multiple-choice questions (MCQs). Each question should have:
 
 - "question": The question statement
 - "options": An array of 4 answer options
