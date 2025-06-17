@@ -7,12 +7,6 @@ import { GoogleGenAI } from '@google/genai';
 import formidable, { File } from 'formidable';
 import { Readable } from 'stream';
 
-// Disable Next.js built-in body parsing
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 // Helper: Convert Web Request to Node.js IncomingMessage
 async function webRequestToIncomingMessage(request: Request): Promise<any> {

@@ -15,17 +15,13 @@ interface Question {
 }
 
 interface TestAttempt {
-  id: string;
+  _id: string;
   score: number;
   answers: number[];
   totalQuestions: number;
-  test: {
-    id: string;
-    title: string;
-    questions: Question[];
-    userAnswers: number[];
-  };
+  questions: Question[];
   completedAt: string;
+  updatedAt: string;
 }
 
 export default function TestResults({
@@ -74,12 +70,14 @@ export default function TestResults({
   }
 
   if (!attempt) {
-    console.log("attempt", attempt)
+    // console.log("attempt", attempt)
     return <div>Results not found</div>;
   }
   console.log("attempt", attempt)
   const percentage = Math.round((attempt.score / attempt.questions.length) * 100);
-  const passed = parseFloat(percentage) >= 50;
+  console.log("percentage", percentage)
+  let rlt = percentage >= 50 ? "passed": "failed";
+  
 
   return (
     <div className="container mx-auto py-8">
@@ -95,10 +93,10 @@ export default function TestResults({
             <p className="text-xl text-gray-600">{percentage}%</p>
             <p
               className={`mt-2 text-lg font-semibold ${
-                passed ? 'text-green-600' : 'text-red-600'
+                rlt==="passed" ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              {passed ? '✅ Passed' : '❌ Failed'}
+              {rlt==="passed" ? '✅ Passed' : '❌ Failed'}
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Completed on{' '}

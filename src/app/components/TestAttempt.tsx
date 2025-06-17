@@ -32,6 +32,7 @@ interface TestAttemptProps {
 }
 
 export default function TestAttempt({ test, onComplete }: TestAttemptProps) {
+  console.log("testAttempt 😊", test)
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});

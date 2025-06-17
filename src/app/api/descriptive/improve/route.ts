@@ -35,7 +35,15 @@ export async function POST(request: Request) {
       contents: [prompt],
     });
 
-    const improvedAnswer = result.candidates[0]?.content?.parts[0]?.text;
+    // const improvedAnswer = result.candidates[0]?.content?.parts[0]?.text;
+    const improvedAnswer =
+      result?.candidates &&
+      Array.isArray(result.candidates) &&
+      result.candidates[0]?.content?.parts &&
+      Array.isArray(result.candidates[0].content.parts) &&
+      result.candidates[0].content.parts[0]?.text
+        ? result.candidates[0].content.parts[0].text
+        : undefined;
 
     if (!improvedAnswer) {
       throw new Error("Failed to extract improved answer from Gemini response.");

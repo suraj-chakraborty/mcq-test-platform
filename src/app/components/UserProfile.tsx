@@ -26,7 +26,7 @@ export default function UserProfile({ onUpdate }: UserProfileProps) {
       setFormData({
         name: session.user.name || '',
         email: session.user.email || '',
-        mongodbUrl: session.user.mongodbUrl || '',
+        mongodbUrl: '',
       });
     }
   }, [session]);

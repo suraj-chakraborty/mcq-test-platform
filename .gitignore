@@ -3,6 +3,8 @@
 /.pnp
 .pnp.js
 /public/uploads
+/.history
+.history
 # testing
 /coverage
 

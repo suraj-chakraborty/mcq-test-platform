@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pdf from 'pdf-parse/lib/pdf-parse'
 import { generateMCQs } from '@/app/lib/ai';
 import connectDB from '@/app/lib/mongodb';
 import Pdf from '@/app/models/Pdf';

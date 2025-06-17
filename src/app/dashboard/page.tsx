@@ -26,7 +26,9 @@ import Loading from '../loading';
 interface Question {
   question: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer: string;
+  explanation: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 interface PDFFile {
@@ -56,6 +58,7 @@ interface TestAttempt {
   score: number;
   percentage: number;
   createdAt: string;
+  timeLimit: number;
   test: {
     title: string;
   };
@@ -66,6 +69,7 @@ interface Test {
   title: string;
   duration: number;
   description: string;
+  timeLimit: number;
   questions: Question[];
   createdAt: string;
 }
@@ -131,7 +135,7 @@ export default function Dashboard() {
       }));
     }
   };
-  
+
 
   const fetchPDFTests = async () => {
     try {
@@ -188,9 +192,9 @@ export default function Dashboard() {
       const response = await fetch(`/api/pdf-tests/${testToUpdate._id}`, {
         method: 'UPDATE',
         body: JSON.stringify(testToUpdate),
-        
+
       }
-    );
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -291,7 +295,7 @@ export default function Dashboard() {
 
   const filteredAndSortedTests = useMemo(() => {
     return tests
-      .filter(test => 
+      .filter(test =>
         test.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .sort((a, b) => {
@@ -319,24 +323,28 @@ export default function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     const formDataToSend = new FormData();
     console.log(formData)
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
-  
+
     // Append multiple context PDFs
-    formData.contextPDF.forEach((file) => {
-      formDataToSend.append('contextPDF', file);
-    });
-    formData.pyqPDF.forEach((file) => {
-      formDataToSend.append('pyqPDF', file);
-    });
+    if (formData.contextPDF) {
+      formData.contextPDF.forEach((file) => {
+        formDataToSend.append('contextPDF', file);
+      });
+    }
+    if (formData.pyqPDF) {
+      formData.pyqPDF.forEach((file) => {
+        formDataToSend.append('pyqPDF', file);
+      });
+    }
     // Append pyqPDF (assumed to be a single File object)
     // if (formData.pyqPDF) {
     //   formDataToSend.append('pyqPDF', formData.pyqPDF);
     // }
-  
+
 
     try {
       const response = await fetch('/api/pdf-tests/create', {
@@ -345,16 +353,16 @@ export default function Dashboard() {
       });
 
       console.log("response", response)
-  
+
       const textResponse = await response.text();
-  
+
       try {
         const data = JSON.parse(textResponse);
-  
+
         if (response.ok && data.success) {
           toast.success('PDF test created successfully!');
           setShowCreateForm(false);
-  
+
           // Reset form
           setFormData({
             title: '',
@@ -362,7 +370,7 @@ export default function Dashboard() {
             contextPDF: [],
             pyqPDF: null,
           });
-  
+
           fetchPDFTests();
         } else {
           throw new Error(data.error || 'Failed to create PDF test');
@@ -376,8 +384,8 @@ export default function Dashboard() {
       toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
     }
   };
-  
-  
+
+
 
   if (isLoading) {
     return (
@@ -389,12 +397,16 @@ export default function Dashboard() {
 
   if (selectedTest) {
     return (
+     <>
+      console.log("selectedTest", {selectedTest})
       <TestAttempt
         test={selectedTest}
         onComplete={handleTestComplete}
       />
+     </>
     );
   }
+
 
   if (showResults && currentResults) {
     return (
@@ -406,582 +418,170 @@ export default function Dashboard() {
   }
 
   return (
-//     <div className="container mx-auto px-4 py-8">
-//       <div className="flex justify-between items-center mb-8">
-//         <h1 className="text-3xl font-bold">Dashboard</h1>
-//         <div className="flex items-center gap-4">
-//           <span className="text-gray-600">Welcome,</span>
-//           <button
-//             onClick={() => setIsProfileModalOpen(true)}
-//             className="text-blue-600 hover:text-blue-800 font-medium"
-//           >
-//             {session?.user?.name || 'User'}
-//           </button>
-//         </div>
-//       </div>
-//       <Tabs defaultValue="account" className="w-[400px]">
-//   <TabsList>
-//     <TabsTrigger value="current_affair">Normal Test</TabsTrigger>
-//     <TabsTrigger value="pdf">Pdf Test</TabsTrigger>
-//     <TabsTrigger value="pyq-pdf">Pdf question paper based Test</TabsTrigger>
-//     <TabsTrigger value="descriptive">Descriptive Test</TabsTrigger>
-//   </TabsList>
-//   <TabsContent value="current_affair"><div className="flex justify-between items-center mb-8">
-//             <h1 className="text-2xl font-bold">My Tests</h1>
-//             <div className="flex gap-4">
-//               <Button onClick={() => startPredefinedTest('current-affairs')}>
-//                 Start Current Affairs Test
-//               </Button>
-//               <Button onClick={() => startPredefinedTest('general-knowledge')}>
-//                 Start General Knowledge Test
-//               </Button>
-//               <Button onClick={() => router.push('/create-test')}>
-//                 Create New Test
-//               </Button>
-//             </div>
-//           </div>
-          
-//           <div className="space-y-8">
-//               <section>
-//                 <div className="flex justify-between items-center mb-4">
-//                   <h2 className="text-2xl font-semibold">Your Tests</h2>
-//                   <Button onClick={() => router.push('/create-test')}>
-//                     Create New Test
-//                   </Button>
-//                 </div>
-
-//                 <div className="flex flex-col md:flex-row gap-4 mb-6">
-//                   <Input
-//                     placeholder="Search tests..."
-//                     value={searchQuery}
-//                     onChange={(e) => setSearchQuery(e.target.value)}
-//                     className="flex-1"
-//                   />
-//                   <Select value={sortBy} onValueChange={(value: 'date' | 'name' | 'questions') => setSortBy(value)}>
-//                     <SelectTrigger className="w-[180px]">
-//                       <SelectValue placeholder="Sort by" />
-//                     </SelectTrigger>
-//                     <SelectContent>
-//                       <SelectItem value="date">Date</SelectItem>
-//                       <SelectItem value="name">Name</SelectItem>
-//                       <SelectItem value="questions">Questions</SelectItem>
-//                     </SelectContent>
-//                   </Select>
-//                 </div>
-
-//                 <div className="grid grid-cols-1 gap-6">
-//                   {isLoading ? (
-//                     <div className="text-center py-8">
-//                       <p>Loading tests...</p>
-//                     </div>
-//                   ) : (
-//                     <>
-//                       {displayedTests.map((test) => (
-//                         <Card key={test.id}>
-//                           <CardHeader>
-//                             <CardTitle className="flex justify-between items-start">
-//                               <span className="truncate">{test.title}</span>
-//                               <div className="flex gap-2">
-//                                 <Button
-//                                   variant="outline"
-//                                   size="sm"
-//                                   onClick={() => router.push(`/edit-test/${test.id}`)}
-//                                 >
-//                                   Edit
-//                                 </Button>
-//                                 <Button
-//                                   variant="destructive"
-//                                   size="sm"
-//                                   onClick={() => handleDelete(test.id)}
-//                                 >
-//                                   Delete
-//                                 </Button>
-//                               </div>
-//                             </CardTitle>
-//                           </CardHeader>
-//                           <CardContent>
-//                             <div className="space-y-2">
-//                               <p className="text-sm text-gray-500">
-//                                 Duration: {test.duration} minutes
-//                               </p>
-//                               <p className="text-sm text-gray-500">
-//                                 Questions: {test.questions.length}
-//                               </p>
-//                               <p className="text-sm text-gray-500">
-//                                 Created: {new Date(test.createdAt).toLocaleDateString()}
-//                               </p>
-//                             </div>
-//                             <Button
-//                               className="w-full mt-4"
-//                               onClick={() => router.push(`/take-test/${test.id}`)}
-//                             >
-//                               Take Test
-//                             </Button>
-//                           </CardContent>
-//                         </Card>
-//                       ))}
-
-//                       {displayedTests.length === 0 && (
-//                         <div className="text-center py-8">
-//                           <p className="text-gray-500">No tests found matching your criteria</p>
-//                         </div>
-//                       )}
-
-//                       {!allTestsLoaded && filteredAndSortedTests.length > 5 && (
-//                         <div className="text-center mt-4">
-//                           <Button
-//                             variant="outline"
-//                             onClick={loadMore}
-//                           >
-//                             Load More Tests
-//                           </Button>
-//                         </div>
-//                       )}
-//                     </>
-//                   )}
-//                 </div>
-//               </section>
-//             </div>
-
-//           </TabsContent>
-//   <TabsContent value="pdf"><div className="space-y-8">
-//               <section>
-//                 <div className="flex justify-between items-center mb-4">
-//                   <h2 className="text-2xl font-semibold">PDF Management</h2>
-//                   <Button onClick={() => router.push('/create-test')}>
-//                     Create New Test
-//                   </Button>
-//                 </div>
-//                 <PdfUpload onUploadSuccess={() => {
-//                   // Refresh the PDF list
-//                   const event = new Event('pdfUploaded');
-//                   window.dispatchEvent(event);
-//                 }} />
-//               </section>
-//               <section>
-//                 <PdfList />
-//               </section>
-
-          
-              
-//             </div>
-            
-
-            
-//             </TabsContent>
-//             <TabsContent value="descriptive">
-//             <section>
-//                 <DescriptivePage />
-//               </section>
-              
-              
-
-//             </TabsContent>
-//             <TabsContent value="pyq-pdf">
-//             <section>
-//             <div className="flex justify-between items-center mb-8">
-//             <h1 className="text-3xl font-bold">Tests</h1>
-//             <Button onClick={() => setShowCreateForm(true)}>
-//               Create PDF Test
-//             </Button>
-//           </div>
-
-//           <div className="grid  gap-8">
-//             {/* PDF Tests Section */}
-//             <div className="space-y-4">
-//               <h2 className="text-2xl font-bold">PDF Tests</h2>
-//               {pdfTests.length > 0 ? (
-//                 pdfTests.map((test) => (
-//                   <Card key={test._id}>
-//                     <CardHeader>
-//                       <div className="flex justify-between items-center">
-//                         <CardTitle>{test.title}</CardTitle>
-//                         <div className="flex items-center gap-2">
-//                           <Button
-//                             variant="outline"
-//                             onClick={() => setEditingTest(test)}
-//                           >
-//                             Edit Questions
-//                           </Button>
-//                           <Button
-//                             variant="destructive"
-//                             onClick={() => setTestToDelete(test)}
-//                           >
-//                             Delete
-//                           </Button>
-//                         </div>
-//                       </div>
-//                     </CardHeader>
-                    
-//                   </Card>
-//                 ))
-//               ) : (
-//                 <div className="text-center py-8">
-//                   <p className="text-gray-500">No PDF tests available</p>
-//                 </div>
-//               )}
-//             </div>
-            
-//           </div>
-//             </section>
-            
-//             </TabsContent>
-// </Tabs>
-
-//       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-
-//         {/* Tests Section */}
-//         <div className="space-y-8">
-          
-          
-//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-//             {/* PDF Section */}
-//             {/* <div className="space-y-8">
-//               <section>
-//                 <div className="flex justify-between items-center mb-4">
-//                   <h2 className="text-2xl font-semibold">PDF Management</h2>
-//                   <Button onClick={() => router.push('/create-test')}>
-//                     Create New Test
-//                   </Button>
-//                 </div>
-//                 <PdfUpload onUploadSuccess={() => {
-//                   // Refresh the PDF list
-//                   const event = new Event('pdfUploaded');
-//                   window.dispatchEvent(event);
-//                 }} />
-//               </section>
-
-//               <section>
-//                 <PdfList />
-//               </section>
-//               <section>
-//                 <DescriptivePage />
-//               </section>
-//             </div> */}
-//             {/* <section>
-//             <div className="flex justify-between items-center mb-8">
-//             <h1 className="text-3xl font-bold">Tests</h1>
-//             <Button onClick={() => setShowCreateForm(true)}>
-//               Create PDF Test
-//             </Button>
-//           </div>
-
-//           <div className="grid grid-cols-1 md:grid-cols-2 gap-8"> */}
-//             {/* PDF Tests Section */}
-//             {/* <div className="space-y-4">
-//               <h2 className="text-2xl font-bold">PDF Tests</h2>
-//               {pdfTests.length > 0 ? (
-//                 pdfTests.map((test) => (
-//                   <Card key={test._id}>
-//                     <CardHeader>
-//                       <div className="flex justify-between items-center">
-//                         <CardTitle>{test.title}</CardTitle>
-//                         <div className="flex items-center gap-2">
-//                           <Button
-//                             variant="outline"
-//                             onClick={() => setEditingTest(test)}
-//                           >
-//                             Edit Questions
-//                           </Button>
-//                           <Button
-//                             variant="destructive"
-//                             onClick={() => setTestToDelete(test)}
-//                           >
-//                             Delete
-//                           </Button>
-//                         </div>
-//                       </div>
-//                     </CardHeader>
-//                     <CardContent>
-//                       <p className="text-gray-600">{test.description}</p>
-//                       <div className="mt-4">
-//                         <h3 className="font-semibold">Questions</h3>
-//                         <div className="space-y-4 mt-2">
-//                           {test.questions.map((question, index) => (
-//                             <div key={index} className="border rounded p-4">
-//                               <p className="font-medium">{question.question}</p>
-//                               <div className="mt-2">
-//                                 {question.options.map((option: string, optIndex: number) => (
-//                                   <div
-//                                     key={optIndex}
-//                                     className={`p-2 rounded ${
-//                                       option === question.correctAnswer
-//                                         ? 'bg-green-100'
-//                                         : 'bg-gray-100'
-//                                     }`}
-//                                   >
-//                                     {option}
-//                                   </div>
-//                                 ))}
-//                               </div>
-//                               <p className="mt-2 text-sm text-gray-600">
-//                                 Difficulty: {question.difficulty}
-//                               </p>
-//                             </div>
-//                           ))}
-//                         </div>
-//                       </div>
-//                     </CardContent>
-//                   </Card>
-//                 ))
-//               ) : (
-//                 <div className="text-center py-8">
-//                   <p className="text-gray-500">No PDF tests available</p>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//             </section> */}
-//                   {/* Create PDF Test Dialog */}
-//       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-//         <DialogContent>
-//           <DialogHeader>
-//             <DialogTitle>Create PDF Test</DialogTitle>
-//           </DialogHeader>
-//           <form onSubmit={handleSubmit} className="space-y-4">
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Title</label>
-//               <input
-//                 type="text"
-//                 value={formData.title}
-//                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Description</label>
-//               <textarea
-//                 value={formData.description}
-//                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-//             <div>
-//               <label className="block text-sm font-medium mb-1">Context PDF</label>
-//               <input
-//                 type="file"
-//                 multiple={true}
-//                 accept=".pdf"
-//                 onChange={(e) => handleFileChange(e, 'context')}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-//             <div>
-//               <label className="block text-sm font-medium mb-1">PYQ PDF</label>
-//               <input
-//                 type="file"
-//                 multiple={true}
-//                 accept=".pdf"
-//                 onChange={(e) => handleFileChange(e, 'pyq')}
-//                 className="w-full p-2 border rounded"
-//                 required
-//               />
-//             </div>
-//             <div className="flex justify-end gap-2">
-//               <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
-//                 Cancel
-//               </Button>
-//               <Button type="submit">Create</Button>
-//             </div>
-//           </form>
-//         </DialogContent>
-//       </Dialog>
-
-//       {/* Delete Confirmation Dialog */}
-//       <AlertDialog open={!!testToDelete} onOpenChange={() => setTestToDelete(null)}>
-//         <AlertDialogContent>
-//           <AlertDialogHeader>
-//             <AlertDialogTitle>Delete Test</AlertDialogTitle>
-//             <AlertDialogDescription>
-//               Are you sure you want to delete this test? This action cannot be undone.
-//             </AlertDialogDescription>
-//           </AlertDialogHeader>
-//           <AlertDialogFooter>
-//             <AlertDialogCancel>Cancel</AlertDialogCancel>
-//             <AlertDialogAction onClick={handleDeleteTest}>Delete</AlertDialogAction>
-//           </AlertDialogFooter>
-//         </AlertDialogContent>
-//       </AlertDialog>
-
-        
-//             {/* Tests Section */}
-            
-//           </div>
-//         </div>
-//       </div>
-
-//       <UserProfileModal 
-//         isOpen={isProfileModalOpen}
-//         onClose={() => setIsProfileModalOpen(false)}
-//       />
-//     </div>
-<div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-  <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-    <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-    <div className="flex items-center gap-2 sm:gap-4">
-      <span className="text-gray-600 text-sm sm:text-base">Welcome,</span>
-      <button
-        onClick={() => setIsProfileModalOpen(true)}
-        className="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base"
-      >
-        {session?.user?.name || 'User'}
-      </button>
-    </div>
-  </div>
-
-  <Tabs defaultValue="current_affair" className="w-full">
-    <TabsList className="flex flex-wrap gap-2 justify-start sm:justify-center mb-6">
-      <TabsTrigger value="current_affair">Normal Test</TabsTrigger>
-      <TabsTrigger value="pdf">PDF Test</TabsTrigger>
-      <TabsTrigger value="pyq-pdf">PYQ Based Test</TabsTrigger>
-      <TabsTrigger value="descriptive">Descriptive Test</TabsTrigger>
-    </TabsList>
-
-    <TabsContent value="current_affair">
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
-        <h2 className="text-xl lg:text-2xl font-semibold">My Tests</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => startPredefinedTest('current-affairs')}>
-            Current Affairs
-          </Button>
-          <Button onClick={() => startPredefinedTest('general-knowledge')}>
-            General Knowledge
-          </Button>
-          <Button onClick={() => router.push('/create-test')}>
-            Create Test
-          </Button>
+    <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <span className="text-gray-600 text-sm sm:text-base">Welcome,</span>
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base"
+          >
+            {session?.user?.name || 'User'}
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <Input
-          placeholder="Search tests..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-        />
-        <Select value={sortBy} onValueChange={(val) => setSortBy(val)}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="date">Date</SelectItem>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="questions">Questions</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Tabs defaultValue="current_affair" className="w-full">
+        <TabsList className="flex flex-wrap gap-2 justify-start sm:justify-center mb-6">
+          <TabsTrigger value="current_affair">Normal Test</TabsTrigger>
+          <TabsTrigger value="pdf">PDF Test</TabsTrigger>
+          <TabsTrigger value="pyq-pdf">PYQ Based Test</TabsTrigger>
+          <TabsTrigger value="descriptive">Descriptive Test</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading ? (
-          <div className="col-span-full text-center py-6"><Loading /></div>
-        ) : displayedTests.length > 0 ? (
-          displayedTests.map((test) => (
-            <Card key={test.id} className="flex flex-col justify-between h-full">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <span className="truncate text-base font-medium">{test.title}</span>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" onClick={() => router.push(`/edit-test/${test.id}`)}>
-                      Edit
+        <TabsContent value="current_affair">
+          <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
+            <h2 className="text-xl lg:text-2xl font-semibold">My Tests</h2>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => startPredefinedTest('current-affairs')}>
+                Current Affairs
+              </Button>
+              <Button onClick={() => startPredefinedTest('general-knowledge')}>
+                General Knowledge
+              </Button>
+              <Button onClick={() => router.push('/create-test')}>
+                Create Test
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <Input
+              placeholder="Search tests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
+            />
+            <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="questions">Questions</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {isLoading ? (
+              <div className="col-span-full text-center py-6"><Loading /></div>
+            ) : displayedTests.length > 0 ? (
+              displayedTests.map((test) => (
+                <Card key={test.id} className="flex flex-col justify-between h-full">
+                  <CardHeader>
+                    <CardTitle className="flex justify-between items-start">
+                      <span className="truncate text-base font-medium">{test.title}</span>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" onClick={() => router.push(`/edit-test/${test.id}`)}>
+                          Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(test.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm text-gray-500">Duration: {test.duration} mins</p>
+                    <p className="text-sm text-gray-500">Questions: {test.questions.length}</p>
+                    <p className="text-sm text-gray-500">Created: {new Date(test.createdAt).toLocaleDateString()}</p>
+                    <Button className="w-full mt-4" onClick={() => router.push(`/take-test/${test.id}`)}>
+                      Take Test
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(test.id)}>
-                      Delete
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm text-gray-500">Duration: {test.duration} mins</p>
-                <p className="text-sm text-gray-500">Questions: {test.questions.length}</p>
-                <p className="text-sm text-gray-500">Created: {new Date(test.createdAt).toLocaleDateString()}</p>
-                <Button className="w-full mt-4" onClick={() => router.push(`/take-test/${test.id}`)}>
-                  Take Test
-                </Button>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-6 text-gray-500">
-            No tests found matching your criteria.
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-6 text-gray-500">
+                No tests found matching your criteria.
+              </div>
+            )}
+
+            {!allTestsLoaded && filteredAndSortedTests.length > 5 && (
+              <div className="col-span-full text-center mt-4">
+                <Button variant="outline" onClick={loadMore}>Load More</Button>
+              </div>
+            )}
           </div>
-        )}
+        </TabsContent>
 
-        {!allTestsLoaded && filteredAndSortedTests.length > 5 && (
-          <div className="col-span-full text-center mt-4">
-            <Button variant="outline" onClick={loadMore}>Load More</Button>
+        <TabsContent value="pdf">
+          <div className="space-y-8">
+            <section>
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">PDF Management</h2>
+                <Button onClick={() => router.push('/create-test')}>Create New Test</Button>
+              </div>
+              <PdfUpload onUploadSuccess={() => window.dispatchEvent(new Event('pdfUploaded'))} />
+            </section>
+            <section>
+              <PdfList />
+            </section>
           </div>
-        )}
-      </div>
-    </TabsContent>
+        </TabsContent>
 
-    <TabsContent value="pdf">
-      <div className="space-y-8">
-        <section>
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">PDF Management</h2>
-            <Button onClick={() => router.push('/create-test')}>Create New Test</Button>
-          </div>
-          <PdfUpload onUploadSuccess={() => window.dispatchEvent(new Event('pdfUploaded'))} />
-        </section>
-        <section>
-          <PdfList />
-        </section>
-      </div>
-    </TabsContent>
+        <TabsContent value="descriptive">
+          <section>
+            <DescriptivePage />
+          </section>
+        </TabsContent>
 
-    <TabsContent value="descriptive">
-      <section>
-        <DescriptivePage />
-      </section>
-    </TabsContent>
+        <TabsContent value="pyq-pdf">
+          <section>
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Tests</h2>
+              <Button onClick={() => setShowCreateForm(true)}>Create PDF Test</Button>
+            </div>
 
-    <TabsContent value="pyq-pdf">
-      <section>
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Tests</h2>
-          <Button onClick={() => setShowCreateForm(true)}>Create PDF Test</Button>
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">PDF Tests</h3>
-          {pdfTests.length > 0 ? (
-            pdfTests.map((test) => (
-              <Card key={test._id}>
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row justify-between gap-2 items-start sm:items-center">
-                    <CardTitle>{test.title}</CardTitle>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => {
-                        setViewTest(viewTest?._id === test._id ? null : test);
-                      }}>
-                        {viewTest?._id === test._id ? 'Hide Questions & Answers' : 'View Questions & Answers'}
-                      </Button>
-                      <Button variant="outline" onClick={() => setEditingTest(test)}>Edit</Button>
-                      <Button variant="destructive" onClick={() => setTestToDelete(test)}>Delete</Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          router.push(`/pdf-tests/${test._id}/attempt`);
-                        }}
-                      >
-                        Attempt Test
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-6 text-gray-500">No PDF tests available.</div>
-          )}
-        </div>
-      </section>
-    </TabsContent>
-  </Tabs>
+            <div className="space-y-6">
+              <h3 className="text-xl font-semibold">PDF Tests</h3>
+              {pdfTests.length > 0 ? (
+                pdfTests.map((test) => (
+                  <Card key={test._id}>
+                    <CardHeader>
+                      <div className="flex flex-col sm:flex-row justify-between gap-2 items-start sm:items-center">
+                        <CardTitle>{test.title}</CardTitle>
+                        <div className="flex gap-2">
+                          <Button variant="outline" onClick={() => {
+                            setViewTest(viewTest?._id === test._id ? null : test);
+                          }}>
+                            {viewTest?._id === test._id ? 'Hide Questions & Answers' : 'View Questions & Answers'}
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditingTest(test)}>Edit</Button>
+                          <Button variant="destructive" onClick={() => setTestToDelete(test)}>Delete</Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              router.push(`/pdf-tests/${test._id}/attempt`);
+                            }}
+                          >
+                            Attempt Test
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-6 text-gray-500">No PDF tests available.</div>
+              )}
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
 
       {viewTest && (
         <div className="mt-4 border rounded-lg p-6 bg-white shadow-sm">
@@ -1015,7 +615,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-        
+
 
       {editingTest && (
         <div className="mt-4 border rounded-lg p-6 bg-white shadow-sm">
@@ -1239,16 +839,16 @@ export default function Dashboard() {
         </div>
       )}
 
-                   {/* Create PDF Test Dialog */}
-       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-         <DialogContent>
-           <DialogHeader>
-             <DialogTitle>Create PDF Test</DialogTitle>
-           </DialogHeader>
-           <form onSubmit={handleSubmit} className="space-y-4">
-             <div>
-               <label className="block text-sm font-medium mb-1">Title</label>
-               <input
+      {/* Create PDF Test Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create PDF Test</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title</label>
+              <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
@@ -1313,11 +913,11 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <UserProfileModal 
+      <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
-</div>
+    </div>
 
   );
 } 

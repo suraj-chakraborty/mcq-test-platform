@@ -33,27 +33,27 @@ export default function TakeTest() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
+  // useEffect(() => {
     // TODO: Fetch test data from API
     // For now, using mock data
-    const mockTest: Test = {
-      id: '1',
-      title: 'Sample Test',
-      duration: 30,
-      questions: [
-        {
-          id: '1',
-          question: 'What is the capital of France?',
-          options: ['London', 'Berlin', 'Paris', 'Madrid'],
-          correctAnswer: 2,
-        },
-        // Add more questions...
-      ],
-    };
-    setTest(mockTest);
-    setTimeLeft(mockTest.duration * 60);
-    setAnswers(new Array(mockTest.questions.length).fill(-1));
-  }, []);
+  //   const mockTest: Test = {
+  //     id: '1',
+  //     title: 'Sample Test',
+  //     duration: 30,
+  //     questions: [
+  //       {
+  //         id: '1',
+  //         question: 'What is the capital of France?',
+  //         options: ['London', 'Berlin', 'Paris', 'Madrid'],
+  //         correctAnswer: 2,
+  //       },
+  //       // Add more questions...
+  //     ],
+  //   };
+  //   setTest(mockTest);
+  //   setTimeLeft(mockTest.duration * 60);
+  //   setAnswers(new Array(mockTest.questions.length).fill(-1));
+  // }, []);
 
   useEffect(() => {
     if (timeLeft > 0) {

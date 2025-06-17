@@ -52,11 +52,20 @@ export async function POST(request: Request) {
     // console.log(result);
     // const response = await result.response;
     // console.log(response);
-    const text = result.candidates[0]?.content?.parts[0]?.text;
-    console.log("text",text);
+    // const text = result.candidates[0]?.content?.parts[0]?.text;
+    const text =
+      result?.candidates &&
+      Array.isArray(result.candidates) &&
+      result.candidates[0]?.content?.parts &&
+      Array.isArray(result.candidates[0].content.parts) &&
+      result.candidates[0].content.parts[0]?.text
+        ? result.candidates[0].content.parts[0].text
+        : undefined;
+
+    // console.log("text", text);
 
     if (!text) {
-    throw new Error('No text response from Gemini API');
+      throw new Error('No text response from Gemini API');
     }
 
     let evaluation;

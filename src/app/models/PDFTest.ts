@@ -18,7 +18,7 @@ const QuestionSchema = new mongoose.Schema({
   },
   options: {
     type: [String],
-    validate: v => Array.isArray(v) && v.length >= 2,
+    validate: (v: string | any[]) => Array.isArray(v) && v.length >= 2,
   },
   correctAnswer: {
     type: String,

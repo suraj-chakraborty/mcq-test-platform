@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
+    console.log('Login request received:', { email, password });
 
     if (!email || !password) {
       return NextResponse.json(
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { message: 'User logged in successfully', user: { id: user._id, name: user.name, email: user.email } },
+      { message: 'User logged in successfully', user: { id: user.id, name: user.name, email: user.email } },
       { status: 201 }
     );
   } catch (error) {
