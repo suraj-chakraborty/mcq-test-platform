@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signIn } from 'next-auth/react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@radix-ui/themes';
 import { Flex, Text } from '@radix-ui/themes';
 import { toast } from 'sonner';
+import { signIn } from 'next-auth/react';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -95,7 +96,7 @@ export default function SignUp() {
 
           <Button
             className="w-full"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn()}
           >
             Sign up with Google
           </Button>

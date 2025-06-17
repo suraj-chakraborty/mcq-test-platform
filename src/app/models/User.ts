@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
   },
   uploadedPdfs: [{
     type: Schema.Types.ObjectId,
