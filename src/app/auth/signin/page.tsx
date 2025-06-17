@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@radix-ui/themes';
 import { Flex, Text } from '@radix-ui/themes';
@@ -11,6 +11,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { data: session } = useSession()
 
   const handleManualSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +91,7 @@ export default function SignIn() {
 
           <Button
             className="w-full"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: 'http://localhost:3000/dashboard' })}
           >
             Sign in with Google
           </Button>

@@ -95,6 +95,8 @@ export default function Dashboard() {
     pyqPDF: []
   });
 
+  console.log("session", session, status)
+
   const [showResults, setShowResults] = useState(false);
   const [currentResults, setCurrentResults] = useState<any>(null);
   const [testAttempts, setTestAttempts] = useState<TestAttempt[]>([]);
