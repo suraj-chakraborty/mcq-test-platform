@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = path.join(process.cwd(), '/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
     const processedPdfs = await Promise.all(files.map(async (file) => {
