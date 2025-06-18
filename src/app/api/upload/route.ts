@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadDir = path.join(process.cwd(), '/tmp', 'uploads');
+    const uploadDir = path.join('/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
     const arrayBuffer = await file.arrayBuffer();
