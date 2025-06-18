@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import FileUpload from '../components/FileUpload';
@@ -15,10 +15,11 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!session) {
-    router.push('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (!session) {
+      router.push('/login');
+    }
+  }, [session, router]);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -83,7 +84,7 @@ export default function UploadPage() {
             onFileSelect={handleFileSelect}
             accept={{
               'application/pdf': ['.pdf'],
-              'image/*': ['.png', '.jpg', '.jpeg', '.gif']
+              'image/*': ['.png', '.jpg', '.jpeg']
             }}
             maxSize={10 * 1024 * 1024} // 10MB
           />

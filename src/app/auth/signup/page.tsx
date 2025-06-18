@@ -7,6 +7,7 @@ import { Button } from '@radix-ui/themes';
 import { Flex, Text } from '@radix-ui/themes';
 import { toast } from 'sonner';
 import { signIn } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -39,7 +40,7 @@ export default function SignUp() {
       if (result?.error) {
         toast.error('Failed to sign in after registration');
       } else {
-        window.location.href = '/dashboard';
+        redirect('/dashboard')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed');
