@@ -21,10 +21,16 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
     // get user
-    const user = await prisma.user.findUnique(email);
-    // const user = await User.findOne({
-    //   email,
-    // });
+  //   const user = await prisma.user.findUnique({
+  //     where: {
+  //       email: email,
+  //     }
+  // });
+  console.log("hassed password",hashedPassword)
+    const user = await User.findOne({
+      email,
+    });
+    console.log("userpassword", user.password)
     if (!user) {
       return NextResponse.json(
         { message: 'User not found' },

@@ -1,17 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@radix-ui/themes';
 import { Flex, Text } from '@radix-ui/themes';
 import { toast } from 'sonner';
+import { redirect } from 'next/navigation';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { data: session } = useSession()
+  
+
+  useEffect(() => {
+    if (session) {
+      redirect("/dashboard")
+    }
+  },[session])
 
   const handleManualSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +50,7 @@ export default function SignIn() {
       if (result?.error) {
         toast.error('Invalid credentials');
       } else {
-        window.location.href = '/dashboard';
+        redirect('/dashboard')
       }
     } catch (error) {
       toast.error('An error occurred');

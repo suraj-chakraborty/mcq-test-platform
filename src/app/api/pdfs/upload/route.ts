@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateMCQs } from '@/app/lib/ai';
 import connectDB from '@/app/lib/mongodb';
@@ -15,8 +17,6 @@ const genAI = new GoogleGenAI({
 });
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {

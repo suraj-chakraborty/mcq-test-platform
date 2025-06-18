@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
@@ -11,8 +15,7 @@ import path from 'path';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs } from '@/app/lib/ai';
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
