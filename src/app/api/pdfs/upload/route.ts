@@ -17,7 +17,7 @@ const genAI = new GoogleGenAI({
 });
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export const maxDuration = 300;
+export const maxDuration = 10;
 
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const data = await pdfParse(buffer);
