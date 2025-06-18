@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
+const UPLOAD_DIR = path.join(process.cwd(), '/tmp', 'uploads');
 
 export async function saveFile(file: File): Promise<string> {
   try {
