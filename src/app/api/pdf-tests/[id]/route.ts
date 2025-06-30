@@ -48,7 +48,7 @@ export async function PUT(  request: Request,
     const id = (await params).id;
     const { data } = await request.json();
 
-    console.log("data", data);
+    // console.log("data", data);
     try {
       const session = await getServerSession(authOptions);
       if (!session?.user) {

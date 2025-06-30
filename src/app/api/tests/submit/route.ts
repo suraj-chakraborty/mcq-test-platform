@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Fetch test
     const test = await Test.findById(id);
-    console.log("server test😎😍😍", test)
+    // console.log("server test😎😍😍", test)
 
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });

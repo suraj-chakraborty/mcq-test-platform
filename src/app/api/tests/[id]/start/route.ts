@@ -28,7 +28,7 @@ export async function GET(
 
     // Fetch the test
     const test = await Test.findById(testId).lean() as any;
-    console.log("server test", test)
+    // console.log("server test", test)
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }

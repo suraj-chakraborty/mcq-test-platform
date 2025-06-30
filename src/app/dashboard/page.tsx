@@ -99,7 +99,7 @@ export default function Dashboard() {
     pyqPDF: []
   });
 
-  console.log("session", session, status)
+  // console.log("session", session, status)
 
   const [showResults, setShowResults] = useState(false);
   const [currentResults, setCurrentResults] = useState<any>(null);
@@ -133,7 +133,7 @@ export default function Dashboard() {
     try {
       const response = await fetch('/api/pdf-tests');
       const data = await response.json();
-      console.log(data)
+      // console.log(data)
       if (data.success) {
         setPDFTests(data.tests || []);
       } else {
@@ -317,7 +317,7 @@ export default function Dashboard() {
     e.preventDefault();
 
     const formDataToSend = new FormData();
-    console.log(formData)
+    // console.log(formData)
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
 
@@ -344,7 +344,7 @@ export default function Dashboard() {
         body: formDataToSend,
       });
 
-      console.log("response", response)
+      // console.log("response", response)
 
       const textResponse = await response.text();
 
@@ -390,7 +390,7 @@ export default function Dashboard() {
   if (selectedTest) {
     return (
      <>
-      console.log("selectedTest", {selectedTest})
+      {/* console.log("selectedTest", {selectedTest}) */}
       <TestAttempt
         test={selectedTest}
         onComplete={handleTestComplete}

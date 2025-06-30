@@ -24,16 +24,16 @@ export async function POST(
     }
 
     const { id, answers } = await request.json();
-    console.log("Test ID:",id);
-    console.log("Answers:", answers);
+    // console.log("Test ID:",id);
+    // console.log("Answers:", answers);
 
     await connectDB();
 
     // Fetch test
     const test = await Test.findById(id);
-    console.log('Test data:', test);
+    // console.log('Test data:', test);
     const questions = await Question.find({ testId: test._id});
-    console.log('Questions:', questions);
+    // console.log('Questions:', questions);
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
