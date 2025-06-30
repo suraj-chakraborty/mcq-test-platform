@@ -81,7 +81,7 @@ export default function SignUp() {
               className="w-full p-2 border rounded-md"
               required
             />
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-black text-white p-2 rounded font-semibold hover:bg-slate-200 hover:text-black backdrop-hue-rotate-15" disabled={loading}>
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
           </form>
@@ -96,8 +96,8 @@ export default function SignUp() {
           </div>
 
           <Button
-            className="w-full"
-            onClick={() => signIn()}
+            className="w-full cursor-pointer bg-white text-black p-2 rounded font-semibold hover:bg-gray-100 hover:text-black backdrop-hue-rotate-15"
+            onClick={() => signIn('google', { callbackUrl: 'http://localhost:3000/dashboard' })}
           >
             Sign up with Google
           </Button>
@@ -105,7 +105,7 @@ export default function SignUp() {
           <Flex justify="center" mt="4">
             <Text size="2">
               Already have an account?{' '}
-              <a href="/auth/signin" className="text-blue-600 hover:underline">
+              <a href="/auth/signin" className="text-black-600 font-semibold text-md hover:underline hover:text-blue-800">
                 Sign in
               </a>
             </Text>
