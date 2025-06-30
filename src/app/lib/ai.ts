@@ -10,7 +10,7 @@ export interface MCQQuestion {
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 export async function generateMCQs(pdfText: string): Promise<MCQQuestion[]> {
-
+ const truncatedText = pdfText.slice(0, 6000);
   const prompt = `
 You are a teaching assistant. Based on the following PDF content, generate 10 multiple-choice questions (MCQs). Each question should have:
 
@@ -23,20 +23,23 @@ Return the response as a JSON array.
 
 PDF Content:
 """
-${pdfText}
+${truncatedText}
 """`;
 
   try {
-    const result = await genAI.models.generateContent({
+    const result = await genAI.models.generateContentStream({
         model: 'gemini-2.0-flash-001',
         contents: prompt,
       });
-      if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
-        throw new Error('Failed to get response from Gemini');
-      }
-      const text = result.candidates[0].content.parts[0].text;
-      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+      console.log('Gemini MCQ generation result:', result);
+     let fullResponse = '';
+    for await (const chunk of result) {
+      fullResponse += chunk.text;
+    }
+
+    const cleanText = fullResponse.replace(/```json\n?|\n?```/g, '').trim();
     const parsed = JSON.parse(cleanText);
+    console.log(parsed)
     return parsed;
   } catch (error) {
     console.error('Gemini MCQ generation error:', error);

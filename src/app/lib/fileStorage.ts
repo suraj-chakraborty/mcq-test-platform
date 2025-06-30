@@ -29,6 +29,7 @@
 //   }
 // } 
 
+export const runtime = 'nodejs';
 
 import { uploadToCloudinary } from './cloudinary';
 
