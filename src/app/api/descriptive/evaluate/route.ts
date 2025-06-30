@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const { examName, question, answer, wordCount, timeLimit, timeTaken } = await request.json();
-    console.log(examName, question, answer, wordCount, timeLimit, timeTaken);
+    // console.log(examName, question, answer, wordCount, timeLimit, timeTaken);
 
     await connectDB();
 

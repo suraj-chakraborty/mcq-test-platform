@@ -31,7 +31,7 @@ ${truncatedText}
         model: 'gemini-2.0-flash-001',
         contents: prompt,
       });
-      console.log('Gemini MCQ generation result:', result);
+      // console.log('Gemini MCQ generation result:', result);
      let fullResponse = '';
     for await (const chunk of result) {
       fullResponse += chunk.text;
@@ -39,7 +39,7 @@ ${truncatedText}
 
     const cleanText = fullResponse.replace(/```json\n?|\n?```/g, '').trim();
     const parsed = JSON.parse(cleanText);
-    console.log(parsed)
+    // console.log(parsed)
     return parsed;
   } catch (error) {
     console.error('Gemini MCQ generation error:', error);

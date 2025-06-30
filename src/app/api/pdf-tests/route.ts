@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const tests = await PDFTest.find({ userId: session.user.id })
       .sort({ createdAt: -1 });
 
-      console.log("PDFtest", tests)
+      // console.log("PDFtest", tests)
 
     return NextResponse.json({
       success: true,

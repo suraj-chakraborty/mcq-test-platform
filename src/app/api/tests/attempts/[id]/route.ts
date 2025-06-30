@@ -10,7 +10,7 @@ export async function GET(
 ) {
   const id = (await params).id;
   try {
-    console.log("params", params )
+    // console.log("params", params )
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -39,7 +39,7 @@ export async function GET(
       _id: attemptId,
       userId: session.user.id,
     });
-    console.log("server attempt", attempt)
+    // console.log("server attempt", attempt)
 
     if (!attempt) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function GET(
         { status: 404 }
       );
     }
-    console.log("server attempt", attempt)
+    // console.log("server attempt", attempt)
     return NextResponse.json(attempt);
   } catch (error) {
     console.error('Error fetching test attempt:', error);

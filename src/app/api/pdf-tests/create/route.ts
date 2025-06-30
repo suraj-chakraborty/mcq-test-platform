@@ -96,7 +96,7 @@ export async function POST(req: Request) {
     // console.log("cleanText", cleanText)
     const parsed = JSON.parse(cleanText);
     const questions = parsed.questions;
-    console.log("questions",questions)
+    // console.log("questions",questions)
     const context = contextPDFs.map((f: any) => ({
       name: f.originalFilename.toString(),
       url: `/uploads/${f.newFilename}`  // Adjust this to match your file storage path

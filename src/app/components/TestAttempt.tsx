@@ -32,7 +32,7 @@ interface TestAttemptProps {
 }
 
 export default function TestAttempt({ test, onComplete }: TestAttemptProps) {
-  console.log("testAttempt 😊", test)
+  // console.log("testAttempt 😊", test)
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -40,7 +40,7 @@ export default function TestAttempt({ test, onComplete }: TestAttemptProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    console.log("test", test)
+    // console.log("test", test)
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {

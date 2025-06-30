@@ -29,7 +29,7 @@ export default function TestResultsPage() {
           router.push('/dashboard');
           return;
         }
-        console.log("params", params)
+        // console.log("params", params)
         const response = await fetch(`/api/tests/attempts/${params.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch test results');

@@ -46,7 +46,7 @@ export default function TestResults() {
           throw new Error('Failed to fetch results');
         }
         const data = await response.json();
-        console.log("data", data)
+        // console.log("data", data)
         setAttempt(data);
       } catch (error) {
         toast.error('Failed to load results');

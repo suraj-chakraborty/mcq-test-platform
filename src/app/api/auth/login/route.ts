@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
-    console.log('Login request received:', { email, password });
+    // console.log('Login request received:', { email, password });
 
     if (!email || !password) {
       return NextResponse.json(
@@ -26,11 +26,11 @@ export async function POST(req: Request) {
   //       email: email,
   //     }
   // });
-  console.log("hassed password",hashedPassword)
+  // console.log("hassed password",hashedPassword)
     const user = await User.findOne({
       email,
     });
-    console.log("userpassword", user.password)
+    // console.log("userpassword", user.password)
     if (!user) {
       return NextResponse.json(
         { message: 'User not found' },
