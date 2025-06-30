@@ -1,5 +1,7 @@
+
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { generateMCQs } from '@/app/lib/ai';
 import connectDB from '@/app/lib/mongodb';
@@ -13,26 +15,39 @@ import { mkdir } from 'fs/promises';
 import path from 'path';
 
 const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY!,
 });
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const maxDuration = 10; // Vercel hard limit on free plan
 
-export const maxDuration = 10;
-
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+async function extractTextFromPdf(buffer: Buffer): Promise<{ text: string; numpages: number }> {
   const data = await pdfParse(buffer);
-  const extractedText = data.text;
-  if (!extractedText || extractedText.length < 50) {
+  if (!data.text || data.text.length < 50) {
     throw new Error('PDF too short or invalid');
   }
-  return extractedText;
+  return { text: data.text, numpages: data.numpages ?? 0 };
+}
+
+async function safeGenerateMCQs(text: string, timeoutMs = 8000): Promise<any[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const result = await generateMCQs(text);
+    return result;
+  } catch (err) {
+    console.warn('MCQ generation failed or timed out:', err);
+    return []; // fallback
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function POST(request: Request) {
   try {
-    console.log("Received upload request");
-    const session = await getServerSession(authOptions);
+    console.log('Received upload request');
 
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -47,49 +62,58 @@ export async function POST(request: Request) {
     const uploadDir = path.join('/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
-    const processedPdfs = await Promise.all(files.map(async (file) => {
-      if (file.type !== 'application/pdf') {
-        throw new Error(`File ${file.name} is not a PDF`);
-      }
+    const results = await Promise.allSettled(
+      files.map(async (file) => {
+        if (file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} is not a PDF`);
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          throw new Error(`File ${file.name} exceeds max size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+        }
 
-      if (file.size > MAX_FILE_SIZE) {
-        throw new Error(`File ${file.name} exceeds max size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
-      }
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileUrl = await saveFile(file);
+        const { text, numpages } = await extractTextFromPdf(buffer);
+        const mcqs = await safeGenerateMCQs(text);
 
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const fileUrl = await saveFile(file);
-      const text = await extractTextFromPdf(buffer);
-      const mcqs = await generateMCQs(text);
+        await connectDB();
 
-      await connectDB();
-      const pdf = await Pdf.create({
-        title: file.name,
-        content: text,
-        url: fileUrl,
-        userId: session.user.id,
-        fileSize: file.size,
-        pageCount: (await pdfParse(buffer)).numpages,
-        mcqs: mcqs,
-      });
+        const pdf = await Pdf.create({
+          title: file.name,
+          content: text,
+          url: fileUrl,
+          userId: session.user.id,
+          fileSize: file.size,
+          pageCount: numpages,
+          mcqs: mcqs,
+        });
 
-      return {
-        pdf,
-        mcqs
-      };
-    }));
+        return {
+          pdf,
+          mcqs,
+        };
+      })
+    );
 
-    // Combine MCQs from all PDFs
-    const combinedMcqs = processedPdfs.flatMap(p => p.mcqs);
+    const processedPdfs = results
+      .filter((r) => r.status === 'fulfilled')
+      .map((r) => (r as PromiseFulfilledResult<any>).value);
+
+    const failed = results.filter((r) => r.status === 'rejected');
 
     return NextResponse.json({
       success: true,
-      pdfs: processedPdfs.map(p => ({
+      pdfs: processedPdfs.map((p) => ({
         filename: p.pdf.title,
         size: p.pdf.fileSize,
         url: p.pdf.url,
       })),
-      mcqs: combinedMcqs,
+      mcqs: processedPdfs.flatMap((p) => p.mcqs),
+      errors: failed.map((e, idx) => ({
+        index: idx,
+        reason: (e as PromiseRejectedResult).reason?.message || 'Unknown error',
+      })),
     });
   } catch (error) {
     console.error('Upload error:', error);
