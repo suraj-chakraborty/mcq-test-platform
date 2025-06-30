@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 interface Question {
@@ -23,7 +23,8 @@ interface TestData {
   completed?: boolean;
 }
 
-export default function TestPage({ params }: { params: { id: string } }) {
+export default function TestPage() {
+  const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
   const [test, setTest] = useState<TestData | null>(null);

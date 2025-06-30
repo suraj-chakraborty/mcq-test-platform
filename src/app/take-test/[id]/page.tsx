@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,9 @@ interface Test {
   createdAt: string;
 }
 
-export default function TakeTestPage({ params }: { params: { id: string } }) {
+export default function TakeTestPage() {
   const router = useRouter();
+  const params = useParams()
   const { data: session, status } = useSession();
   const [tests, setTests] = useState<Test | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,9 @@ interface TestAttempt {
   updatedAt: string;
 }
 
-export default function TestResults({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function TestResults() {
   const router = useRouter();
+  const params= useParams();
   const { data: session, status } = useSession();
   const [attempt, setAttempt] = useState<TestAttempt | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +40,7 @@ export default function TestResults({
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        console.log("params", params)
+        // console.log("params", params)
         const response = await fetch(`/api/tests/attempts/${params.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch results');

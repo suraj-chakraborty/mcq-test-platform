@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import PDFTestAttempt from '@/app/components/PDFTestAttempt';
 
-export default function AttemptTestPage({ params }: { params: { id: string } }) {
+export default function AttemptTestPage() {
   const { data: session, status } = useSession();
+  const params = useParams()
   const router = useRouter();
   const [test, setTest] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

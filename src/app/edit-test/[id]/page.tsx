@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import EditTest from '@/app/components/EditTest';
 import { toast } from 'sonner';
+
 
 interface Question {
   question: string;
@@ -18,7 +19,8 @@ interface Test {
   questions: Question[];
 }
 
-export default function EditTestPage({ params }: { params: { id: string } }) {
+export default function EditTestPage() {
+  const params = useParams()
   const router = useRouter();
   const [test, setTest] = useState<Test | null>(null);
   const [isLoading, setIsLoading] = useState(true);
