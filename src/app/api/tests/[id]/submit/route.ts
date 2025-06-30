@@ -14,8 +14,9 @@ interface Question {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -23,7 +24,7 @@ export async function POST(
     }
 
     const { id, answers } = await request.json();
-    console.log("Test ID:", params.id);
+    console.log("Test ID:",id);
     console.log("Answers:", answers);
 
     await connectDB();

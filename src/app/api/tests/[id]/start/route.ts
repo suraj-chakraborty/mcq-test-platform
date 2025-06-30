@@ -8,8 +8,9 @@ import mongoose from 'mongoose';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -18,7 +19,7 @@ export async function GET(
 
     await connectDB();
 
-    const testId = params.id;
+    const testId = id;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(testId)) {
