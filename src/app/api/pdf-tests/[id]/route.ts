@@ -6,8 +6,9 @@ import PDFTest from '@/app/models/PDFTest';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -17,7 +18,7 @@ export async function DELETE(
     await connectDB();
 
     const test = await PDFTest.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: session.user.id
     });
 
@@ -43,8 +44,10 @@ export async function DELETE(
 } 
 
 export async function PUT(  request: Request,
-  { params }: { params: { id: string} }) {
+  { params }: { params: Promise<{ id: string }>}) {
+    const id = (await params).id;
     const { data } = await request.json();
+
     console.log("data", data);
     try {
       const session = await getServerSession(authOptions);
@@ -55,7 +58,7 @@ export async function PUT(  request: Request,
       await connectDB();
   
       const test = await PDFTest.findOneAndUpdate({
-        _id: params.id,
+        _id: id,
         userId: session.user.id
       });
   
@@ -82,8 +85,9 @@ export async function PUT(  request: Request,
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -92,7 +96,7 @@ export async function GET(
 
     await connectDB();
 
-    const test = await PDFTest.findById(params.id);
+    const test = await PDFTest.findById(id);
     if (!test) {
       return NextResponse.json(
         { error: 'Test not found' },

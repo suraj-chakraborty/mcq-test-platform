@@ -6,9 +6,9 @@ import TestResult from '@/app/models/TestResult';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
-  
+  const id = (await params).id;
   try {
     console.log("params", params )
     const session = await getServerSession(authOptions);
@@ -22,7 +22,7 @@ export async function GET(
 
     await connectDB();
 
-    const attemptId = params.id;
+    const attemptId = id;
     
     // Check if attemptId is undefined or 'undefined'
     if (!attemptId || attemptId === 'undefined') {

@@ -6,8 +6,9 @@ import TestResult from '@/app/models/TestResult';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }>}
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
 
@@ -21,7 +22,7 @@ export async function GET(
     await connectDB();
 
     const test = await TestResult.findOne({
-      _id: params.id,
+      _id: id,
       userId: session.user.id,
     });
 

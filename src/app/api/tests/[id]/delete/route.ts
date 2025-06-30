@@ -6,8 +6,9 @@ import Test from '@/app/models/Test';
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
 
@@ -20,7 +21,7 @@ export async function DELETE(
 
     await connectDB();
 
-    const test = await Test.findByIdAndDelete(params.id);
+    const test = await Test.findByIdAndDelete(id);
 
     if (!test) {
       return NextResponse.json(

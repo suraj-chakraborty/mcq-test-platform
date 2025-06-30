@@ -6,8 +6,11 @@ import DescriptiveTest from '@/app/models/DescriptiveTest';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> } 
 ) {
+  const  id  = (await params).id
+  // console.log("context", context)
+  // console.log("id",id)
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -17,7 +20,7 @@ export async function DELETE(
     await connectDB();
 
     const test = await DescriptiveTest.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: session.user.id
     });
 

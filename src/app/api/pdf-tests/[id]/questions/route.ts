@@ -6,8 +6,9 @@ import PDFTest from '@/app/models/PDFTest';
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -27,7 +28,7 @@ export async function PUT(
 
     const test = await PDFTest.findOneAndUpdate(
       {
-        _id: params.id,
+        _id: id,
         userId: session.user.id
       },
       {
