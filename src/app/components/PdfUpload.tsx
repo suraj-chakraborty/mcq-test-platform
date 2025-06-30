@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface MCQQuestion {
   question: string;
@@ -36,7 +37,7 @@ const ACCEPTED_FILE_TYPES = {
 } as const;
 
 export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
-  const router = useRouter();
+  const router = useRouter()
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentFiles, setCurrentFiles] = useState<File[]>([]);
@@ -174,6 +175,7 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
     onDrop,
     accept: ACCEPTED_FILE_TYPES,
     multiple: true,
+    disabled: isUploading,
   });
 
   const filteredAndSortedPdfs = useMemo(() => {
@@ -209,6 +211,14 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
       >
         <input {...getInputProps()} />
+        {isUploading && (
+            <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <LoadingSpinner />
+                <p className="text-gray-700 text-sm">Uploading your PDF...</p>
+              </div>
+            </div>
+           )}
         {isUploading ? (
           <div>
             <p>Uploading {currentFiles.length} files</p>
