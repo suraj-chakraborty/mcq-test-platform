@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import TestAttempt from '@/app/components/TestAttempt';
 import TestResults from '@/app/components/TestResults';
 import Loading from '../loading';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface Question {
   question: string;
@@ -78,7 +79,6 @@ export default function Dashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [tests, setTests] = useState<Test[]>([]);
-  const [loading, setLoading] = useState(true);
   const [pdfTests, setPDFTests] = useState<PDFFile[]>([]);
   const [testToDelete, setTestToDelete] = useState<PDFFile | null>(null);
   const [testToUpdate, setTestToUpdate] = useState<PDFFile | null>(null);
@@ -113,15 +113,7 @@ export default function Dashboard() {
     }
   }, [status, router]);
 
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'context' | 'pyq') => {
-  //   const file = e.target.files?.[0];
-  //   if (file) {
-  //     setFormData(prev => ({
-  //       ...prev,
-  //       [type === 'context' ? 'contextPDF' : 'pyqPDF']: file
-  //     }));
-  //   }
-  // };
+
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
