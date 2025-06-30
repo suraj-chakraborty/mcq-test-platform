@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileUrl = await saveFile(file);
+    // const fileUrl = await uploadToCloudinary(buffer, file.name)
     const text = await extractTextFromPdf(buffer);
     const mcqs = await generateMCQs(text);
 
