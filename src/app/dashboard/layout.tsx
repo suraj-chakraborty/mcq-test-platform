@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -13,15 +13,18 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+   useEffect(() => {
+    if (status === "unauthenticated") {
+      setIsRedirecting(true);
+      router.push("/auth/signin");
+    }
+  }, [status, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading'|| isRedirecting) {
     return <div><Loading /></div>;
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/auth/signin');
-    return null;
-  }
 
   return (
     <div>

@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/app/lib/mongodb';
 import User from '@/app/models/User';
-import prisma from '@/lib/prisma';
+import { rateLimit } from '@/app/lib/rate_limit';
 
 export async function POST(req: Request) {
+   const ip = req.headers.get('x-forwarded-for') || 'unknown';
+
+  const { allowed, retryAfter } = rateLimit(ip);
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ message: `Too many attempts. Try again in ${retryAfter}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
   try {
     const { email, password } = await req.json();
-    // console.log('Login request received:', { email, password });
+    console.log('Login request received:', { email, password });
 
     if (!email || !password) {
       return NextResponse.json(
@@ -19,7 +28,9 @@ export async function POST(req: Request) {
     await connectDB();
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // console.log(password)
+    // const hashedPassword = await bcrypt.compare(password, user.password);
+    // console.log("loginpassword", hashedPassword)
     // get user
   //   const user = await prisma.user.findUnique({
   //     where: {
@@ -36,7 +47,10 @@ export async function POST(req: Request) {
         { message: 'User not found' },
         { status: 400 }
       );
-    }else if (user.password !== hashedPassword) {
+    }else if (await bcrypt.compare(password, user.password) === false) {
+          console.log("userpassword", user.password)
+          // console.log("hassed password", hashedPassword)
+          console.log("user", user)
         return NextResponse.json(
             { message: 'wrong credentials' },
             { status: 400 }

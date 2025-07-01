@@ -13,6 +13,8 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { data: session } = useSession()
+  const [lastAttemptTime, setLastAttemptTime] = useState<number | null>(null);
+  const COOLDOWN_MS = 5000;
   
 
   useEffect(() => {
@@ -23,6 +25,14 @@ export default function SignIn() {
 
   const handleManualSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const now = Date.now();
+    if (lastAttemptTime && now - lastAttemptTime < COOLDOWN_MS) {
+      toast.error(`Please wait ${Math.ceil((COOLDOWN_MS - (now - lastAttemptTime)) / 1000)}s before retrying.`);
+      return;
+    }
+
+    setLastAttemptTime(now);
     setLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
@@ -30,30 +40,29 @@ export default function SignIn() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+      
+      console.log(response)
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || 'Login failed')
       }
-
-      // Sign in after successful registration
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Registration failed');
-    }
-    try {
+   
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
+      console.log(result)
 
       if (result?.error) {
-        toast.error('Invalid credentials');
+        toast.error('Authentication failed: Invalid credentials.');
       } else {
         redirect('/dashboard')
       }
-    } catch (error) {
-      toast.error('An error occurred');
+    }catch (error) {
+      const message =
+      error instanceof Error ? error.message : 'An unexpected error occurred during login.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
