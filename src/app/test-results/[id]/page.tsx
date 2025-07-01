@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import Loading from '@/app/loading';
 
 interface Question {
   id: string;
@@ -63,7 +64,7 @@ export default function TestResults() {
   }, [session, params.id, router]);
 
   if (status === 'loading' || loading) {
-    return <div>Loading...</div>;
+    return <div><Loading /></div>;
   }
 
   if (!attempt) {

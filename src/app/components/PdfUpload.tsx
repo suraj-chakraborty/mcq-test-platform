@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from './LoadingSpinner';
+import Truncate from './Truncate';
+
 
 interface MCQQuestion {
   question: string;
@@ -282,7 +284,9 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium truncate">{pdf.title}</h3>
+                      <h3 className="font-medium truncate">
+                        {Truncate(pdf.title, 30 )}
+                        </h3>
                       <p className="text-sm text-gray-500">
                         Size: {(pdf.fileSize / (1024 * 1024)).toFixed(2)}MB
                       </p>
