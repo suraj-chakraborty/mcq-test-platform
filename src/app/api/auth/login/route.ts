@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   }
   try {
     const { email, password } = await req.json();
-    console.log('Login request received:', { email, password });
+    // console.log('Login request received:', { email, password });
 
     if (!email || !password) {
       return NextResponse.json(
@@ -48,9 +48,9 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }else if (await bcrypt.compare(password, user.password) === false) {
-          console.log("userpassword", user.password)
+          // console.log("userpassword", user.password)
           // console.log("hassed password", hashedPassword)
-          console.log("user", user)
+          // console.log("user", user)
         return NextResponse.json(
             { message: 'wrong credentials' },
             { status: 400 }
