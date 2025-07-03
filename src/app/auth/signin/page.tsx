@@ -108,7 +108,7 @@ export default function SignIn() {
 
           <Button
             className="w-full cursor-pointer bg-white text-black p-2 rounded font-semibold hover:bg-gray-100 hover:text-black backdrop-hue-rotate-15"
-            onClick={() => signIn('google', { callbackUrl: 'http://localhost:3000/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: 'https://mcq-test-platform.netlify.app/dashboard' })}
           >
             Sign in with Google
           </Button>
