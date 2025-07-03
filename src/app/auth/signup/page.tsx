@@ -8,12 +8,14 @@ import { Flex, Text } from '@radix-ui/themes';
 import { toast } from 'sonner';
 import { signIn } from 'next-auth/react';
 import { redirect } from 'next/navigation';
+import OTPVerificationForm from '@/app/components/OTPVerificationForm';
 
 export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
 
   const handleManualSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +26,12 @@ export default function SignUp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Registration failed');
+      const data = await response.json()
+      if (response.ok) {
+        alert('OTP sent to your email');
+        setShowOTP(true);
+      } else {
+         throw new Error(data.message || 'Registration failed')
       }
 
       // Sign in after successful registration
@@ -37,11 +41,11 @@ export default function SignUp() {
         redirect: false,
       });
 
-      if (result?.error) {
-        toast.error('Failed to sign in after registration');
-      } else {
-        redirect('/dashboard')
-      }
+      // if (result?.error) {
+      //   toast.error('Failed to sign in after registration');
+      // } else {
+      //   redirect('/dashboard')
+      // }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Registration failed');
     } finally {
@@ -85,6 +89,7 @@ export default function SignUp() {
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
           </form>
+            {showOTP && <OTPVerificationForm email={email} />}
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">

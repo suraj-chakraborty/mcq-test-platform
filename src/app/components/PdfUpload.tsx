@@ -31,6 +31,8 @@ interface PdfDocument {
 
 interface PdfUploadProps {
   onUploadSuccess?: () => void;
+  onUploadPending?: () => void;
+  onUploadError?: () => void;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -38,7 +40,7 @@ const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 } as const;
 
-export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
+export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadError  }: PdfUploadProps) {
   const router = useRouter()
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -97,10 +99,14 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
       const xhr = new XMLHttpRequest();
       
       xhr.upload.addEventListener('progress', (event) => {
+        // console.log("event",event)
+        // console.log(event.lengthComputable, event.loaded, event.total);
         if (event.lengthComputable) {
           const percentCompleted = Math.round((event.loaded * 100) / event.total);
           setUploadProgress(percentCompleted);
+          setIsUploading(true)
         }
+        onUploadPending?.();
       });
 
       xhr.addEventListener('load', () => {
@@ -114,6 +120,7 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
             setShowMcqs(true);
             toast.success('PDFs uploaded and processed successfully');
             onUploadSuccess?.();
+            setIsUploading(false);
             fetchPdfs();
           } else {
             let errorMessage = 'Upload failed';
@@ -135,9 +142,11 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
 
       xhr.onerror = () => {
         toast.error('Network error');
+        onUploadError?.();
       };
 
       xhr.open('POST', '/api/pdfs/upload');
+      setIsUploading(true);
       xhr.setRequestHeader('Accept', 'application/json');
       xhr.send(formData);
     } catch (err) {
@@ -146,7 +155,7 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
     } finally {
       setIsUploading(false);
     }
-  }, [onUploadSuccess]);
+  }, [onUploadSuccess, onUploadPending, onUploadError]);
 
   const handleStartTest = async (type: 'pdf' | 'current-affairs' | 'general-knowledge', pdfIds?: string[]) => {
     try {
@@ -205,6 +214,7 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
       });
   }, [pdfs, searchQuery, filterType, sortBy]);
 
+  // console.log(isUploading, currentFiles, uploadProgress, mcqs, showMcqs, pdfs, isLoading);
   return (
     <div className="space-y-6">
       <div
@@ -221,7 +231,7 @@ export default function PdfUpload({ onUploadSuccess }: PdfUploadProps) {
               </div>
             </div>
            )}
-        {isUploading ? (
+        {isUploading===true ? (
           <div>
             <p>Uploading {currentFiles.length} files</p>
             <Progress value={uploadProgress} />

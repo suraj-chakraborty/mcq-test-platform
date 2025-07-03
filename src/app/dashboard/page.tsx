@@ -520,7 +520,7 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-semibold">PDF Management</h2>
                 <Button onClick={() => router.push('/create-test')}>Create New Test</Button>
               </div>
-              <PdfUpload onUploadSuccess={() => window.dispatchEvent(new Event('pdfUploaded'))} />
+              <PdfUpload  />
             </section>
             <section>
               <PdfList />

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import FileUpload from '../components/FileUpload';
 import PdfPreview from '../components/PdfPreview';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -76,8 +77,10 @@ export default function UploadPage() {
           {error}
         </div>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {uploading === true ? (
+        <LoadingSpinner />
+      ):(
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-xl font-semibold mb-4">Upload File</h2>
           <FileUpload
@@ -134,6 +137,8 @@ export default function UploadPage() {
           )}
         </div>
       </div>
+      )}
+      
     </div>
   );
 } 

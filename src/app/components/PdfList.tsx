@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import Truncate from './Truncate';
 
 interface Pdf {
   _id: string;
@@ -74,7 +75,7 @@ export default function PdfList() {
             <div className="flex items-center space-x-4">
               <div className="text-2xl text-gray-400">📄</div>
               <div>
-                <h3 className="font-medium text-gray-900">{pdf.title}</h3>
+                <h3 className="font-medium text-gray-900">{Truncate(pdf.title, 30)}</h3>
                 <p className="text-sm text-gray-500">
                   Uploaded on {new Date(pdf.createdAt).toLocaleDateString()}
                 </p>
