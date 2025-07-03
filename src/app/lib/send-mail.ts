@@ -8,7 +8,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
   service: "gmail",
   auth: {
     type: "OAuth2",
-    user: "surajchakraborty121@gmail.com",
+    user: process.env.EMAIL_USER,
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
@@ -17,7 +17,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
 
   try {
     await transporter.sendMail({
-    from:  `"MCQ Test Platform" <${testAccount.user}>`,
+    from:  `"MCQ Test Platform" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     text,
