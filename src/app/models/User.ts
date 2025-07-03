@@ -7,7 +7,10 @@ export interface IUser {
   password: string;
   uploadedPdfs: mongoose.Types.ObjectId[];
   testHistory: mongoose.Types.ObjectId[];
-  createdAt: Date;
+  otp: string;
+  isVerified: boolean;
+  otpExpiresAt: Date;
+
   updatedAt: Date;
   image: string;
   mongodbUrl: string;
@@ -27,6 +30,12 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: false,
   },
+  otp: { type: String, required: false },
+  isVerified: {
+  type: Boolean,
+  default: false,
+},
+  otpExpiresAt: Date,
   uploadedPdfs: [{
     type: Schema.Types.ObjectId,
     ref: 'Pdf',
