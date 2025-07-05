@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error fetching PDF tests:', error);
+  console.error('Error fetching PDF tests:', error);
     return NextResponse.json(
       { error: 'Failed to fetch tests' },
       { status: 500 }
