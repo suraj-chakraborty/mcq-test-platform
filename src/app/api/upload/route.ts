@@ -34,6 +34,10 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     // console.log("formData",formData)
     const file = formData.get('file') as File;
+    const topic = formData.get('domainTopic')?.toString() || 'General';
+    // console.log(`Topic: ${topic}`);
+    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
+    // console.log(`Number of questions requested: ${numQuestions}`);
     // console.log("file", file)
 
     if (!file) {
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
     const fileUrl = await saveFile(file);
     // const fileUrl = await uploadToCloudinary(buffer, file.name)
     const text = await extractTextFromPdf(buffer);
-    const mcqs = await generateMCQs(text);
+    const mcqs = await generateMCQs(text, topic, numQuestions);
 
     await connectDB();
     const pdf = await Pdf.create({

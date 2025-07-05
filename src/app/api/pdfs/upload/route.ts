@@ -68,9 +68,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
      const topic = formData.get('domainTopic')?.toString() || 'General';
-     console.log(`Topic: ${topic}`);
+    //  console.log(`Topic: ${topic}`);
     const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
-    console.log(`Number of questions requested: ${numQuestions}`);
+    // console.log(`Number of questions requested: ${numQuestions}`);
 
     const uploadDir = path.join('/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
