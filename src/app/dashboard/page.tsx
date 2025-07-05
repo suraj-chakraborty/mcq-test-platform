@@ -51,6 +51,8 @@ interface PDFFile {
 interface FormData {
   title: string;
   description: string;
+  domainTopic: string;
+  numQuestions: number;
   contextPDF: File[] | null;
   pyqPDF: File[] | null;
 }
@@ -98,6 +100,8 @@ export default function Dashboard() {
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
+    domainTopic: '',
+    numQuestions: 10,
     contextPDF: [],
     pyqPDF: []
   });
@@ -318,11 +322,14 @@ export default function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true)
 
     const formDataToSend = new FormData();
     // console.log(formData)
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
+    formDataToSend.append('domainTopic', formData.domainTopic);
+    formDataToSend.append('numQuestions', formData.numQuestions.toString());
 
     // Append multiple context PDFs
     if (formData.contextPDF) {
@@ -356,12 +363,15 @@ export default function Dashboard() {
 
         if (response.ok && data.success) {
           toast.success('PDF test created successfully!');
+          setIsLoading(false)
           setShowCreateForm(false);
 
           // Reset form
           setFormData({
             title: '',
             description: '',
+            domainTopic: '',
+            numQuestions: 10,
             contextPDF: [],
             pyqPDF: null,
           });
@@ -856,6 +866,24 @@ export default function Dashboard() {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Topic</label>
+              <textarea
+                value={formData.domainTopic}
+                onChange={(e) => setFormData(prev => ({ ...prev, domainTopic: e.target.value }))}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">No. of Questation</label>
+              <textarea
+                value={formData.numQuestions}
+                onChange={(e) => setFormData(prev => ({ ...prev, numQuestions: Number(e.target.value) }))}
                 className="w-full p-2 border rounded"
                 required
               />
