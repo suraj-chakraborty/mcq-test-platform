@@ -9,15 +9,20 @@ export interface MCQQuestion {
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
-export async function generateMCQs(pdfText: string): Promise<MCQQuestion[]> {
+export async function generateMCQs(pdfText: string, topic:string, numQuestions:number): Promise<MCQQuestion[]> {
  const truncatedText = pdfText.slice(0, 6000);
   const prompt = `
-You are a teaching assistant. Based on the following PDF content, generate 10 multiple-choice questions (MCQs). Each question should have:
+You are a teaching assistant.
+The topic for these questions is: **${topic}**.
 
-- "question": The question statement
-- "options": An array of 4 answer options
-- "correctAnswer": Index of the correct option (0-based)
-- "explanation": A brief explanation of the answer
+Your task is to generate ${numQuestions} multiple-choice questions (MCQs) *strictly and exclusively* based on the provided "PDF Content" below, and relevant to the specified topic. Ensure that every question, its options, and the correct answer can be directly inferred or found within the given text. Do not introduce any outside information or concepts *until you are completely sure about the information*.
+
+Each question should have:
+
+ - "question": The question statement
+ - "options": An array of 4 answer options
+ - "correctAnswer": Index of the correct option (0-based)
+ - "explanation": A brief explanation of the answer, referencing the provided text where applicable.
 
 Return the response as a JSON array.
 

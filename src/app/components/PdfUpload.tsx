@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect ,useMemo  } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { Progress } from '@/components/ui/progress';
@@ -40,7 +40,7 @@ const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 } as const;
 
-export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadError  }: PdfUploadProps) {
+export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadError }: PdfUploadProps) {
   const router = useRouter()
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -53,6 +53,9 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'with-mcqs' | 'without-mcqs'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'size'>('date');
+  const [showModal, ShowModal] = useState(false);
+  const [numQuestions, setNumQuestions] = useState(10);
+  const [domainTopic, setDomainTopic] = useState('');
 
   useEffect(() => {
     fetchPdfs();
@@ -83,21 +86,29 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
       }
       return true;
     });
-
     if (validFiles.length === 0) return;
-
-    setIsUploading(true);
     setCurrentFiles(validFiles);
+    ShowModal(true)
+  }, []);
+
+  const handleUploadWithForm = async () => {
+    if (!domainTopic || numQuestions <= 0) {
+      toast.error("Please fill all fields");
+      return;
+    }
+    setIsUploading(true);
     setUploadProgress(0);
 
     const formData = new FormData();
-    validFiles.forEach(file => {
+    currentFiles.forEach(file => {
       formData.append('files', file);
+      formData.append('numQuestions', numQuestions.toString());
+      formData.append('domainTopic', domainTopic);
     });
 
     try {
       const xhr = new XMLHttpRequest();
-      
+
       xhr.upload.addEventListener('progress', (event) => {
         // console.log("event",event)
         // console.log(event.lengthComputable, event.loaded, event.total);
@@ -154,8 +165,9 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
       toast.error('Upload failed');
     } finally {
       setIsUploading(false);
+
     }
-  }, [onUploadSuccess, onUploadPending, onUploadError]);
+  };
 
   const handleStartTest = async (type: 'pdf' | 'current-affairs' | 'general-knowledge', pdfIds?: string[]) => {
     try {
@@ -165,7 +177,7 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(
-          type === 'pdf' 
+          type === 'pdf'
             ? { pdfIds }
             : { type }
         ),
@@ -193,10 +205,10 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
     return pdfs
       .filter(pdf => {
         const matchesSearch = pdf.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesFilter = filterType === 'all' 
-          ? true 
-          : filterType === 'with-mcqs' 
-            ? pdf.mcqs?.length > 0 
+        const matchesFilter = filterType === 'all'
+          ? true
+          : filterType === 'with-mcqs'
+            ? pdf.mcqs?.length > 0
             : !pdf.mcqs?.length;
         return matchesSearch && matchesFilter;
       })
@@ -224,14 +236,14 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
       >
         <input {...getInputProps()} />
         {isUploading && (
-            <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <LoadingSpinner />
-                <p className="text-gray-700 text-sm">Uploading your PDF...</p>
-              </div>
+          <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <LoadingSpinner />
+              <p className="text-gray-700 text-sm">Uploading your PDF...</p>
             </div>
-           )}
-        {isUploading===true ? (
+          </div>
+        )}
+        {isUploading === true ? (
           <div>
             <p>Uploading {currentFiles.length} files</p>
             <Progress value={uploadProgress} />
@@ -295,8 +307,8 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium truncate">
-                        {Truncate(pdf.title, 30 )}
-                        </h3>
+                        {Truncate(pdf.title, 30)}
+                      </h3>
                       <p className="text-sm text-gray-500">
                         Size: {(pdf.fileSize / (1024 * 1024)).toFixed(2)}MB
                       </p>
@@ -353,7 +365,65 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
         </div>
       </div>
 
-      {showMcqs && mcqs.length > 0 && (
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => ShowModal(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Generate MCQs</h2>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleUploadWithForm();
+                ShowModal(false);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="num-questions">
+                  Number of Questions (max 50)
+                </label>
+                <Input
+                  id="num-questions"
+                  type="number"
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(Number(e.target.value))}
+                  min={1}
+                  max={50}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="domain-topic">
+                  Domain / Topic
+                </label>
+                <Input
+                  id="domain-topic"
+                  type="text"
+                  value={domainTopic}
+                  placeholder="Enter or select a topic"
+                  onChange={(e) => setDomainTopic(e.target.value)}
+                  list="ai-suggested-domains"
+                  required
+                />
+
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => ShowModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Generate</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* {showMcqs && mcqs.length > 0 && (
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">Generated MCQs</h2>
           <div className="space-y-6">
@@ -379,7 +449,7 @@ export default function PdfUpload({ onUploadSuccess,onUploadPending,onUploadErro
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

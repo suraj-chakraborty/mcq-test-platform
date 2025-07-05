@@ -13,6 +13,13 @@ import pdfParse from 'pdf-parse/lib/pdf-parse';
 import { GoogleGenAI } from '@google/genai';
 import { mkdir } from 'fs/promises';
 import path from 'path';
+import formidable from 'formidable';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -29,11 +36,12 @@ async function extractTextFromPdf(buffer: Buffer): Promise<{ text: string; numpa
   return { text: data.text, numpages: data.numpages ?? 0 };
 }
 
-async function safeGenerateMCQs(text: string, timeoutMs = 8000): Promise<any[]> {
+async function safeGenerateMCQs(text: string,topic:string, numQuestions:number, timeoutMs = 8000): Promise<any[]> {
+  console.log(text.slice(0, 100), topic, numQuestions);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const result = await generateMCQs(text);
+    const result = await generateMCQs(text, topic, numQuestions);
     return result;
   } catch (err) {
     console.warn('MCQ generation failed or timed out:', err);
@@ -45,6 +53,7 @@ async function safeGenerateMCQs(text: string, timeoutMs = 8000): Promise<any[]> 
 
 export async function POST(request: Request) {
   try {
+    console.log(request)
     console.log('Received upload request');
 
     const session = await getServerSession(authOptions);
@@ -58,6 +67,10 @@ export async function POST(request: Request) {
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
+     const topic = formData.get('domainTopic')?.toString() || 'General';
+     console.log(`Topic: ${topic}`);
+    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
+    console.log(`Number of questions requested: ${numQuestions}`);
 
     const uploadDir = path.join('/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
@@ -75,7 +88,7 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(arrayBuffer);
         const fileUrl = await saveFile(file);
         const { text, numpages } = await extractTextFromPdf(buffer);
-        const mcqs = await safeGenerateMCQs(text);
+        const mcqs = await safeGenerateMCQs(text,topic, numQuestions);
 
         await connectDB();
 
