@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: false,
-
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
