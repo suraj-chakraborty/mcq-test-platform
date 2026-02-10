@@ -35,11 +35,11 @@ export default function SignUp() {
       }
 
       // Sign in after successful registration
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+      // const result = await signIn('credentials', {
+      //   email,
+      //   password,
+      //   redirect: false,
+      // });
 
       // if (result?.error) {
       //   toast.error('Failed to sign in after registration');
