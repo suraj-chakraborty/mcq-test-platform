@@ -13,7 +13,7 @@ interface Question {
 }
 
 interface TestData {
-  _id: string;
+  id: string;
   questions: Question[];
   testType: string;
   totalQuestions: number;

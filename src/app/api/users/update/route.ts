@@ -1,40 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import User from '@/app/models/User';
+import { prisma } from '@/app/lib/prisma';
 
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { name, email, mongodbUrl } = await request.json();
 
-    await connectDB();
-
     // Update user details
-    const updatedUser = await User.findByIdAndUpdate(
-      session.user.id,
-      {
+    const updatedUser = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
         name,
         email,
         mongodbUrl,
       },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    });
 
     return NextResponse.json({
       success: true,
       user: {
-        id: updatedUser._id,
+        id: updatedUser.id,
         name: updatedUser.name,
         email: updatedUser.email,
         mongodbUrl: updatedUser.mongodbUrl,
@@ -47,4 +39,4 @@ export async function PUT(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

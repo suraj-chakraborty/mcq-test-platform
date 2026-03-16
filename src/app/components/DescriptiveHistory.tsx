@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface TestHistory {
-  _id: string;
+  id: string;
   examName: string;
   question: string;
   answer: string;
@@ -54,13 +54,13 @@ export default function DescriptiveHistory() {
   const handleDelete = async (test: TestHistory) => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/descriptive/${test._id}`, {
+      const response = await fetch(`/api/descriptive/${test.id}`, {
         method: 'DELETE',
       });
 
       const data = await response.json();
       if (data.success) {
-        setTests(tests.filter(t => t._id !== test._id));
+        setTests(tests.filter(t => t.id !== test.id));
         toast.success('Test deleted successfully');
       } else {
         throw new Error(data.error);
@@ -155,7 +155,7 @@ export default function DescriptiveHistory() {
         <div>No tests found</div>
       ) : (
         tests.map((test) => (
-          <Card key={test._id} className="mb-4">
+          <Card key={test.id} className="mb-4">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>{test.examName}</CardTitle>

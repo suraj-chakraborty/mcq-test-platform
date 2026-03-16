@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import Truncate from './Truncate';
 
 interface Pdf {
-  _id: string;
+  id: string;
   title: string;
   createdAt: string;
   isReference: boolean;
@@ -35,7 +35,7 @@ export default function PdfList() {
 
       if (!response.ok) throw new Error('Failed to delete PDF');
 
-      setPdfs(pdfs.filter(pdf => pdf._id !== id));
+      setPdfs(pdfs.filter(pdf => pdf.id !== id));
       toast.success('PDF deleted successfully');
     } catch (error) {
       console.error('Error deleting PDF:', error);
@@ -69,7 +69,7 @@ export default function PdfList() {
       <div className="grid gap-4">
         {pdfs.map((pdf) => (
           <div
-            key={pdf._id}
+            key={pdf.id}
             className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-200"
           >
             <div className="flex items-center space-x-4">
@@ -82,7 +82,7 @@ export default function PdfList() {
               </div>
             </div>
             <button
-              onClick={() => deletePdf(pdf._id)}
+              onClick={() => deletePdf(pdf.id)}
               className="text-red-500 hover:text-red-700 transition-colors"
             >
               Delete

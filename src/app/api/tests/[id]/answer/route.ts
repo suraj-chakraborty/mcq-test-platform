@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import TestResult from '@/app/models/TestResult';
-
-interface Question {
-  userAnswer: string;
-  correctAnswer: number;
-  isCorrect: boolean;
-}
+import { prisma } from '@/app/lib/prisma';
 
 export async function POST(
   req: Request,
@@ -27,55 +20,68 @@ export async function POST(
 
     const { questionIndex, answer } = await req.json();
 
-    await connectDB();
-
-    const test = await TestResult.findOne({
-      _id: id,
-      userId: session.user.id,
+    const attempt = await prisma.testAttempt.findUnique({
+      where: { id },
+      include: {
+        test: {
+          include: { questions: true }
+        }
+      }
     });
 
-    if (!test) {
+    if (!attempt || attempt.userId !== session.user.id) {
       return NextResponse.json(
-        { message: 'Test not found' },
+        { message: 'Test Attempt not found' },
         { status: 404 }
       );
     }
 
-    if (questionIndex >= test.questions.length) {
+    const test = attempt.test;
+
+    if (questionIndex < 0 || questionIndex >= test.questions.length) {
       return NextResponse.json(
         { message: 'Invalid question index' },
         { status: 400 }
       );
     }
 
-    const question = test.questions[questionIndex];
-    const isCorrect = answer === question.correctAnswer;
+    // Update the answers array
+    const newAnswers = [...attempt.answers];
+    newAnswers[questionIndex] = answer;
 
-    // Update question
-    question.userAnswer = answer;
-    question.isCorrect = isCorrect;
+    // Recalculate score
+    let correctAnswersCount = 0;
+    let wrongAnswersCount = 0;
 
-    // Update test statistics
-    if (isCorrect) {
-      test.correctAnswers += 1;
-    } else {
-      test.wrongAnswers += 1;
-    }
+    newAnswers.forEach((ans, idx) => {
+      // It's possible some indices are undefined/null if answered out of order, check carefully
+      if (ans === undefined || ans === null) return;
+      if (ans === test.questions[idx].correctAnswer) {
+        correctAnswersCount++;
+      } else {
+        wrongAnswersCount++;
+      }
+    });
 
-    // Calculate score (+1 for correct, -0.5 for wrong)
-    test.score = test.correctAnswers - (test.wrongAnswers * 0.5);
+    // Score calculation matching original (+1 for correct, -0.5 for wrong)
+    const newScore = Math.max(0, correctAnswersCount - (wrongAnswersCount * 0.5));
 
-    // Check if test is complete
-    const isComplete = test.questions.every((q: Question) => q.userAnswer !== '');
-    if (isComplete) {
-      test.completed = true;
-    }
+    // Check if test is complete (all questions answered)
+    const isComplete = newAnswers.length === test.questions.length && newAnswers.every(a => a !== undefined && a !== null);
 
-    await test.save();
+    const updatedAttempt = await prisma.testAttempt.update({
+      where: { id: attempt.id },
+      data: {
+        answers: newAnswers,
+        score: Math.round(newScore), // Store round integer score for TestAttempt, or adjust schema if float needed
+        completed: isComplete,
+        ...(isComplete ? { completedAt: new Date() } : {})
+      }
+    });
 
     return NextResponse.json({
       message: 'Answer submitted successfully',
-      test,
+      test: updatedAttempt, // return updated attempt
     });
   } catch (error) {
     console.error('Answer submission error:', error);
@@ -84,4 +90,4 @@ export async function POST(
       { status: 500 }
     );
   }
-} 
+}

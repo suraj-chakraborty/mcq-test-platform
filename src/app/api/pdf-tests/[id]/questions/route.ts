@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import PDFTest from '@/app/models/PDFTest';
+import { prisma } from '@/app/lib/prisma';
 
 export async function PUT(
   request: Request,
@@ -11,7 +10,7 @@ export async function PUT(
   const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -24,21 +23,9 @@ export async function PUT(
       );
     }
 
-    await connectDB();
-
-    const test = await PDFTest.findOneAndUpdate(
-      {
-        _id: id,
-        userId: session.user.id
-      },
-      {
-        $set: {
-          questions,
-          updatedAt: new Date()
-        }
-      },
-      { new: true }
-    );
+    const test = await prisma.test.findUnique({
+      where: { id, userId: session.user.id }
+    });
 
     if (!test) {
       return NextResponse.json(
@@ -47,9 +34,29 @@ export async function PUT(
       );
     }
 
+    // Update questions: Delete old ones and create new ones
+    await prisma.$transaction([
+      prisma.question.deleteMany({ where: { testId: id } }),
+      prisma.question.createMany({
+        data: questions.map((q: any) => ({
+          testId: id,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation || '',
+          difficulty: q.difficulty || 'medium'
+        }))
+      })
+    ]);
+
+    const updatedTest = await prisma.test.findUnique({
+      where: { id },
+      include: { questions: true }
+    });
+
     return NextResponse.json({
       success: true,
-      test
+      test: updatedTest
     });
 
   } catch (error) {
@@ -59,4 +66,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-} 
+}

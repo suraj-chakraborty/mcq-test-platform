@@ -24,7 +24,7 @@ interface Question {
 }
 
 interface PDFTest {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   timeLimit: number;
@@ -152,13 +152,13 @@ export default function PDFTestCreator() {
   const handleDelete = async (test: PDFTest) => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/pdf-tests/${test._id}`, {
+      const response = await fetch(`/api/pdf-tests/${test.id}`, {
         method: 'DELETE'
       });
 
       const data = await response.json();
       if (data.success) {
-        setTests(tests.filter(t => t._id !== test._id));
+        setTests(tests.filter(t => t.id !== test.id));
         toast.success('Test deleted successfully');
       }
     } catch (error) {
@@ -171,7 +171,7 @@ export default function PDFTestCreator() {
 
   const handleUpdateQuestion = async (testId: string, questionIndex: number, updatedQuestion: Question) => {
     try {
-      const test = tests.find(t => t._id === testId);
+      const test = tests.find(t => t.id === testId);
       if (!test) return;
 
       const updatedQuestions = [...test.questions];
@@ -188,7 +188,7 @@ export default function PDFTestCreator() {
       const data = await response.json();
       if (data.success) {
         setTests(tests.map(t => 
-          t._id === testId ? { ...t, questions: updatedQuestions } : t
+          t.id === testId ? { ...t, questions: updatedQuestions } : t
         ));
         toast.success('Question updated successfully');
       }
@@ -270,7 +270,7 @@ export default function PDFTestCreator() {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Your Tests</h2>
         {tests.map((test) => (
-          <Card key={test._id}>
+          <Card key={test.id}>
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>{test.title}</CardTitle>
@@ -360,7 +360,7 @@ export default function PDFTestCreator() {
                       value={question.question}
                       onChange={(e) => {
                         const updatedQuestion = { ...question, question: e.target.value };
-                        handleUpdateQuestion(editingTest._id, index, updatedQuestion);
+                        handleUpdateQuestion(editingTest.id, index, updatedQuestion);
                       }}
                     />
                   </div>
@@ -377,7 +377,7 @@ export default function PDFTestCreator() {
                               ...question,
                               options: updatedOptions
                             };
-                            handleUpdateQuestion(editingTest._id, index, updatedQuestion);
+                            handleUpdateQuestion(editingTest.id, index, updatedQuestion);
                           }}
                         />
                         <Button
@@ -387,7 +387,7 @@ export default function PDFTestCreator() {
                               ...question,
                               correctAnswer: option
                             };
-                            handleUpdateQuestion(editingTest._id, index, updatedQuestion);
+                            handleUpdateQuestion(editingTest.id, index, updatedQuestion);
                           }}
                         >
                           Correct
@@ -404,7 +404,7 @@ export default function PDFTestCreator() {
                           ...question,
                           explanation: e.target.value
                         };
-                        handleUpdateQuestion(editingTest._id, index, updatedQuestion);
+                        handleUpdateQuestion(editingTest.id, index, updatedQuestion);
                       }}
                     />
                   </div>
@@ -417,7 +417,7 @@ export default function PDFTestCreator() {
                           ...question,
                           difficulty: e.target.value as 'easy' | 'medium' | 'hard'
                         };
-                        handleUpdateQuestion(editingTest._id, index, updatedQuestion);
+                        handleUpdateQuestion(editingTest.id, index, updatedQuestion);
                       }}
                       className="w-full p-2 border rounded"
                     >

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { z } from 'zod';
 
 export interface MCQQuestion {
   question: string;
@@ -7,10 +8,17 @@ export interface MCQQuestion {
   explanation: string;
 }
 
+const mcqSchema = z.array(z.object({
+  question: z.string(),
+  options: z.array(z.string()).length(4),
+  correctAnswer: z.number().int().min(0).max(3),
+  explanation: z.string(),
+}));
+
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 export async function generateMCQs(pdfText: string, topic:string, numQuestions:number): Promise<MCQQuestion[]> {
- const truncatedText = pdfText.slice(0, 6000);
+  const truncatedText = pdfText.slice(0, 6000);
   const prompt = `
 You are a teaching assistant.
 The topic for these questions is: **${topic}**.
@@ -24,7 +32,15 @@ Each question should have:
  - "correctAnswer": Index of the correct option (0-based)
  - "explanation": A brief explanation of the answer, referencing the provided text where applicable.
 
-Return the response as a JSON array.
+Return the response EXACTLY as a JSON array (do not wrap it in an object):
+[
+  {
+    "question": "Sample text",
+    "options": ["A", "B", "C", "D"],
+    "correctAnswer": 0,
+    "explanation": "Because..."
+  }
+]
 
 PDF Content:
 """
@@ -32,22 +48,36 @@ ${truncatedText}
 """`;
 
   try {
-    const result = await genAI.models.generateContentStream({
-        model: 'gemini-2.0-flash-001',
-        contents: prompt,
-      });
-      // console.log('Gemini MCQ generation result:', result);
-     let fullResponse = '';
-    for await (const chunk of result) {
-      fullResponse += chunk.text;
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.0-flash-001',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (!result.text) {
+      throw new Error("No text returned by Gemini");
+    }
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(result.text);
+    } catch (e) {
+      console.error("Gemini JSON Parse Error:", e, result.text);
+      return [];
     }
 
-    const cleanText = fullResponse.replace(/```json\n?|\n?```/g, '').trim();
-    const parsed = JSON.parse(cleanText);
-    // console.log(parsed)
-    return parsed;
+    const validation = mcqSchema.safeParse(parsed);
+    if (!validation.success) {
+      console.error("Gemini Validation Error:", validation.error.format());
+      return [];
+    }
+
+    return validation.data;
   } catch (error) {
     console.error('Gemini MCQ generation error:', error);
     return [];
   }
 }
+

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import Test from '@/app/models/Test';
+import { prisma } from '@/app/lib/prisma';
 
 export async function DELETE(
   req: Request,
@@ -19,26 +18,30 @@ export async function DELETE(
       );
     }
 
-    await connectDB();
+    const test = await prisma.test.findUnique({
+      where: { id }
+    });
 
-    const test = await Test.findByIdAndDelete(id);
-
-    if (!test) {
+    if (!test || test.userId !== session.user.id) {
       return NextResponse.json(
-        { message: 'Test not found' },
+        { message: 'Test not found or unauthorized' },
         { status: 404 }
       );
     }
+    
+    await prisma.test.delete({
+      where: { id }
+    });
 
     return NextResponse.json({
-      message: 'PDF deleted successfully',
+      message: 'Test deleted successfully',
       test,
     });
   } catch (error) {
-    console.error('PDF delete error:', error);
+    console.error('Test delete error:', error);
     return NextResponse.json(
-      { message: 'An error occurred while deleting the PDF' },
+      { message: 'An error occurred while deleting the test' },
       { status: 500 }
     );
   }
-} 
+}

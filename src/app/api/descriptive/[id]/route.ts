@@ -1,32 +1,31 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import DescriptiveTest from '@/app/models/DescriptiveTest';
+import { prisma } from '@/app/lib/prisma';
 
 export async function DELETE(
   request: Request,
-    { params }: { params: Promise<{ id: string }> } 
+  { params }: { params: Promise<{ id: string }> } 
 ) {
-  const  id  = (await params).id
-  // console.log("context", context)
-  // console.log("id",id)
+  const id = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
-
-    const test = await DescriptiveTest.findOneAndDelete({
-      _id: id,
-      userId: session.user.id
+    // Prisma doesn't have an exact findOneAndDelete, so we first find to check ownership
+    const test = await prisma.descriptiveTest.findUnique({
+      where: { id: id }
     });
 
-    if (!test) {
-      return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+    if (!test || test.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Test not found or unauthorized' }, { status: 404 });
     }
+
+    await prisma.descriptiveTest.delete({
+      where: { id: id }
+    });
 
     return NextResponse.json({
       success: true,
@@ -40,4 +39,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}

@@ -26,26 +26,34 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?   @unique
-  password      String?   // ✅ Ensure `password` field exists
-  mongodbUrl    String?   
-  // emailVerified DateTime?
-  // image         String?
-  accounts      Account[]
-  sessions      Session[]
-  tests         Test[]
-  attempts      TestAttempt[]
-} 
-
 model Session {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
   userId       String   @db.ObjectId
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  password      String?
+  image         String?
+  mongodbUrl    String?   
+  
+  // Custom user fields
+  otp           String?
+  isVerified    Boolean   @default(false)
+  otpExpiresAt  DateTime?
+
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Relations
+  tests            Test[]
+  attempts         TestAttempt[]
+  descriptiveTests DescriptiveTest[]
 }
 
 model VerificationToken {
@@ -57,17 +65,32 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ------ App Specific Models ------
+
+model PdfDocument {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  url         String
+  testId      String   @db.ObjectId
+  test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
 model Test {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
-  duration    Int          // in minutes
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      String       @db.ObjectId
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  duration    Int           // in minutes
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  userId      String        @db.ObjectId
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   questions   Question[]
   attempts    TestAttempt[]
+  pdfs        PdfDocument[] // Context/PYQ PDFs
+
+  @@index([userId])
 }
 
 model Question {
@@ -75,8 +98,13 @@ model Question {
   question      String
   options       String[]
   correctAnswer Int
-  testId        String   @db.ObjectId // ✅ Fix relation field name
+  explanation   String?
+  difficulty    String   @default("medium")
+
+  testId        String   @db.ObjectId
   test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
 }
 
 model TestAttempt {
@@ -86,8 +114,35 @@ model TestAttempt {
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
   completedAt DateTime?
+
   userId      String   @db.ObjectId
   testId      String   @db.ObjectId
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([testId])
+}
+
+model DescriptiveTest {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  examName       String
+  question       String
+  answer         String
+  wordCount      Int
+  timeLimit      Int      // in minutes
+  timeTaken      Int      // in seconds
+  feedback       String
+  score          Float
+  suggestions    String[]
+  strengths      String[]
+  areasToImprove String[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

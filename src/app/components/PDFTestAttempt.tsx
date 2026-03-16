@@ -17,7 +17,7 @@ interface Question {
 }
 
 interface PDFTest {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   timeLimit: number;
@@ -70,7 +70,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          testId: test._id,
+          testId: test.id,
           answers,
           timeTaken: test.timeLimit * 60 - timeLeft,
         }),

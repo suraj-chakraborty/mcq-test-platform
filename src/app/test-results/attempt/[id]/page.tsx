@@ -39,7 +39,7 @@ export default function TestResultsPage() {
         
         // Handle array response - find the specific attempt
         if (Array.isArray(data)) {
-          const specificAttempt = data.find(attempt => attempt._id === params.id);
+          const specificAttempt = data.find(attempt => attempt.id === params.id);
           if (!specificAttempt) {
             throw new Error('Test attempt not found');
           }

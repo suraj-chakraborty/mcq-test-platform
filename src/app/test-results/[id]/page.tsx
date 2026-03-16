@@ -16,7 +16,7 @@ interface Question {
 }
 
 interface TestAttempt {
-  _id: string;
+  id: string;
   score: number;
   answers: number[];
   totalQuestions: number;
@@ -81,7 +81,7 @@ export default function TestResults() {
     <div className="container mx-auto py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Test Results - {attempt._id}</CardTitle>
+          <CardTitle>Test Results - {attempt.id}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center mb-8">
@@ -108,7 +108,7 @@ export default function TestResults() {
           <div className="space-y-6">
             {attempt.questions.map((question: any, index: number) => (
               <div
-                key={question._id}
+                key={question.id || index}
                 className={`p-4 rounded-lg ${
                   question.userAnswer === question.correctAnswer
                     ? 'bg-green-50'
