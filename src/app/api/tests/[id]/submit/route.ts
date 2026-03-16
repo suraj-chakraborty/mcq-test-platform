@@ -1,52 +1,43 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import Test from '@/app/models/Test';
-import TestResult from '@/app/models/TestResult';
-import Question from '@/app/models/Question';
-
-interface Question {
-  question: string;
-  options: string[];
-  correctAnswer: number;
-}
+import { prisma } from '@/app/lib/prisma';
+import { testAttemptSchema } from '@/lib/validations/test';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }>}
 ) {
-  const id = (await params).id;
+  const routeId = (await params).id;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, answers } = await request.json();
-    // console.log("Test ID:",id);
-    // console.log("Answers:", answers);
+    const body = await request.json();
+    const result = testAttemptSchema.safeParse(body);
 
-    await connectDB();
+    if (!result.success) {
+      return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
+    }
 
-    // Fetch test
-    const test = await Test.findById(id);
-    // console.log('Test data:', test);
-    const questions = await Question.find({ testId: test._id});
-    // console.log('Questions:', questions);
+    const { testId, answers } = result.data;
+    const finalTestId = testId || routeId;
+
+    const test = await prisma.test.findUnique({
+      where: { id: finalTestId },
+      include: { questions: true }
+    });
+
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
-    // Choose questions: either from test.questions (if populated) or fallback
-    const questionList =
-      test.questions && test.questions.length > 0 && typeof test.questions[0] === 'object'
-        ? test.questions
-        : questions;
-
-    // Calculate score and prepare question results
+    const questions = test.questions;
     let correctAnswers = 0;
-    const questionResults = questionList.map((question: Question, index: number) => {
+
+    const questionResults = questions.map((question, index) => {
       const isCorrect = answers[index] === question.correctAnswer;
       if (isCorrect) correctAnswers++;
       return {
@@ -59,38 +50,35 @@ export async function POST(
     });
 
     const score = correctAnswers;
-    const totalQuestions = test.questions.length;
+    const totalQuestions = questions.length;
 
-    // Save test result
-    const testResult = await TestResult.create({
-      userId: session.user.id,
-      testId: test.id||test._id,
-      questions: questionResults,
-      answers,
-      score,
-      passed: score >= (test.passingMarks / test.totalMarks) * 100,
-      totalQuestions,
-      correctAnswers,
-      wrongAnswers: totalQuestions - correctAnswers,
-      timeTaken: 0,
+    // Save test attempt
+    const testAttempt = await prisma.testAttempt.create({
+      data: {
+        userId: session.user.id,
+        testId: finalTestId,
+        score,
+        answers,
+        completed: true,
+        completedAt: new Date(),
+      }
     });
 
-    // Return test data along with results
     return NextResponse.json({
       success: true,
       attempt: {
-        id: testResult._id,
+        id: testAttempt.id,
         score,
         answers,
         totalQuestions,
         test: {
-          id: test._id,
+          id: test.id,
           title: test.title,
           questions: questionResults,
         },
-        completedAt: testResult.createdAt,
+        completedAt: testAttempt.completedAt,
       },
-      attemptId: testResult._id,
+      attemptId: testAttempt.id,
     });
   } catch (error) {
     console.error('Error submitting test:', error);
@@ -99,4 +87,4 @@ export async function POST(
       { status: 500 }
     );
   }
-} 
+}

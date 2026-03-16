@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import PDFTest from '@/app/models/PDFTest';
+import { prisma } from '@/app/lib/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -11,23 +10,53 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const skip = (page - 1) * limit;
 
-    const tests = await PDFTest.find({ userId: session.user.id })
-      .sort({ createdAt: -1 });
+    const where = {
+      userId: session.user.id,
+      pdfs: { some: {} },
+      ...(search ? {
+        title: {
+          contains: search,
+          mode: 'insensitive' as any
+        }
+      } : {})
+    };
 
-      // console.log("PDFtest", tests)
+    const [tests, total] = await Promise.all([
+      prisma.test.findMany({
+        where,
+        include: {
+          pdfs: true,
+          questions: true
+        } as any,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.test.count({ where })
+    ]);
 
     return NextResponse.json({
       success: true,
-      tests
+      tests,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
     });
 
   } catch (error) {
-  console.error('Error fetching PDF tests:', error);
+    console.error('Error fetching PDF tests:', error);
     return NextResponse.json(
       { error: 'Failed to fetch tests' },
       { status: 500 }
     );
   }
-} 
+}

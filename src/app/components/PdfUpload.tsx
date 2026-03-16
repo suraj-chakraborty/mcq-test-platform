@@ -20,7 +20,7 @@ interface MCQQuestion {
 }
 
 interface PdfDocument {
-  _id: string;
+  id: string;
   title: string;
   url: string;
   createdAt: string;
@@ -301,7 +301,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
             <div className="space-y-4">
               {filteredAndSortedPdfs.map((pdf) => (
                 <div
-                  key={pdf._id}
+                  key={pdf.id}
                   className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
                 >
                   <div className="flex items-center justify-between">
@@ -325,19 +325,19 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
                     <div className="flex gap-2">
                       <input
                         type="checkbox"
-                        checked={selectedPdfs.includes(pdf._id)}
+                        checked={selectedPdfs.includes(pdf.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedPdfs([...selectedPdfs, pdf._id]);
+                            setSelectedPdfs([...selectedPdfs, pdf.id]);
                           } else {
-                            setSelectedPdfs(selectedPdfs.filter(id => id !== pdf._id));
+                            setSelectedPdfs(selectedPdfs.filter(id => id !== pdf.id));
                           }
                         }}
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStartTest('pdf', [pdf._id])}
+                        onClick={() => handleStartTest('pdf', [pdf.id])}
                         disabled={!pdf.mcqs?.length}
                       >
                         Take Test

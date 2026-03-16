@@ -1,28 +1,31 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import connectDB from '@/app/lib/mongodb';
-import User from '@/app/models/User';
+import { prisma } from '@/app/lib/prisma';
+import { registerSchema } from '@/lib/validations/auth';
 import { sendEmail } from '@/app/lib/send-mail';
 
 export async function POST(req: Request) {
-  //todo: implement otp verification
   const OTPgenerator = Math.floor(100000 + Math.random() * 900000);
 
   try {
-    const { name, email, password } = await req.json();
-    // console.log(name,email,password)
-
-    if (!name || !email || !password) {
+    const body = await req.json();
+    
+    // Zod validation
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { message: 'Validation failed', errors: result.error.format() },
         { status: 400 }
       );
     }
 
-    await connectDB();
+    const { name, email, password } = result.data;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ 
+        where: { email } 
+    });
+    
     if (existingUser) {
       return NextResponse.json(
         { message: 'User already exists' },
@@ -31,26 +34,28 @@ export async function POST(req: Request) {
     }
 
     // Hash password
-    // console.log(password)
     const hashedPassword = await bcrypt.hash(password, 12);
-    // console.log("registerpassword", hashedPassword)
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      otp: OTPgenerator.toString(),
-      otpExpiresAt: otpExpiry,
-      isVerified: false,
+    // Create user in Prisma
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        otp: OTPgenerator.toString(),
+        otpExpiresAt: otpExpiry,
+        isVerified: false,
+      }
     });
 
     await sendEmail(email, 'Your OTP Code', `Your OTP is ${OTPgenerator}`);
 
     return NextResponse.json(
-      { message: 'User created. OTP sent to email.',
-         user: { id: user._id, name: user.name, email: user.email } },
+      { 
+        message: 'User created. OTP sent to email.',
+        user: { id: user.id, name: user.name, email: user.email } 
+      },
       { status: 201 }
     );
   } catch (error) {
@@ -60,4 +65,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}

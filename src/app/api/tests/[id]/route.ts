@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import TestResult from '@/app/models/TestResult';
+import { prisma } from '@/app/lib/prisma';
 
 export async function GET(
   req: Request,
@@ -19,14 +18,18 @@ export async function GET(
       );
     }
 
-    await connectDB();
-
-    const test = await TestResult.findOne({
-      _id: id,
-      userId: session.user.id,
+    const testAttempt = await prisma.testAttempt.findUnique({
+      where: { id: id },
+      include: {
+        test: {
+          include: {
+            questions: true
+          }
+        }
+      }
     });
 
-    if (!test) {
+    if (!testAttempt || testAttempt.userId !== session.user.id) {
       return NextResponse.json(
         { message: 'Test not found' },
         { status: 404 }
@@ -35,7 +38,7 @@ export async function GET(
 
     return NextResponse.json({
       message: 'Test fetched successfully',
-      test,
+      test: testAttempt,
     });
   } catch (error) {
     console.error('Test fetch error:', error);
@@ -44,4 +47,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

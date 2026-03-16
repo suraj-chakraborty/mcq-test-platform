@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import TestResult from '@/app/models/TestResult';
+import { prisma } from '@/app/lib/prisma';
 
 export async function GET(
   request: Request,
@@ -10,7 +9,6 @@ export async function GET(
 ) {
   const id = (await params).id;
   try {
-    // console.log("params", params )
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -20,34 +18,52 @@ export async function GET(
       );
     }
 
-    await connectDB();
-
     const attemptId = id;
     
     // Check if attemptId is undefined or 'undefined'
     if (!attemptId || attemptId === 'undefined') {
-      // If no attemptId is provided, return all attempts for the user
-      const attempts = await TestResult.find({
-        userId: session.user.id,
-      }).sort({ createdAt: -1 });
+      const { searchParams } = new URL(request.url);
+      const page = parseInt(searchParams.get('page') || '1');
+      const limit = parseInt(searchParams.get('limit') || '10');
+      const skip = (page - 1) * limit;
+
+      const where = { userId: session.user.id };
+
+      // If no attemptId is provided, return all attempts for the user with pagination
+      const [attempts, total] = await Promise.all([
+        prisma.testAttempt.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit
+        }),
+        prisma.testAttempt.count({ where })
+      ]);
       
-      return NextResponse.json(attempts);
+      return NextResponse.json({
+        success: true,
+        attempts,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
     }
 
     // If attemptId is provided, find specific attempt
-    const attempt = await TestResult.findOne({
-      _id: attemptId,
-      userId: session.user.id,
+    const attempt = await prisma.testAttempt.findUnique({
+      where: { id: attemptId }
     });
-    // console.log("server attempt", attempt)
 
-    if (!attempt) {
+    if (!attempt || attempt.userId !== session.user.id) {
       return NextResponse.json(
         { error: 'Test attempt not found' },
         { status: 404 }
       );
     }
-    // console.log("server attempt", attempt)
+
     return NextResponse.json(attempt);
   } catch (error) {
     console.error('Error fetching test attempt:', error);
@@ -56,4 +72,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import connectDB from '@/app/lib/mongodb';
-import User from '@/app/models/User';
+import { prisma } from '@/app/lib/prisma';
 import { rateLimit } from '@/app/lib/rate_limit';
 
 export async function POST(req: Request) {
-   const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
 
   const { allowed, retryAfter } = rateLimit(ip);
   if (!allowed) {
@@ -16,7 +15,6 @@ export async function POST(req: Request) {
   }
   try {
     const { email, password } = await req.json();
-    // console.log('Login request received:', { email, password });
 
     if (!email || !password) {
       return NextResponse.json(
@@ -25,47 +23,34 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
-
-    // Hash password
-    // console.log(password)
-    // const hashedPassword = await bcrypt.compare(password, user.password);
-    // console.log("loginpassword", hashedPassword)
-    // get user
-  //   const user = await prisma.user.findUnique({
-  //     where: {
-  //       email: email,
-  //     }
-  // });
-  // console.log("hassed password",hashedPassword)
-    const user = await User.findOne({
-      email,
+    const user = await prisma.user.findUnique({
+      where: { email },
     });
-    // console.log("userpassword", user.password)
-    if (!user) {
+
+    if (!user || !user.password) {
       return NextResponse.json(
-        { message: 'User not found' },
+        { message: 'User not found or invalid credentials' },
         { status: 400 }
       );
-    }else if (await bcrypt.compare(password, user.password) === false) {
-          // console.log("userpassword", user.password)
-          // console.log("hassed password", hashedPassword)
-          // console.log("user", user)
-        return NextResponse.json(
-            { message: 'wrong credentials' },
-            { status: 400 }
-          );
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { message: 'Invalid credentials' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json(
       { message: 'User logged in successfully', user: { id: user.id, name: user.name, email: user.email } },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Login error:', error);
     return NextResponse.json(
-      { message: 'An error occurred during registration' },
+      { message: 'An error occurred during login' },
       { status: 500 }
     );
   }
-} 
+}

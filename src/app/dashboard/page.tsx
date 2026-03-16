@@ -35,7 +35,7 @@ interface Question {
 }
 
 interface PDFFile {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   questions: Array<{
@@ -58,7 +58,7 @@ interface FormData {
 }
 
 interface TestAttempt {
-  _id: string;
+  id: string;
   testId: string;
   score: number;
   percentage: number;
@@ -166,7 +166,7 @@ export default function Dashboard() {
     if (!testToDelete) return;
 
     try {
-      const response = await fetch(`/api/pdf-tests/${testToDelete._id}`, {
+      const response = await fetch(`/api/pdf-tests/${testToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -188,7 +188,7 @@ export default function Dashboard() {
     if (!testToUpdate) return;
 
     try {
-      const response = await fetch(`/api/pdf-tests/${testToUpdate._id}`, {
+      const response = await fetch(`/api/pdf-tests/${testToUpdate.id}`, {
         method: 'UPDATE',
         body: JSON.stringify(testToUpdate),
 
@@ -555,22 +555,22 @@ export default function Dashboard() {
               <h3 className="text-xl font-semibold">PDF Tests</h3>
               {pdfTests.length > 0 ? (
                 pdfTests.map((test) => (
-                  <Card key={test._id}>
+                  <Card key={test.id}>
                     <CardHeader>
                       <div className="flex flex-col sm:flex-row justify-between gap-2 items-start sm:items-center">
                         <CardTitle>{test.title}</CardTitle>
                         <div className="flex gap-2">
                           <Button variant="outline" onClick={() => {
-                            setViewTest(viewTest?._id === test._id ? null : test);
+                            setViewTest(viewTest?.id === test.id ? null : test);
                           }}>
-                            {viewTest?._id === test._id ? 'Hide Questions & Answers' : 'View Questions & Answers'}
+                            {viewTest?.id === test.id ? 'Hide Questions & Answers' : 'View Questions & Answers'}
                           </Button>
                           <Button variant="outline" onClick={() => setEditingTest(test)}>Edit</Button>
                           <Button variant="destructive" onClick={() => setTestToDelete(test)}>Delete</Button>
                           <Button
                             variant="outline"
                             onClick={() => {
-                              router.push(`/pdf-tests/${test._id}/attempt`);
+                              router.push(`/pdf-tests/${test.id}/attempt`);
                             }}
                           >
                             Attempt Test
@@ -819,7 +819,7 @@ export default function Dashboard() {
               </Button>
               <Button type="submit" onClick={async () => {
                 try {
-                  const response = await fetch(`/api/pdf-test/${editingTest._id}`, {
+                  const response = await fetch(`/api/pdf-test/${editingTest.id}`, {
                     method: 'PUT',
                     headers: {
                       'Content-Type': 'application/json',

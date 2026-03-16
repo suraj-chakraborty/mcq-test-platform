@@ -1,43 +1,21 @@
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { generateMCQs } from '@/app/lib/ai';
-import connectDB from '@/app/lib/mongodb';
-import Pdf from '@/app/models/Pdf';
+import { prisma } from '@/app/lib/prisma';
 import { saveFile } from '@/app/lib/fileStorage';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import pdfParse from 'pdf-parse/lib/pdf-parse';
-import { GoogleGenAI } from '@google/genai';
+import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { mkdir } from 'fs/promises';
 import path from 'path';
-import formidable from 'formidable';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
-
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-export const maxDuration = 10; // Vercel hard limit on free plan
+export const maxDuration = 30; // Increased for multiple large PDFs
 
-async function extractTextFromPdf(buffer: Buffer): Promise<{ text: string; numpages: number }> {
-  const data = await pdfParse(buffer);
-  if (!data.text || data.text.length < 50) {
-    throw new Error('PDF too short or invalid');
-  }
-  return { text: data.text, numpages: data.numpages ?? 0 };
-}
-
-async function safeGenerateMCQs(text: string,topic:string, numQuestions:number, timeoutMs = 8000): Promise<any[]> {
-  console.log(text.slice(0, 100), topic, numQuestions);
+async function safeGenerateMCQs(text: string, topic: string, numQuestions: number, timeoutMs = 15000): Promise<any[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -53,11 +31,8 @@ async function safeGenerateMCQs(text: string,topic:string, numQuestions:number, 
 
 export async function POST(request: Request) {
   try {
-    console.log(request)
-    console.log('Received upload request');
-
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -67,10 +42,9 @@ export async function POST(request: Request) {
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });
     }
-     const topic = formData.get('domainTopic')?.toString() || 'General';
-    //  console.log(`Topic: ${topic}`);
+
+    const topic = formData.get('domainTopic')?.toString() || 'General';
     const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
-    // console.log(`Number of questions requested: ${numQuestions}`);
 
     const uploadDir = path.join('/tmp', 'uploads');
     await mkdir(uploadDir, { recursive: true });
@@ -81,35 +55,54 @@ export async function POST(request: Request) {
           throw new Error(`File ${file.name} is not a PDF`);
         }
         if (file.size > MAX_FILE_SIZE) {
-          throw new Error(`File ${file.name} exceeds max size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+          throw new Error(`File ${file.name} exceeds max size`);
         }
 
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const fileUrl = await saveFile(file);
-        const { text, numpages } = await extractTextFromPdf(buffer);
-        const mcqs = await safeGenerateMCQs(text,topic, numQuestions);
+        const text = await extractTextFromPdf(buffer);
+        const mcqs = await safeGenerateMCQs(text, topic, numQuestions);
 
-        await connectDB();
-
-        const pdf = await Pdf.create({
-          title: file.name,
-          content: text,
-          url: fileUrl,
-          userId: session.user.id,
-          fileSize: file.size,
-          pageCount: numpages,
-          mcqs: mcqs,
+        // Create Test + Questions + PdfDocument
+        const test = await prisma.test.create({
+          data: {
+            userId: session.user.id,
+            title: file.name,
+            description: `Test generated from ${file.name} (Topic: ${topic})`,
+            duration: 30,
+            questions: {
+              create: mcqs.map((q: any) => ({
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation || '',
+                difficulty: q.difficulty || 'medium'
+              }))
+            },
+            pdfs: {
+              create: [
+                {
+                  name: file.name,
+                  url: fileUrl
+                }
+              ]
+            }
+          } as any,
+          include: {
+            pdfs: true,
+            questions: true
+          } as any
         });
 
         return {
-          pdf,
-          mcqs,
+          test: test as any,
+          mcqs: (test as any).questions
         };
       })
     );
 
-    const processedPdfs = results
+    const processedTests = results
       .filter((r) => r.status === 'fulfilled')
       .map((r) => (r as PromiseFulfilledResult<any>).value);
 
@@ -117,12 +110,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      pdfs: processedPdfs.map((p) => ({
-        filename: p.pdf.title,
-        size: p.pdf.fileSize,
-        url: p.pdf.url,
+      tests: processedTests.map((t) => ({
+        id: t.test.id,
+        title: t.test.title,
+        pdfUrl: t.test.pdfs[0]?.url,
       })),
-      mcqs: processedPdfs.flatMap((p) => p.mcqs),
+      mcqs: processedTests.flatMap((p) => p.mcqs),
       errors: failed.map((e, idx) => ({
         index: idx,
         reason: (e as PromiseRejectedResult).reason?.message || 'Unknown error',
@@ -136,3 +129,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

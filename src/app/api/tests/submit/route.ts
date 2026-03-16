@@ -1,69 +1,69 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import connectDB from '@/app/lib/mongodb';
-import Test from '@/app/models/Test';
-import TestResult from '@/app/models/TestResult';
+import { prisma } from '@/app/lib/prisma';
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id, answers } = await request.json();
-    // console.log("id, answers", id ,answers)
 
-    await connectDB();
-
-    // Fetch test
-    const test = await Test.findById(id);
-    // console.log("server test😎😍😍", test)
+    const test = await prisma.test.findUnique({
+      where: { id },
+      include: {
+        questions: true,
+      },
+    });
 
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
     // Calculate score
-    const score = answers.reduce((acc: number, answer: number, index: number) => {
+    const correctCount = answers.reduce((acc: number, answer: number, index: number) => {
+      if (answer === null || answer === undefined) return acc;
       return acc + (answer === test.questions[index].correctAnswer ? 1 : 0);
     }, 0);
 
-    // Save test result
-    const testResult = await TestResult.create({
-      userId: session.user.id,
-      testId: test.id ||test._id,
-      answers,
-      score,
-      passed: score >= (test.passingMarks / test.totalMarks) * 100,
-      totalQuestions: test.questions.length,
-      correctAnswers: score,
-      wrongAnswers: test.questions.length - score,
-      timeTaken: 0,
+    const score = Math.round(correctCount); // Storing integer score
+
+    // Save test result (TestAttempt)
+    const testAttempt = await prisma.testAttempt.create({
+      data: {
+        userId: session.user.id,
+        testId: test.id,
+        answers,
+        score,
+        completed: true,
+        completedAt: new Date(),
+      },
     });
 
     return NextResponse.json({
       success: true,
       attempt: {
-        id: testResult._id,
+        id: testAttempt.id,
         score,
         answers,
         totalQuestions: test.questions.length,
         test: {
-          id: test._id,
+          id: test.id,
           title: test.title,
           questions: test.questions,
         },
-        completedAt: testResult.createdAt,
+        completedAt: testAttempt.completedAt,
       },
-      attemptId: testResult._id,
+      attemptId: testAttempt.id,
     });
   } catch (error) {
-    // console.error('Error submitting test:', error);
+    console.error('Error submitting test:', error);
     return NextResponse.json(
       { error: 'Failed to submit test' },
       { status: 500 }
     );
   }
-} 
+}

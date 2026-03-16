@@ -11,7 +11,7 @@ interface Question {
 }
 
 interface PDF {
-  _id: string;
+  id: string;
   title: string;
 }
 
@@ -115,22 +115,22 @@ export default function TestsPage() {
             </label>
             <div className="space-y-2">
               {pdfs.map((pdf) => (
-                <div key={pdf._id} className="flex items-center">
+                <div key={pdf.id} className="flex items-center">
                   <input
                     type="checkbox"
-                    id={pdf._id}
-                    value={pdf._id}
-                    checked={selectedPdfs.includes(pdf._id)}
+                    id={pdf.id}
+                    value={pdf.id}
+                    checked={selectedPdfs.includes(pdf.id)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedPdfs([...selectedPdfs, pdf._id]);
+                        setSelectedPdfs([...selectedPdfs, pdf.id]);
                       } else {
-                        setSelectedPdfs(selectedPdfs.filter(id => id !== pdf._id));
+                        setSelectedPdfs(selectedPdfs.filter(id => id !== pdf.id));
                       }
                     }}
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label htmlFor={pdf._id} className="ml-2 block text-sm text-gray-900">
+                  <label htmlFor={pdf.id} className="ml-2 block text-sm text-gray-900">
                     {pdf.title}
                   </label>
                 </div>

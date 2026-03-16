@@ -13,7 +13,7 @@ interface Question {
 }
 
 interface Test {
-  _id: string;
+  id: string;
   title: string;
   duration: number;
   questions: Question[];
@@ -62,5 +62,5 @@ export default function EditTestPage() {
     );
   }
 
-  return <EditTest testId={test._id} initialData={test} />;
+  return <EditTest testId={test.id} initialData={test} />;
 } 
