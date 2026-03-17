@@ -25,11 +25,15 @@ export async function POST(
       return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 });
     }
 
-    const { interval, repetition, easeFactor, nextReviewAt } = calculateSM2(quality, {
-      interval: flashcard.interval,
-      repetition: flashcard.repetition,
-      easeFactor: flashcard.easeFactor
-    });
+    const { interval, repetition, easeFactor, nextReviewAt } = calculateSM2(
+      quality, 
+      {
+        interval: flashcard.interval,
+        repetition: flashcard.repetition,
+        easeFactor: flashcard.easeFactor
+      },
+      flashcard.nextReviewAt // We can use nextReviewAt as an approximation or add lastReviewedAt field
+    );
 
     const updated = await prisma.flashcard.update({
       where: { id: flashcardId },
