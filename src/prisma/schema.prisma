@@ -66,6 +66,8 @@ model User {
   achievements     Achievement[]
   hostedDuels      DuelRoom[] @relation("HostedDuels")
   guestDuels       DuelRoom[] @relation("GuestDuels")
+  flashcards       Flashcard[]
+  questionAudits   QuestionAudit[]
 }
 
 model VerificationToken {
@@ -115,6 +117,9 @@ model Question {
   correctAnswer Int
   explanation   String?
   difficulty    String   @default("medium")
+  
+  flashcards    Flashcard[]
+  audits        QuestionAudit[]
 
   testId        String   @db.ObjectId
   test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
@@ -193,4 +198,39 @@ model DuelRoom {
   test        Test     @relation(fields: [testId], references: [id])
   host        User     @relation("HostedDuels", fields: [hostId], references: [id])
   guest       User?    @relation("GuestDuels", fields: [guestId], references: [id])
+}
+
+model Flashcard {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  questionId    String   @db.ObjectId
+  
+  // SRS Fields (SM-2)
+  interval      Int      @default(0) // Interval in days
+  repetition    Int      @default(0) // Iteration number
+  easeFactor    Float    @default(2.5) // Difficulty multiplier
+  nextReviewAt  DateTime @default(now())
+  
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, nextReviewAt])
+}
+
+model QuestionAudit {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  questionId  String   @db.ObjectId
+  userId      String   @db.ObjectId
+  reason      String   // E.g., Incorrect option, typo, bad explanation
+  details     String?
+  status      String   @default("PENDING") // PENDING, RESOLVED, DISMISSED
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }

@@ -8,8 +8,10 @@ import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Flag } from 'lucide-react';
 
 interface Question {
+  id: string;
   question: string;
   options: string[];
   correctAnswer: string;
@@ -136,9 +138,33 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
         <CardContent>
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-4">
-                {test.questions[currentQuestionIndex].question}
-              </h3>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-medium">
+                  {test.questions[currentQuestionIndex].question}
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                  onClick={async () => {
+                    const reason = prompt('What is wrong with this question? (e.g. Typo, Wrong Answer)');
+                    if (!reason) return;
+                    try {
+                      const res = await fetch(`/api/questions/${(test.questions[currentQuestionIndex] as any).id}/audit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                      });
+                      if (res.ok) toast.success('Report submitted! Bug Hunter XP awarded (simulated)');
+                    } catch (err) {
+                      toast.error('Failed to submit report');
+                    }
+                  }}
+                >
+                  <Flag className="h-4 w-4 mr-1" />
+                  Report
+                </Button>
+              </div>
               <RadioGroup
                 value={answers[currentQuestionIndex] || ''}
                 onValueChange={(value) =>
