@@ -43,6 +43,15 @@ export async function POST(request: Request) {
       },
     });
 
+    // Gamification Integration
+    const { processGamification } = await import('@/app/lib/gamification');
+    const gamificationResult = await processGamification(
+      session.user.id,
+      score,
+      test.questions.length,
+      0 // Default time taken (can be improved if frontend sends it)
+    );
+
     return NextResponse.json({
       success: true,
       attempt: {

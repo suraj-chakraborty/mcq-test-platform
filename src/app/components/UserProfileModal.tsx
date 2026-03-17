@@ -14,7 +14,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle className="text-2xl font-black">User Profile & Progress</DialogTitle>
         </DialogHeader>
         <UserProfile onUpdate={onClose} />
       </DialogContent>
