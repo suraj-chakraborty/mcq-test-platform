@@ -24,6 +24,7 @@ interface TestAttempt {
   answers: number[];
   totalQuestions: number;
   questions: Question[];
+  xpEarned?: number;
   completedAt: string;
   updatedAt: string;
 }
@@ -137,6 +138,21 @@ export default function TestResults() {
                       <span className="text-3xl font-black text-gray-800">{percentage}%</span>
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Accuracy</span>
                     </div>
+                    {attempt.xpEarned && (
+                      <>
+                        <div className="h-10 w-px bg-gray-100" />
+                        <div className="flex flex-col items-center">
+                          <motion.span 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-3xl font-black text-indigo-600"
+                          >
+                            +{attempt.xpEarned}
+                          </motion.span>
+                          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">XP Earned</span>
+                        </div>
+                      </>
+                    )}
                     <div className="h-10 w-px bg-gray-100" />
                     <motion.p
                       className={`text-2xl font-black px-8 py-2 rounded-xl ${
@@ -150,9 +166,18 @@ export default function TestResults() {
                   </div>
                 </div>
 
+                <div className="flex gap-2 justify-center mb-6">
+                   {percentage === 100 && (
+                     <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">🎯 Perfect Score</span>
+                   )}
+                   {attempt.xpEarned && attempt.xpEarned > 150 && (
+                     <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-indigo-200">🔥 Elite Performance</span>
+                   )}
+                </div>
+
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
                   Completed on{' '}
-                  {new Date(attempt.updatedAt).toLocaleString('en-US', {
+                  {new Date(attempt.completedAt || attempt.updatedAt).toLocaleString('en-US', {
                     dateStyle: 'long',
                     timeStyle: 'short',
                   })}

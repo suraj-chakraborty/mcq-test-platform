@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import TestAttempt from '@/app/components/TestAttempt';
 import TestResults from '@/app/components/TestResults';
+import BattleRoom from '@/app/components/BattleRoom';
 import Loading from '../loading';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +97,40 @@ export default function Dashboard() {
   const [displayCount, setDisplayCount] = useState(6);
   const [allTestsLoaded, setAllTestsLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [battleRoomCode, setBattleRoomCode] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<{
+    level: number;
+    streak: number;
+    xp: number;
+    xpInCurrentLevel: number;
+    xpNeededForNextLevel: number;
+  } | null>(null);
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/users/profile');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setUserStats({
+            level: data.user.level,
+            streak: data.user.streak,
+            xp: data.user.xp,
+            xpInCurrentLevel: data.user.xpInCurrentLevel,
+            xpNeededForNextLevel: data.user.xpNeededForNextLevel,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchStats();
+    }
+  }, [session]);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -351,6 +386,54 @@ export default function Dashboard() {
     );
   }
 
+  const handleCreateBattle = async (testId: string) => {
+    try {
+      const res = await fetch('/api/duels/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBattleRoomCode(data.room.roomCode);
+      } else {
+        toast.error(data.error || 'Failed to create battle');
+      }
+    } catch (err) {
+      toast.error('Connection error');
+    }
+  };
+
+  const handleJoinBattle = async () => {
+    const code = prompt('Enter Battle Code:');
+    if (!code) return;
+    try {
+      const res = await fetch('/api/duels/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode: code.toUpperCase() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBattleRoomCode(data.room.roomCode);
+      } else {
+        toast.error(data.error || 'Failed to join battle');
+      }
+    } catch (err) {
+      toast.error('Connection error');
+    }
+  };
+
+  if (battleRoomCode && session?.user?.id) {
+    return (
+      <BattleRoom 
+        roomCode={battleRoomCode} 
+        userId={session.user.id} 
+        onExit={() => setBattleRoomCode(null)} 
+      />
+    );
+  }
+
   if (selectedTest) {
     return <TestAttempt test={selectedTest} onComplete={handleTestComplete} />;
   }
@@ -366,13 +449,36 @@ export default function Dashboard() {
           <h1 className="text-4xl font-black text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 font-medium">Manage your learning journey</p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 bg-white p-2 pr-6 rounded-full shadow-sm border border-gray-100">
-          <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">{session?.user?.name?.[0] || 'U'}</div>
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Student</span>
-            <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors">
-              {session?.user?.name || 'User'}
-            </button>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-6 bg-white p-2 pr-6 rounded-full shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100 text-amber-700 font-black text-sm">
+            <span>🔥</span>
+            <span>{userStats?.streak || 0}</span>
+          </div>
+          
+          <div className="hidden md:flex flex-col gap-1 w-24">
+             <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-indigo-400">
+               <span>LVL {userStats?.level || 1}</span>
+               <span>{Math.floor(((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
+             </div>
+             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100}%` }}
+                  className="h-full bg-indigo-500"
+                />
+             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100">
+              {session?.user?.name?.[0] || 'U'}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Level {userStats?.level || 1}</span>
+              <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors whitespace-nowrap">
+                {session?.user?.name || 'User'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -390,6 +496,7 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-2 w-full lg:w-auto">
               <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
               <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
+              <Button variant="outline" className="rounded-full px-6 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
               <Button className="rounded-full px-8 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
             </div>
             <div className="flex gap-4 w-full lg:max-w-md">
@@ -441,6 +548,18 @@ export default function Dashboard() {
                               }}
                             >
                               🔗
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-lg"
+                              title="Start Battle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateBattle(test.id);
+                              }}
+                            >
+                              ⚔️
                             </Button>
                             <Button 
                               variant="ghost" 

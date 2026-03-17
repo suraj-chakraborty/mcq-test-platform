@@ -29,9 +29,10 @@ interface Test {
 interface TestAttemptProps {
   test: Test;
   onComplete: (results: any) => void;
+  onQuestionChange?: (index: number) => void;
 }
 
-export default function TestAttempt({ test, onComplete }: TestAttemptProps) {
+export default function TestAttempt({ test, onComplete, onQuestionChange }: TestAttemptProps) {
   // console.log("testAttempt 😊", test)
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -64,7 +65,9 @@ export default function TestAttempt({ test, onComplete }: TestAttemptProps) {
 
   const handleNext = () => {
     if (currentQuestionIndex < test.questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      onQuestionChange?.(nextIndex);
     }
   };
 
