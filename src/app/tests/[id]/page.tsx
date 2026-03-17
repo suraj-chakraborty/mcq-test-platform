@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/app/components/Skeleton';
 
 interface Question {
   question: string;
@@ -103,8 +105,22 @@ export default function TestPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading test...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-2xl w-full mx-auto px-4">
+          <div className="bg-white p-8 rounded-xl shadow-sm space-y-6">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="h-2 w-full rounded-full" />
+            <Skeleton className="h-8 w-3/4 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -160,46 +176,66 @@ export default function TestPage() {
   const question = test.questions[currentQuestion];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium">
-              Question {currentQuestion + 1} of {test.questions.length}
-            </h2>
-            <div className="text-sm text-gray-500">
-              Score: {test.score}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl w-full">
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-100">
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium text-gray-700">
+                Question <span className="text-indigo-600 font-bold">{currentQuestion + 1}</span> of {test.questions.length}
+              </h2>
+              <div className="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                Score: {test.score}
+              </div>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <motion.div
+                className="h-2 bg-indigo-600"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentQuestion + 1) / test.questions.length) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
             </div>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full">
-            <div
-              className="h-2 bg-indigo-600 rounded-full"
-              style={{
-                width: `${((currentQuestion + 1) / test.questions.length) * 100}%`,
-              }}
-            />
-          </div>
-        </div>
 
-        <div className="space-y-6">
-          <p className="text-lg font-medium">{question.question}</p>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentQuestion}
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -20, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="space-y-8"
+            >
+              <p className="text-xl font-semibold text-gray-800 leading-relaxed">
+                {question.question}
+              </p>
 
-          <div className="space-y-3">
-            {question.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswer(option)}
-                disabled={submitting}
-                className={`w-full text-left p-4 rounded-lg border ${
-                  submitting
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+              <div className="grid gap-3">
+                {question.options.map((option, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => handleAnswer(option)}
+                    disabled={submitting}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                      submitting
+                        ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50'
+                        : 'border-gray-100 hover:border-indigo-600 hover:bg-indigo-50/30 bg-white text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-500 font-bold text-sm">
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                      <span className="text-lg">{option}</span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>

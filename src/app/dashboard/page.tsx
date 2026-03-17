@@ -23,8 +23,8 @@ import TestAttempt from '@/app/components/TestAttempt';
 import TestResults from '@/app/components/TestResults';
 import Loading from '../loading';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-
-
+import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
 
 interface Question {
   question: string;
@@ -80,7 +80,6 @@ interface Test {
 }
 
 export default function Dashboard() {
-
   const router = useRouter();
   const { data: session, status } = useSession();
   const [tests, setTests] = useState<Test[]>([]);
@@ -94,7 +93,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'questions'>('date');
-  const [displayCount, setDisplayCount] = useState(5);
+  const [displayCount, setDisplayCount] = useState(6);
   const [allTestsLoaded, setAllTestsLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -105,8 +104,6 @@ export default function Dashboard() {
     contextPDF: [],
     pyqPDF: []
   });
-
-  // console.log("session", session, status)
 
   const [showResults, setShowResults] = useState(false);
   const [currentResults, setCurrentResults] = useState<any>(null);
@@ -120,12 +117,7 @@ export default function Dashboard() {
     }
   }, [status, router]);
 
-
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: 'context' | 'pyq'
-  ) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'context' | 'pyq') => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) {
       setFormData(prev => ({
@@ -135,12 +127,10 @@ export default function Dashboard() {
     }
   };
 
-
   const fetchPDFTests = async () => {
     try {
       const response = await fetch('/api/pdf-tests');
       const data = await response.json();
-      // console.log(data)
       if (data.success) {
         setPDFTests(data.tests || []);
       } else {
@@ -184,36 +174,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateTest = async () => {
-    if (!testToUpdate) return;
-
-    try {
-      const response = await fetch(`/api/pdf-tests/${testToUpdate.id}`, {
-        method: 'UPDATE',
-        body: JSON.stringify(testToUpdate),
-
-      }
-      );
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success('PDF test Updated successfully');
-        setTestToUpdate(null);
-        fetchPDFTests();
-      } else {
-        throw new Error(data.error || 'Failed to delete PDF test');
-      }
-    } catch (error) {
-      console.error('Error deleting PDF test:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete PDF test');
-    }
-  };
-
   const handleCloseResults = () => {
     setShowResults(false);
     setCurrentResults(null);
   };
-
 
   const fetchTests = async () => {
     try {
@@ -221,7 +185,7 @@ export default function Dashboard() {
       const response = await fetch('/api/tests');
       const data = await response.json();
       setTests(data.tests || []);
-      setAllTestsLoaded((data.tests || []).length <= 5);
+      setAllTestsLoaded((data.tests || []).length <= 6);
     } catch (error) {
       console.error('Error fetching tests:', error);
       toast.error('Failed to load tests');
@@ -245,7 +209,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTests();
-    fetchPDFTests()
+    fetchPDFTests();
+    fetchTestAttempts();
   }, []);
 
   const handleDelete = async (testId: string) => {
@@ -314,24 +279,22 @@ export default function Dashboard() {
   const displayedTests = filteredAndSortedTests.slice(0, displayCount);
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 5);
-    if (displayCount + 5 >= filteredAndSortedTests.length) {
+    setDisplayCount(prev => prev + 6);
+    if (displayCount + 6 >= filteredAndSortedTests.length) {
       setAllTestsLoaded(true);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true)
+    setIsLoading(true);
 
     const formDataToSend = new FormData();
-    // console.log(formData)
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('domainTopic', formData.domainTopic);
     formDataToSend.append('numQuestions', formData.numQuestions.toString());
 
-    // Append multiple context PDFs
     if (formData.contextPDF) {
       formData.contextPDF.forEach((file) => {
         formDataToSend.append('contextPDF', file);
@@ -342,11 +305,6 @@ export default function Dashboard() {
         formDataToSend.append('pyqPDF', file);
       });
     }
-    // Append pyqPDF (assumed to be a single File object)
-    // if (formData.pyqPDF) {
-    //   formDataToSend.append('pyqPDF', formData.pyqPDF);
-    // }
-
 
     try {
       const response = await fetch('/api/pdf-tests/create', {
@@ -354,183 +312,192 @@ export default function Dashboard() {
         body: formDataToSend,
       });
 
-      // console.log("response", response)
-
       const textResponse = await response.text();
-
       try {
         const data = JSON.parse(textResponse);
-
         if (response.ok && data.success) {
           toast.success('PDF test created successfully!');
-          setIsLoading(false)
           setShowCreateForm(false);
-
-          // Reset form
           setFormData({
             title: '',
             description: '',
             domainTopic: '',
             numQuestions: 10,
             contextPDF: [],
-            pyqPDF: null,
+            pyqPDF: [],
           });
-
           fetchPDFTests();
         } else {
           throw new Error(data.error || 'Failed to create PDF test');
         }
       } catch (jsonError) {
-        console.error('Invalid JSON response:', textResponse);
         toast.error('Failed to parse server response');
       }
     } catch (error) {
-      console.error('Network or server error:', error);
       toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
-  if (isLoading) {
+  if (isLoading && tests.length === 0) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center"><Loading /></div>
+      <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <StatsSkeleton />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => <TestCardSkeleton key={i} />)}
+        </div>
       </div>
     );
   }
 
   if (selectedTest) {
-    return (
-     <>
-      {/* console.log("selectedTest", {selectedTest}) */}
-      <TestAttempt
-        test={selectedTest}
-        onComplete={handleTestComplete}
-      />
-     </>
-    );
+    return <TestAttempt test={selectedTest} onComplete={handleTestComplete} />;
   }
 
-
   if (showResults && currentResults) {
-    return (
-      <TestResults
-        results={currentResults}
-        onClose={handleCloseResults}
-      />
-    );
+    return <TestResults results={currentResults} onClose={handleCloseResults} />;
   }
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-gray-600 text-sm sm:text-base">Welcome,</span>
-          <button
-            onClick={() => setIsProfileModalOpen(true)}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base"
-          >
-            {session?.user?.name || 'User'}
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 font-medium">Manage your learning journey</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 bg-white p-2 pr-6 rounded-full shadow-sm border border-gray-100">
+          <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">{session?.user?.name?.[0] || 'U'}</div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Student</span>
+            <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors">
+              {session?.user?.name || 'User'}
+            </button>
+          </div>
+        </motion.div>
       </div>
 
       <Tabs defaultValue="current_affair" className="w-full">
-        <TabsList className="flex flex-wrap gap-2 justify-start sm:justify-center mb-6">
-          <TabsTrigger value="current_affair">Normal Test</TabsTrigger>
-          <TabsTrigger value="pdf">PDF Test</TabsTrigger>
-          <TabsTrigger value="pyq-pdf">PYQ Based Test</TabsTrigger>
-          <TabsTrigger value="descriptive">Descriptive Test</TabsTrigger>
+        <TabsList className="bg-gray-100/50 p-1 rounded-xl mb-8 flex justify-start sm:justify-center overflow-x-auto gap-1 no-scrollbar">
+          <TabsTrigger value="current_affair" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Normal Test</TabsTrigger>
+          <TabsTrigger value="pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PDF Management</TabsTrigger>
+          <TabsTrigger value="pyq-pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PYQ Based</TabsTrigger>
+          <TabsTrigger value="descriptive" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Descriptive</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="current_affair">
-          <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
-            <h2 className="text-xl lg:text-2xl font-semibold">My Tests</h2>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => startPredefinedTest('current-affairs')}>
-                Current Affairs
-              </Button>
-              <Button onClick={() => startPredefinedTest('general-knowledge')}>
-                General Knowledge
-              </Button>
-              <Button onClick={() => router.push('/create-test')}>
-                Create Test
-              </Button>
+        <TabsContent value="current_affair" className="space-y-8">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+              <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
+              <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
+              <Button className="rounded-full px-8 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
             </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 mb-4">
-            <Input
-              placeholder="Search tests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="questions">Questions</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-4 w-full lg:max-w-md">
+              <Input placeholder="Search your tests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 rounded-xl bg-white border-gray-100" />
+              <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
+                <SelectTrigger className="w-[140px] rounded-xl bg-white border-gray-100">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Latest First</SelectItem>
+                  <SelectItem value="name">Name A-Z</SelectItem>
+                  <SelectItem value="questions">Question Count</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-              <div className="col-span-full text-center py-6"><Loading /></div>
+              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map(i => <TestCardSkeleton key={i} />)}
+              </div>
             ) : displayedTests.length > 0 ? (
-              displayedTests.map((test) => (
-                <Card key={test.id} className="flex flex-col justify-between h-full">
-                  <CardHeader>
-                    <CardTitle className="flex justify-between items-start">
-                      <span className="truncate text-base font-medium">{test.title}</span>
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="sm" onClick={() => router.push(`/edit-test/${test.id}`)}>
-                          Edit
+              <AnimatePresence mode="popLayout">
+                {displayedTests.map((test, index) => (
+                  <motion.div
+                    key={test.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Card className="flex flex-col justify-between h-full hover:shadow-2xl transition-all duration-300 border-none bg-white shadow-xl shadow-gray-100/50 group overflow-hidden">
+                      <div className="h-2 bg-indigo-500 w-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex justify-between items-start gap-4">
+                          <span className="truncate text-xl font-black text-gray-900">{test.title}</span>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                              title="Share"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const url = `${window.location.origin}/take-test/${test.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success('Link copied!');
+                              }}
+                            >
+                              🔗
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-amber-600 hover:bg-amber-50 rounded-lg"
+                              title="Leaderboard"
+                              onClick={() => router.push(`/leaderboard/${test.id}`)}
+                            >
+                              🏆
+                            </Button>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6 pt-0">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">⏱️ {test.duration}m</span>
+                          <span className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">📝 {test.questions.length} Qs</span>
+                        </div>
+                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 min-h-[3rem] font-medium">{test.description || 'No description provided.'}</p>
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                          <Button variant="outline" className="w-full rounded-xl font-bold border-gray-100 text-gray-600" onClick={() => router.push(`/edit-test/${test.id}`)}>Edit</Button>
+                          <Button variant="ghost" className="w-full rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(test.id)}>Delete</Button>
+                        </div>
+                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-black text-base shadow-lg shadow-indigo-100 group/btn" onClick={() => router.push(`/take-test/${test.id}`)}>
+                          Take Test <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(test.id)}>
-                          Delete
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-gray-500">Duration: {test.duration} mins</p>
-                    <p className="text-sm text-gray-500">Questions: {test.questions.length}</p>
-                    <p className="text-sm text-gray-500">Created: {new Date(test.createdAt).toLocaleDateString()}</p>
-                    <Button className="w-full mt-4" onClick={() => router.push(`/take-test/${test.id}`)}>
-                      Take Test
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             ) : (
-              <div className="col-span-full text-center py-6 text-gray-500">
-                No tests found matching your criteria.
+              <div className="col-span-full text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                <div className="text-4xl mb-4">🔍</div>
+                <p className="text-gray-500 font-bold">No tests found matching your criteria.</p>
               </div>
             )}
 
-            {!allTestsLoaded && filteredAndSortedTests.length > 5 && (
-              <div className="col-span-full text-center mt-4">
-                <Button variant="outline" onClick={loadMore}>Load More</Button>
+            {!allTestsLoaded && filteredAndSortedTests.length > 6 && (
+              <div className="col-span-full text-center mt-8">
+                <Button variant="outline" className="px-10 rounded-full font-bold h-12" onClick={loadMore}>Load More Results</Button>
               </div>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="pdf">
-          <div className="space-y-8">
-            <section>
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold">PDF Management</h2>
-                <Button onClick={() => router.push('/create-test')}>Create New Test</Button>
+          <div className="space-y-12">
+            <section className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900">PDF Management</h2>
+                  <p className="text-gray-500 font-medium text-sm">Upload documents to generate tests using AI</p>
+                </div>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 px-8 rounded-xl font-bold" onClick={() => router.push('/create-test')}>Generate from AI</Button>
               </div>
-              <PdfUpload  />
+              <PdfUpload />
             </section>
             <section>
               <PdfList />
@@ -539,408 +506,129 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="descriptive">
-          <section>
+          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100">
             <DescriptivePage />
-          </section>
+          </div>
         </TabsContent>
 
         <TabsContent value="pyq-pdf">
-          <section>
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Tests</h2>
-              <Button onClick={() => setShowCreateForm(true)}>Create PDF Test</Button>
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900">PYQ Based Tests</h2>
+                <p className="text-gray-500 font-medium text-sm">Tests generated from Previous Year Questions</p>
+              </div>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 px-8 rounded-xl font-bold h-12" onClick={() => setShowCreateForm(true)}>New PYQ Test</Button>
             </div>
 
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold">PDF Tests</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {pdfTests.length > 0 ? (
                 pdfTests.map((test) => (
-                  <Card key={test.id}>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row justify-between gap-2 items-start sm:items-center">
-                        <CardTitle>{test.title}</CardTitle>
-                        <div className="flex gap-2">
-                          <Button variant="outline" onClick={() => {
-                            setViewTest(viewTest?.id === test.id ? null : test);
-                          }}>
-                            {viewTest?.id === test.id ? 'Hide Questions & Answers' : 'View Questions & Answers'}
-                          </Button>
-                          <Button variant="outline" onClick={() => setEditingTest(test)}>Edit</Button>
-                          <Button variant="destructive" onClick={() => setTestToDelete(test)}>Delete</Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              router.push(`/pdf-tests/${test.id}/attempt`);
-                            }}
-                          >
-                            Attempt Test
-                          </Button>
-                        </div>
+                  <Card key={test.id} className="border-none shadow-xl shadow-gray-100 bg-white rounded-2xl overflow-hidden group">
+                    <CardHeader className="bg-indigo-50/50">
+                      <div className="flex justify-between items-start gap-4">
+                        <CardTitle className="text-lg font-black text-gray-900 line-clamp-1">{test.title}</CardTitle>
+                        <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-600 border border-indigo-100 shadow-sm">PYQ</span>
                       </div>
                     </CardHeader>
+                    <CardContent className="pt-6 space-y-6">
+                      <p className="text-gray-500 text-sm font-medium line-clamp-2">{test.description}</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        <Button className="w-full bg-gray-900 hover:bg-black rounded-xl font-black h-12" onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}>Attempt Now</Button>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Button variant="outline" className="rounded-xl font-bold h-10 text-xs px-2" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)}>View</Button>
+                          <Button variant="outline" className="rounded-xl font-bold h-10 text-xs px-2" onClick={() => setEditingTest(test)}>Edit</Button>
+                          <Button variant="ghost" className="rounded-xl font-bold h-10 text-xs px-2 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => setTestToDelete(test)}>Delete</Button>
+                        </div>
+                      </div>
+                    </CardContent>
                   </Card>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500">No PDF tests available.</div>
+                <div className="col-span-full text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                  <p className="text-gray-500 font-bold">No PYQ tests created yet.</p>
+                </div>
               )}
             </div>
-          </section>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {viewTest && (
-        <div className="mt-4 border rounded-lg p-6 bg-white shadow-sm">
-          <h3 className="text-xl font-semibold mb-4">View PDF Test</h3>
-          <div className="space-y-4">
-            {viewTest.questions?.map((question, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <p className="font-medium">Question {index + 1}: {question.question}</p>
-                <div className="mt-2">
-                  <h4 className="font-medium">Options:</h4>
-                  <ul className="list-disc pl-5">
-                    {question.options.map((option, idx) => (
-                      <li key={idx}>{option}</li>
-                    ))}
-                  </ul>
+      {/* View PDF Test Modal Content */}
+      <Dialog open={!!viewTest} onOpenChange={() => setViewTest(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto rounded-3xl">
+          <DialogTitle className="text-2xl font-black pb-4 border-b">Test Preview: {viewTest?.title}</DialogTitle>
+          <div className="space-y-6 py-6 font-medium">
+            {viewTest?.questions?.map((q, idx) => (
+              <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <p className="font-black text-gray-900 mb-4">Q{idx + 1}: {q.question}</p>
+                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                  {q.options.map((opt, i) => (
+                    <div key={i} className={`p-3 rounded-xl border ${opt === q.correctAnswer ? 'bg-green-100 border-green-200 text-green-800' : 'bg-white border-gray-200 text-gray-600'}`}>
+                      {opt}
+                    </div>
+                  ))}
                 </div>
-                <div className="mt-2">
-                  <h4 className="font-medium">Correct Answer:</h4>
-                  <p>{question.correctAnswer}</p>
-                </div>
-                <div className="mt-2">
-                  <h4 className="font-medium">Explanation:</h4>
-                  <p>{question.explanation}</p>
-                </div>
-                <div className="mt-2">
-                  <h4 className="font-medium">Difficulty:</h4>
-                  <p>{question.difficulty}</p>
-                </div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-4">Explanation</div>
+                <p className="text-sm text-gray-600 mt-1">{q.explanation}</p>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
+      {/* Edit Test Dialog - simplified for standard use */}
+      <Dialog open={!!editingTest} onOpenChange={() => setEditingTest(null)}>
+        <DialogContent className="max-w-2xl rounded-3xl">
+          <DialogHeader><DialogTitle className="text-2xl font-black">Edit Test Details</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+             <p className="text-gray-500 font-medium">Coming soon: Full inline question editing. Use the standard Edit button for now.</p>
+             <Button className="w-full bg-indigo-600" onClick={() => {
+               if(editingTest) router.push(`/edit-test/${editingTest.id}`);
+             }}>Go to Editor</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {editingTest && (
-        <div className="mt-4 border rounded-lg p-6 bg-white shadow-sm">
-          <h3 className="text-xl font-semibold mb-4">Edit PDF Test</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Title</label>
-              <input
-                type="text"
-                value={editingTest?.title || ''}
-                onChange={(e) => {
-                  if (editingTest) {
-                    setEditingTest({
-                      ...editingTest,
-                      title: e.target.value
-                    });
-                  }
-                }}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={editingTest?.description || ''}
-                onChange={(e) => {
-                  if (editingTest) {
-                    setEditingTest({
-                      ...editingTest,
-                      description: e.target.value
-                    });
-                  }
-                }}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Questions</label>
-              {editingTest?.questions?.map((question, index) => (
-                <div key={index} className="border p-4 rounded mb-4">
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Question {index + 1}</label>
-                    <input
-                      type="text"
-                      value={question.question}
-                      onChange={(e) => {
-                        if (editingTest && editingTest.questions) {
-                          const newQuestions = [...editingTest.questions];
-                          newQuestions[index] = {
-                            ...newQuestions[index],
-                            question: e.target.value
-                          };
-                          setEditingTest({
-                            ...editingTest,
-                            questions: newQuestions
-                          });
-                        }
-                      }}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Options</label>
-                    {question.options.map((option, optionIndex) => (
-                      <input
-                        key={optionIndex}
-                        type="text"
-                        value={option}
-                        onChange={(e) => {
-                          if (editingTest && editingTest.questions) {
-                            const newQuestions = [...editingTest.questions];
-                            newQuestions[index].options[optionIndex] = e.target.value;
-                            setEditingTest({
-                              ...editingTest,
-                              questions: newQuestions
-                            });
-                          }
-                        }}
-                        className="w-full p-2 border rounded mb-2"
-                      />
-                    ))}
-                  </div>
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Correct Answer</label>
-                    <select
-                      value={question.correctAnswer}
-                      onChange={(e) => {
-                        if (editingTest && editingTest.questions) {
-                          const newQuestions = [...editingTest.questions];
-                          newQuestions[index] = {
-                            ...newQuestions[index],
-                            correctAnswer: e.target.value
-                          };
-                          setEditingTest({
-                            ...editingTest,
-                            questions: newQuestions
-                          });
-                        }
-                      }}
-                      className="w-full p-2 border rounded"
-                    >
-                      {question.options.map((option, optionIndex) => (
-                        <option key={optionIndex} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Explanation</label>
-                    <textarea
-                      value={question.explanation}
-                      onChange={(e) => {
-                        if (editingTest && editingTest.questions) {
-                          const newQuestions = [...editingTest.questions];
-                          newQuestions[index] = {
-                            ...newQuestions[index],
-                            explanation: e.target.value
-                          };
-                          setEditingTest({
-                            ...editingTest,
-                            questions: newQuestions
-                          });
-                        }
-                      }}
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Difficulty</label>
-                    <select
-                      value={question.difficulty}
-                      onChange={(e) => {
-                        if (editingTest && editingTest.questions) {
-                          const newQuestions = [...editingTest.questions];
-                          newQuestions[index] = {
-                            ...newQuestions[index],
-                            difficulty: e.target.value as "easy" | "medium" | "hard"
-                          };
-                          setEditingTest({
-                            ...editingTest,
-                            questions: newQuestions
-                          });
-                        }
-                      }}
-                      className="w-full p-2 border rounded"
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => {
-                      if (editingTest && editingTest.questions) {
-                        const newQuestions = editingTest.questions.filter((_, i) => i !== index);
-                        setEditingTest({
-                          ...editingTest,
-                          questions: newQuestions
-                        });
-                      }
-                    }}
-                  >
-                    Remove Question
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                onClick={() => {
-                  if (editingTest) {
-                    const newQuestion = {
-                      question: "",
-                      options: ["", "", "", ""],
-                      correctAnswer: "",
-                      explanation: "",
-                      difficulty: "medium" as const
-                    };
-                    setEditingTest({
-                      ...editingTest,
-                      questions: [...(editingTest.questions || []), newQuestion]
-                    });
-                  }
-                }}
-              >
-                Add Question
-              </Button>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setEditingTest(null)}>
-                Cancel
-              </Button>
-              <Button type="submit" onClick={async () => {
-                try {
-                  const response = await fetch(`/api/pdf-test/${editingTest.id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(editingTest)
-                  });
-
-                  if (!response.ok) {
-                    throw new Error('Failed to update test');
-                  }
-
-                  setEditingTest(null);
-                  // Refresh the tests list
-                  fetchPDFTests();
-                } catch (error) {
-                  console.error('Error updating test:', error);
-                  // Handle error (show toast notification etc)
-                }
-              }}>Save Changes</Button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Create PDF Test Dialog */}
+      {/* Create form modal */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create PDF Test</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Title</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              />
+        <DialogContent className="rounded-3xl max-w-lg">
+          <DialogHeader><DialogTitle className="text-2xl font-black">New PYQ Test</DialogTitle></DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-widest text-gray-400">Title</label>
+              <Input value={formData.title} onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))} className="rounded-xl h-12" required />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              />
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-widest text-gray-400">Context PDF (Reference Material)</label>
+              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'context')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer" />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Topic</label>
-              <textarea
-                value={formData.domainTopic}
-                onChange={(e) => setFormData(prev => ({ ...prev, domainTopic: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              />
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-widest text-gray-400">PYQ PDF (Previous Questions)</label>
+              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'pyq')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100 cursor-pointer" />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">No. of Questation</label>
-              <textarea
-                value={formData.numQuestions}
-                onChange={(e) => setFormData(prev => ({ ...prev, numQuestions: Number(e.target.value) }))}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Context PDF</label>
-              <input
-                type="file"
-                multiple={true}
-                accept=".pdf"
-                onChange={(e) => handleFileChange(e, 'context')}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">PYQ PDF</label>
-              <input
-                type="file"
-                multiple={true}
-                accept=".pdf"
-                onChange={(e) => handleFileChange(e, 'pyq')}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Create</Button>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+              <Button type="submit" className="bg-indigo-600 rounded-xl font-bold px-8" disabled={isLoading}>{isLoading ? 'Generating...' : 'Start Generation'}</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!testToDelete} onOpenChange={() => setTestToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Test</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this test? This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-2xl font-black">Delete Permanently?</AlertDialogTitle>
+            <AlertDialogDescription className="font-medium">This will remove this test and all associated attempt data. This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTest}>Delete</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl font-bold">Nevermind</AlertDialogCancel>
+            <AlertDialogAction className="rounded-xl bg-red-600 hover:bg-red-700 font-bold" onClick={handleDeleteTest}>Confirm Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <UserProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-      />
+      <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
     </div>
-
   );
-} 
+}
