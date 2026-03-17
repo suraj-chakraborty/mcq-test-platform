@@ -24,6 +24,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -32,6 +33,8 @@ model Session {
   userId       String   @db.ObjectId
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model User {
@@ -73,6 +76,8 @@ model PdfDocument {
   url         String
   testId      String   @db.ObjectId
   test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
 }
 
 model Test {
@@ -121,7 +126,7 @@ model TestAttempt {
   test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([testId])
+  @@index([testId, score, createdAt])
 }
 
 model DescriptiveTest {
