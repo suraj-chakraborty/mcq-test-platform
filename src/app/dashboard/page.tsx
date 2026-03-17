@@ -22,9 +22,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import TestAttempt from '@/app/components/TestAttempt';
 import TestResults from '@/app/components/TestResults';
 import BattleRoom from '@/app/components/BattleRoom';
+import FlashcardDeck from '@/app/components/FlashcardDeck';
 import Loading from '../loading';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Brain } from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
 
 interface Question {
@@ -98,6 +100,8 @@ export default function Dashboard() {
   const [allTestsLoaded, setAllTestsLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [battleRoomCode, setBattleRoomCode] = useState<string | null>(null);
+  const [dueFlashcards, setDueFlashcards] = useState<any[]>([]);
+  const [isStudying, setIsStudying] = useState(false);
   const [userStats, setUserStats] = useState<{
     level: number;
     streak: number;
@@ -126,9 +130,41 @@ export default function Dashboard() {
     }
   };
 
+  const fetchDueCards = async () => {
+    try {
+      const res = await fetch('/api/flashcards');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setDueFlashcards(data.flashcards);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch flashcards:', err);
+    }
+  };
+
+  const createFlashcards = async (testId: string) => {
+    try {
+      const res = await fetch('/api/flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Created ${data.count} Flashcards! Go to Study tab.`);
+        fetchDueCards();
+      }
+    } catch (err) {
+      toast.error('Failed to create flashcards');
+    }
+  };
+
   useEffect(() => {
     if (session?.user) {
       fetchStats();
+      fetchDueCards();
     }
   }, [session]);
   const [formData, setFormData] = useState<FormData>({
@@ -486,10 +522,60 @@ export default function Dashboard() {
       <Tabs defaultValue="current_affair" className="w-full">
         <TabsList className="bg-gray-100/50 p-1 rounded-xl mb-8 flex justify-start sm:justify-center overflow-x-auto gap-1 no-scrollbar">
           <TabsTrigger value="current_affair" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Normal Test</TabsTrigger>
+          <TabsTrigger value="study" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6 flex items-center gap-2">
+            Study
+            {dueFlashcards.length > 0 && (
+              <span className="bg-red-500 text-white text-[8px] h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
+                {dueFlashcards.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PDF Management</TabsTrigger>
           <TabsTrigger value="pyq-pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PYQ Based</TabsTrigger>
           <TabsTrigger value="descriptive" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Descriptive</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="study" className="space-y-8">
+           {isStudying ? (
+             <FlashcardDeck 
+               cards={dueFlashcards} 
+               onComplete={() => {
+                 setIsStudying(false);
+                 fetchDueCards();
+               }} 
+             />
+           ) : (
+             <div className="max-w-xl mx-auto py-12 text-center">
+                <div className="h-32 w-32 bg-indigo-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                   <Brain className="h-16 w-16 text-indigo-600" />
+                </div>
+                <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Active Recall Lab</h2>
+                <p className="text-gray-500 font-medium mb-10 max-w-sm mx-auto">
+                  {dueFlashcards.length > 0 
+                    ? `You have ${dueFlashcards.length} cards due for review. Let's strengthen those neural pathways!`
+                    : "Your brain is well-rested! No cards due for review. Create new decks from your tests below."}
+                </p>
+                {dueFlashcards.length > 0 && (
+                  <Button 
+                    className="h-16 px-12 rounded-3xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black shadow-2xl shadow-indigo-100 mb-8"
+                    onClick={() => setIsStudying(true)}
+                  >
+                    START STUDY SESSION
+                  </Button>
+                )}
+                
+                <div className="grid grid-cols-1 gap-4 text-left">
+                   <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">⚡</div>
+                      <div>
+                         <h4 className="font-bold text-gray-900">How it works</h4>
+                         <p className="text-sm text-gray-500">We use the SM-2 algorithm to show you difficult questions more often, ensuring you never forget what you've learned.</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+           )}
+        </TabsContent>
 
         <TabsContent value="current_affair" className="space-y-8">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
@@ -569,6 +655,18 @@ export default function Dashboard() {
                               onClick={() => router.push(`/leaderboard/${test.id}`)}
                             >
                               🏆
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                              title="Create Flashcards"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                createFlashcards(test.id);
+                              }}
+                            >
+                              🎴
                             </Button>
                           </div>
                         </CardTitle>
