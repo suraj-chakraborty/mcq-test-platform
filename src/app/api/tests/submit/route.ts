@@ -49,7 +49,8 @@ export async function POST(request: Request) {
       session.user.id,
       score,
       test.questions.length,
-      0 // Default time taken (can be improved if frontend sends it)
+      0, // Default time taken
+      testAttempt.id
     );
 
     return NextResponse.json({
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
         completedAt: testAttempt.completedAt,
       },
       attemptId: testAttempt.id,
+      gamification: gamificationResult
     });
   } catch (error) {
     console.error('Error submitting test:', error);

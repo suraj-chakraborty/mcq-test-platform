@@ -64,6 +64,8 @@ model User {
   attempts         TestAttempt[]
   descriptiveTests DescriptiveTest[]
   achievements     Achievement[]
+  hostedDuels      DuelRoom[] @relation("HostedDuels")
+  guestDuels       DuelRoom[] @relation("GuestDuels")
 }
 
 model VerificationToken {
@@ -101,6 +103,7 @@ model Test {
   questions   Question[]
   attempts    TestAttempt[]
   pdfs        PdfDocument[] // Context/PYQ PDFs
+  duels       DuelRoom[]
 
   @@index([userId])
 }
@@ -124,6 +127,7 @@ model TestAttempt {
   score       Int
   answers     Int[]
   completed   Boolean  @default(false)
+  xpEarned    Int?
   createdAt   DateTime @default(now())
   completedAt DateTime?
 
@@ -170,4 +174,23 @@ model Achievement {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model DuelRoom {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomCode    String   @unique
+  testId      String   @db.ObjectId
+  hostId      String   @db.ObjectId
+  guestId     String?  @db.ObjectId
+  status      String   @default("WAITING") // WAITING, ACTIVE, FINISHED
+  
+  hostProgress  Int    @default(0) // 0-100 percentage
+  guestProgress Int    @default(0) // 0-100 percentage
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  test        Test     @relation(fields: [testId], references: [id])
+  host        User     @relation("HostedDuels", fields: [hostId], references: [id])
+  guest       User?    @relation("GuestDuels", fields: [guestId], references: [id])
 }

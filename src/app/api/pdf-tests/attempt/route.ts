@@ -57,13 +57,15 @@ export async function POST(request: Request) {
       session.user.id,
       score,
       test.questions.length,
-      timeTaken || 0
+      timeTaken || 0,
+      attempt.id
     );
 
     return NextResponse.json({
       success: true,
       score,
-      attempt
+      attempt,
+      gamification: gamificationResult
     });
 
   } catch (error) {
