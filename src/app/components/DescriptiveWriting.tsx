@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Mic, MicOff, Sparkles } from 'lucide-react';
+import OralExam from './OralExam';
 
 interface EvaluationResult {
   score: number;
@@ -41,8 +43,55 @@ export default function DescriptiveWriting() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
+  const [isOralExamOpen, setIsOralExamOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout>();
   const autoSaveRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            setAnswer((prev) => prev + (prev.endsWith(' ') || prev === '' ? '' : ' ') + event.results[i][0].transcript);
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        console.log('Interim:', interimTranscript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      if (!recognitionRef.current) {
+        toast.error('Speech recognition not supported in this browser');
+        return;
+      }
+      recognitionRef.current.start();
+      setIsListening(true);
+      toast.success('Listening... speak your answer.');
+    }
+  };
 
   // Auto-save functionality
   useEffect(() => {
@@ -187,8 +236,18 @@ export default function DescriptiveWriting() {
   return (
     <div className="min-h-screen p-4">
       <Card className="max-w-4xl mx-auto">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Descriptive Writing Practice</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-full gap-2 border-indigo-200 text-indigo-600 font-bold"
+            onClick={() => setIsOralExamOpen(true)}
+            disabled={isTestActive}
+          >
+            <Sparkles className="h-4 w-4" />
+            Try Oral Exam
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -260,11 +319,23 @@ export default function DescriptiveWriting() {
                 <p className="text-lg">{question}</p>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium">Your Answer</label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-sm font-medium">Your Answer</label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`rounded-full gap-2 ${isListening ? 'text-red-500 bg-red-50 animate-pulse' : 'text-indigo-600 hover:bg-indigo-50'}`}
+                    onClick={toggleListening}
+                    disabled={isSubmitting}
+                  >
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {isListening ? 'Stop Listening' : 'Speak Answer'}
+                  </Button>
+                </div>
                 <Textarea
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="Write your answer here..."
+                  placeholder="Write or speak your answer here..."
                   rows={10}
                   className="min-h-[300px]"
                   disabled={isSubmitting}
@@ -339,6 +410,13 @@ export default function DescriptiveWriting() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {isOralExamOpen && (
+        <OralExam 
+          question={question || "Explain the concept you are practicing."} 
+          onClose={() => setIsOralExamOpen(false)} 
+        />
+      )}
     </div>
   );
 } 

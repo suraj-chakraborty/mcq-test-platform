@@ -23,6 +23,7 @@ import TestAttempt from '@/app/components/TestAttempt';
 import TestResults from '@/app/components/TestResults';
 import BattleRoom from '@/app/components/BattleRoom';
 import FlashcardDeck from '@/app/components/FlashcardDeck';
+import MathPhotoUpload from '@/app/components/MathPhotoUpload';
 import Loading from '../loading';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +31,7 @@ import { Brain } from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
 
 interface Question {
+  id: string;
   question: string;
   options: string[];
   correctAnswer: string;
@@ -99,6 +101,7 @@ export default function Dashboard() {
   const [displayCount, setDisplayCount] = useState(6);
   const [allTestsLoaded, setAllTestsLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isMathModalOpen, setIsMathModalOpen] = useState(false);
   const [battleRoomCode, setBattleRoomCode] = useState<string | null>(null);
   const [dueFlashcards, setDueFlashcards] = useState<any[]>([]);
   const [isStudying, setIsStudying] = useState(false);
@@ -583,6 +586,7 @@ export default function Dashboard() {
               <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
               <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
               <Button variant="outline" className="rounded-full px-6 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
+              <Button variant="outline" className="rounded-full px-6 font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100" onClick={() => setIsMathModalOpen(true)}>Scan Math 📸</Button>
               <Button className="rounded-full px-8 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
             </div>
             <div className="flex gap-4 w-full lg:max-w-md">
@@ -846,6 +850,16 @@ export default function Dashboard() {
       </AlertDialog>
 
       <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+
+      {isMathModalOpen && (
+        <MathPhotoUpload 
+          onClose={() => setIsMathModalOpen(false)} 
+          onSuccess={(test) => {
+            setIsMathModalOpen(false);
+            setSelectedTest(test);
+          }} 
+        />
+      )}
     </div>
   );
 }
