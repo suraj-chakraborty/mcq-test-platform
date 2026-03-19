@@ -112,6 +112,9 @@ export default function Dashboard() {
     xpInCurrentLevel: number;
     xpNeededForNextLevel: number;
   } | null>(null);
+  const [isPredefinedModalOpen, setIsPredefinedModalOpen] = useState(false);
+  const [selectedPredefinedType, setSelectedPredefinedType] = useState<'current-affairs' | 'general-knowledge' | null>(null);
+  const [predefinedQuestionCount, setPredefinedQuestionCount] = useState(10);
 
   const fetchStats = async () => {
     try {
@@ -309,14 +312,15 @@ export default function Dashboard() {
     }
   };
 
-  const startPredefinedTest = async (type: 'current-affairs' | 'general-knowledge') => {
+  const startPredefinedTest = async (type: 'current-affairs' | 'general-knowledge', count: number = 10) => {
     try {
+      setIsLoading(true);
       const response = await fetch('/api/tests/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({ type, count }),
       });
 
       if (!response.ok) {
@@ -588,8 +592,8 @@ export default function Dashboard() {
         <TabsContent value="current_affair" className="space-y-8">
           <div className="flex flex-col xl:flex-row justify-between items-stretch lg:items-center gap-6">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row lg:flex-wrap gap-3 w-full xl:w-auto">
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => { setSelectedPredefinedType('current-affairs'); setIsPredefinedModalOpen(true); }}>Current Affairs</Button>
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => { setSelectedPredefinedType('general-knowledge'); setIsPredefinedModalOpen(true); }}>General Knowledge</Button>
               <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 flex-1 lg:flex-none" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
               <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 flex-1 lg:flex-none" onClick={() => setIsMathModalOpen(true)}>Scan Math 📸</Button>
               <Button className="rounded-2xl h-12 px-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 col-span-2 md:col-span-1 lg:flex-none" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
@@ -865,6 +869,64 @@ export default function Dashboard() {
           }} 
         />
       )}
+      <Dialog open={isPredefinedModalOpen} onOpenChange={setIsPredefinedModalOpen}>
+        <DialogContent className="rounded-3xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">Configure Your Test</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 pt-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Number of Questions</label>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{predefinedQuestionCount} Questions</span>
+              </div>
+              <input 
+                type="range" 
+                min="10" 
+                max="30" 
+                step="1" 
+                value={predefinedQuestionCount} 
+                onChange={(e) => setPredefinedQuestionCount(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all"
+              />
+              <div className="flex justify-between text-[10px] font-bold text-gray-400">
+                <span>10 Qs</span>
+                <span>20 Qs</span>
+                <span>30 Qs</span>
+              </div>
+            </div>
+            
+            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">⏱️</div>
+              <div>
+                <p className="text-sm font-black text-indigo-900">Allotted Time</p>
+                <p className="text-xs font-medium text-indigo-600">{predefinedQuestionCount} Minutes (1 min/question)</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4">
+              <Button 
+                className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 group"
+                onClick={() => {
+                  if (selectedPredefinedType) {
+                    startPredefinedTest(selectedPredefinedType, predefinedQuestionCount);
+                    setIsPredefinedModalOpen(false);
+                  }
+                }}
+              >
+                START CHALLENGE <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="rounded-xl font-bold text-gray-400" 
+                onClick={() => setIsPredefinedModalOpen(false)}
+              >
+                Go Back
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
