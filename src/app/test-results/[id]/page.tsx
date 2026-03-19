@@ -53,7 +53,8 @@ export default function TestResults() {
         setAttempt(data);
         
         // Trigger confetti for high scores
-        const scorePercentage = Math.round((data.score / data.questions.length) * 100);
+        const totalQs = data.totalQuestions || data.questions?.length || 1;
+        const scorePercentage = Math.round((data.score / totalQs) * 100);
         if (scorePercentage >= 80) {
           confetti({
             particleCount: 150,
@@ -84,7 +85,8 @@ export default function TestResults() {
     return <div className="min-h-screen flex items-center justify-center">Results not found</div>;
   }
 
-  const percentage = Math.round((attempt.score / attempt.questions.length) * 100);
+  const totalQs = attempt.totalQuestions || attempt.questions?.length || 1;
+  const percentage = Math.round((attempt.score / totalQs) * 100);
   let rlt = percentage >= 50 ? "passed" : "failed";
 
   return (

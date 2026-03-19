@@ -25,11 +25,11 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const result = evaluationInputSchema.safeParse(body);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
     }
-    
+
     const { examName, question, answer, wordCount, timeLimit, timeTaken } = result.data;
 
     const prompt = `
@@ -57,11 +57,11 @@ export async function POST(request: Request) {
     `;
 
     const aiResult = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-001',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        }
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
     });
 
     const text = aiResult.text;
@@ -108,4 +108,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+}

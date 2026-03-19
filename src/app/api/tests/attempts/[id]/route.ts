@@ -54,7 +54,14 @@ export async function GET(
 
     // If attemptId is provided, find specific attempt
     const attempt = await prisma.testAttempt.findUnique({
-      where: { id: attemptId }
+      where: { id: attemptId },
+      include: {
+        test: {
+          include: {
+            questions: true
+          }
+        }
+      }
     });
 
     if (!attempt || attempt.userId !== session.user.id) {
@@ -64,7 +71,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(attempt);
+    // Flatten for frontend
+    const formattedAttempt = {
+      ...attempt,
+      questions: attempt.test.questions,
+    };
+
+    return NextResponse.json(formattedAttempt);
   } catch (error) {
     console.error('Error fetching test attempt:', error);
     return NextResponse.json(

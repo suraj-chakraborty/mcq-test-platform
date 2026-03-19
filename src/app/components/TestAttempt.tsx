@@ -14,7 +14,7 @@ interface Question {
   id: string;
   question: string;
   options: string[];
-  correctAnswer: string;
+  correctAnswer: number;
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }
@@ -25,7 +25,7 @@ interface Test {
   duration: number;
   description: string;
   questions: Question[];
-  timeLimit: number; // in minutes
+  timeLimit?: number; // in minutes
 }
 
 interface TestAttemptProps {
@@ -35,15 +35,13 @@ interface TestAttemptProps {
 }
 
 export default function TestAttempt({ test, onComplete, onQuestionChange }: TestAttemptProps) {
-  // console.log("testAttempt 😊", test)
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(test.timeLimit * 60);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [timeLeft, setTimeLeft] = useState((test.timeLimit || test.duration || 30) * 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // console.log("test", test)
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -58,10 +56,10 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
     return () => clearInterval(timer);
   }, []);
 
-  const handleAnswerSelect = (questionIndex: number, answer: string) => {
+  const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionIndex]: answer,
+      [questionIndex]: answerIndex,
     }));
   };
 
@@ -84,20 +82,25 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/tests/attempt', {
+      // Ensure we have an array of length questions.length, filling with -1 for unanswered
+      const answersArray = Array.from({ length: test.questions.length }, (_, i) => 
+        answers[i] !== undefined ? answers[i] : -1
+      );
+
+      const response = await fetch('/api/tests/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          testId: test.id,
-          answers: Object.values(answers),
+          id: test.id,
+          answers: answersArray,
         }),
       });
 
       const data = await response.json();
       if (data.success) {
-        onComplete(data.data);
+        onComplete(data.attempt);
         toast.success('Test submitted successfully');
       } else {
         throw new Error(data.error || 'Failed to submit test');
@@ -130,7 +133,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
           </div>
           <div className="mt-4">
             <Progress value={progress} className="h-2" />
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-400 mt-1 font-bold italic uppercase tracking-widest text-[10px]">
               Question {currentQuestionIndex + 1} of {test.questions.length}
             </div>
           </div>
@@ -139,13 +142,13 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
           <div className="space-y-6">
             <div>
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-medium">
+                <h3 className="text-xl font-black text-gray-900 leading-tight">
                   {test.questions[currentQuestionIndex].question}
                 </h3>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+                  className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl"
                   onClick={async () => {
                     const reason = prompt('What is wrong with this question? (e.g. Typo, Wrong Answer)');
                     if (!reason) return;
@@ -161,34 +164,38 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
                     }
                   }}
                 >
-                  <Flag className="h-4 w-4 mr-1" />
+                  <Flag className="h-4 w-4 mr-2" />
                   Report
                 </Button>
               </div>
               <RadioGroup
-                value={answers[currentQuestionIndex] || ''}
+                value={answers[currentQuestionIndex]?.toString() || ""}
                 onValueChange={(value) =>
-                  handleAnswerSelect(currentQuestionIndex, value)
+                  handleAnswerSelect(currentQuestionIndex, parseInt(value))
                 }
+                className="grid grid-cols-1 gap-4"
               >
                 {test.questions[currentQuestionIndex].options.map(
                   (option, index) => (
-                    <div key={index} className="flex items-center space-x-2">
+                    <div key={index} className={`flex items-center space-x-4 p-4 rounded-3xl border-2 transition-all cursor-pointer ${answers[currentQuestionIndex] === index ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-100 hover:bg-gray-50'}`}>
                       <RadioGroupItem
-                        value={option}
+                        value={index.toString()}
                         id={`option-${index}`}
+                        className="h-6 w-6 border-2"
                       />
-                      <Label htmlFor={`option-${index}`}>{option}</Label>
+                      <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer text-lg font-medium text-gray-700">{option}</Label>
                     </div>
                   )
                 )}
               </RadioGroup>
             </div>
 
-            <div className="flex justify-between">
+            <div className="flex justify-between pt-8 border-t border-gray-100">
               <Button
+                variant="outline"
                 onClick={handlePrevious}
                 disabled={currentQuestionIndex === 0}
+                className="h-14 px-8 rounded-2xl font-bold border-2"
               >
                 Previous
               </Button>
@@ -196,11 +203,17 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
+                  className="h-14 px-12 rounded-2xl font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 text-lg"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Test'}
+                  {isSubmitting ? 'SUBMITTING...' : 'COMPLETE TEST'}
                 </Button>
               ) : (
-                <Button onClick={handleNext}>Next</Button>
+                <Button 
+                  onClick={handleNext}
+                  className="h-14 px-12 rounded-2xl font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 text-lg"
+                >
+                  NEXT QUESTION
+                </Button>
               )}
             </div>
           </div>
@@ -208,4 +221,4 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
       </Card>
     </div>
   );
-} 
+}
