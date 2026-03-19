@@ -9,6 +9,6 @@ export const generatedMCQSchema = z.array(z.object({
 }));
 
 export const testAttemptSchema = z.object({
-  testId: z.string().optional(), // Can optionally allow from body if overriding
-  answers: z.array(z.number().int().nullable().optional())
+  testId: z.string().optional(),
+  answers: z.array(z.number().int())
 });
