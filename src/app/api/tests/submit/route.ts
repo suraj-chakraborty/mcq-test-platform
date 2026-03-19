@@ -18,6 +18,9 @@ export async function POST(request: Request) {
         questions: true,
       },
     });
+    if (!test) {
+      return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+    }
 
     // Calculate score
     const correctCount = (answers as number[]).reduce((acc: number, answer: number, index: number) => {

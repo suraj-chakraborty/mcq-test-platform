@@ -3,10 +3,10 @@ import { prisma } from '@/app/lib/prisma';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const testId = params.id;
+    const { id: testId } = await params;
 
     // Fetch top 10 attempts for this test
     const attempts = await prisma.testAttempt.findMany({
