@@ -38,22 +38,22 @@ const predefinedTests = {
   },
 };
 
-async function generateGeneralKnowledgeQuestions() {
-  const mcqs = await generateMCQs("General knowledge topics: history, science, geography, culture.", "General Knowledge", 10);
+async function generateGeneralKnowledgeQuestions(count: number = 10) {
+  const mcqs = await generateMCQs("General knowledge topics: history, science, geography, culture.", "General Knowledge", count);
   return {
     title: 'General Knowledge Test',
     description: 'Auto-generated GK quiz using Gemini',
-    duration: 30,
+    duration: count,
     questions: mcqs,
   };
 }
 
-async function generateCurrentAffairsQuestions() {
-  const mcqs = await generateMCQs("Recent news events politics, tech, sports, entertainment from last month.", "Current Affairs", 10);
+async function generateCurrentAffairsQuestions(count: number = 10) {
+  const mcqs = await generateMCQs("Recent news events politics, tech, sports, entertainment from last month.", "Current Affairs", count);
   return {
     title: 'Current Affairs Test',
     description: 'Auto-generated Current Affairs quiz using Gemini',
-    duration: 30,
+    duration: count,
     questions: mcqs,
   };
 }
@@ -66,14 +66,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { type, pdfIds } = await request.json();
+    const { type, pdfIds, count } = await request.json();
+    const finalCount = count ? parseInt(count) : 10;
 
     let testData: any;
 
     if (type === 'current-affairs') {
-      testData = await generateCurrentAffairsQuestions();
+      testData = await generateCurrentAffairsQuestions(finalCount);
     } else if (type === 'general-knowledge') {
-      testData = await generateGeneralKnowledgeQuestions();
+      testData = await generateGeneralKnowledgeQuestions(finalCount);
     } else if (type in predefinedTests) {
       testData = predefinedTests[type as keyof typeof predefinedTests];
     } else if (pdfIds && Array.isArray(pdfIds) && pdfIds.length > 0) {
