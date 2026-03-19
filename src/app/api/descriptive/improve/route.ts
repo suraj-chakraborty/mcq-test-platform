@@ -21,11 +21,11 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const result = improveInputSchema.safeParse(body);
-    
+
     if (!result.success) {
       return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
     }
-    
+
     const { question, answer, examName } = result.data;
 
     const prompt = `
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     `;
 
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-2.0-flash-001',
+      model: 'gemini-2.5-flash',
       contents: prompt,
     });
 

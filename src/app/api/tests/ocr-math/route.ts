@@ -23,17 +23,26 @@ export async function POST(req: Request) {
     // Extract base64 content
     const base64Data = image.split(',')[1] || image;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
 Analyze this image containing a math problem.
-1. Solve the problem shown in the image.
-2. Generate 5 multiple-choice questions (MCQs) that are similar in logic and difficulty to the problem in the image.
-3. The questions should help a student practice the same concept.
+1. Extract the plain text of the problem.
+2. Provide a detailed, step-by-step solution formatted in clear Markdown.
+3. Generate 5 multiple-choice questions (MCQs) that are similar in logic and difficulty.
 4. Topic: ${topic || 'Mathematics'}
 
 Format the response EXACTLY as a JSON object with this structure:
 {
+  "originalQuestion": "[Extracted text of the problem]",
+  "solutionSteps": [
+    {
+      "title": "Step 1: [Short Title]",
+      "content": "[Detailed explanation]",
+      "math": "[The key math formula for this step, using simple text notation like x^2]"
+    }
+  ],
+  "finalAnswer": "[The final result]",
   "title": "Math Practice: [Summary of problem]",
   "description": "Practice questions based on an uploaded image.",
   "questions": [
@@ -90,7 +99,13 @@ Format the response EXACTLY as a JSON object with this structure:
       }
     });
 
-    return NextResponse.json({ success: true, test });
+    return NextResponse.json({ 
+      success: true, 
+      test,
+      originalQuestion: parsed.originalQuestion,
+      solutionSteps: parsed.solutionSteps,
+      finalAnswer: parsed.finalAnswer
+    });
   } catch (error) {
     console.error('OCR Math error:', error);
     return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     const description = fields.description?.[0] || '';
     const topic = fields.domainTopic || 'General';
     const numQuestions = parseInt(fields.numQuestions || '10');
-    
+
     const contextPDFs = Array.isArray(files.contextPDF) ? files.contextPDF : [files.contextPDF].filter(Boolean);
     const pyqPDFs = Array.isArray(files.pyqPDF) ? files.pyqPDF : [files.pyqPDF].filter(Boolean);
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-   const prompt = `
+    const prompt = `
 You are an expert question generator for educational purposes.
 
 The primary topic for these questions is: **${topic}**.
@@ -88,7 +88,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
 `;
 
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-2.0-flash-001',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",

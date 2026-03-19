@@ -18,18 +18,14 @@ export async function GET(
       );
     }
 
-    const testAttempt = await prisma.testAttempt.findUnique({
+    const test = await prisma.test.findUnique({
       where: { id: id },
       include: {
-        test: {
-          include: {
-            questions: true
-          }
-        }
+        questions: true
       }
     });
 
-    if (!testAttempt || testAttempt.userId !== session.user.id) {
+    if (!test || test.userId !== session.user.id) {
       return NextResponse.json(
         { message: 'Test not found' },
         { status: 404 }
@@ -38,7 +34,7 @@ export async function GET(
 
     return NextResponse.json({
       message: 'Test fetched successfully',
-      test: testAttempt,
+      test: test,
     });
   } catch (error) {
     console.error('Test fetch error:', error);

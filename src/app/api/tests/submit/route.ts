@@ -19,24 +19,20 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!test) {
-      return NextResponse.json({ error: 'Test not found' }, { status: 404 });
-    }
-
     // Calculate score
-    const correctCount = answers.reduce((acc: number, answer: number, index: number) => {
-      if (answer === null || answer === undefined) return acc;
+    const correctCount = (answers as number[]).reduce((acc: number, answer: number, index: number) => {
+      if (answer === -1) return acc;
       return acc + (answer === test.questions[index].correctAnswer ? 1 : 0);
     }, 0);
 
-    const score = Math.round(correctCount); // Storing integer score
+    const score = Math.round(correctCount);
 
-    // Save test result (TestAttempt)
+    // Save test result
     const testAttempt = await prisma.testAttempt.create({
       data: {
         userId: session.user.id,
         testId: test.id,
-        answers,
+        answers: answers as number[],
         score,
         completed: true,
         completedAt: new Date(),
@@ -53,21 +49,32 @@ export async function POST(request: Request) {
       testAttempt.id
     );
 
+    // Calculate detailed results for the frontend
+    const detailedResults = test.questions.map((question: any, index: number) => {
+      const userAnswerIndex = (answers as number[])[index];
+      const isCorrect = userAnswerIndex === question.correctAnswer;
+      return {
+        question: question.question,
+        yourAnswer: userAnswerIndex !== -1 ? question.options[userAnswerIndex] : 'Not Answered',
+        correctAnswer: question.options[question.correctAnswer],
+        isCorrect,
+        explanation: question.explanation || ''
+      };
+    });
+
+    const percentage = (score / test.questions.length) * 100;
+
     return NextResponse.json({
       success: true,
       attempt: {
-        id: testAttempt.id,
         score,
-        answers,
         totalQuestions: test.questions.length,
-        test: {
-          id: test.id,
-          title: test.title,
-          questions: test.questions,
-        },
+        percentage,
+        results: detailedResults,
+        attemptId: testAttempt.id,
+        testId: test.id,
         completedAt: testAttempt.completedAt,
       },
-      attemptId: testAttempt.id,
       gamification: gamificationResult
     });
   } catch (error) {

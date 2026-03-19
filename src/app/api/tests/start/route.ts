@@ -100,7 +100,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'No Tests found for these PDF IDs' }, { status: 404 });
       }
 
-      const combinedQuestions = tests.flatMap(t => t.questions);
+      const combinedQuestions = tests.flatMap((t: any) => t.questions);
 
       if (combinedQuestions.length === 0) {
         return NextResponse.json({ error: 'No questions found associated with these PDFs' }, { status: 400 });

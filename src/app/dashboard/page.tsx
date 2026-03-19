@@ -34,7 +34,7 @@ interface Question {
   id: string;
   question: string;
   options: string[];
-  correctAnswer: string;
+  correctAnswer: number;
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
 }
@@ -46,7 +46,7 @@ interface PDFFile {
   questions: Array<{
     question: string;
     options: string[];
-    correctAnswer: string;
+    correctAnswer: number;
     explanation: string;
     difficulty: 'easy' | 'medium' | 'hard';
   }>;
@@ -483,18 +483,23 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-500 font-medium">Manage your learning journey</p>
+          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 font-medium text-sm sm:text-base">Manage your learning journey</p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-6 bg-white p-2 pr-6 rounded-full shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100 text-amber-700 font-black text-sm">
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white p-2 pr-4 sm:pr-6 rounded-[2rem] sm:rounded-full shadow-xl shadow-gray-100/50 border border-gray-100 w-full lg:w-auto"
+        >
+          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full border border-amber-100 text-amber-700 font-black text-sm whitespace-nowrap">
             <span>🔥</span>
-            <span>{userStats?.streak || 0}</span>
+            <span>{userStats?.streak || 0} Day Streak</span>
           </div>
           
-          <div className="hidden md:flex flex-col gap-1 w-24">
+          <div className="hidden sm:flex flex-col gap-1 w-24">
              <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-indigo-400">
                <span>LVL {userStats?.level || 1}</span>
                <span>{Math.floor(((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
@@ -508,13 +513,13 @@ export default function Dashboard() {
              </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100">
+          <div className="flex items-center gap-3 ml-auto sm:ml-0 border-l border-gray-100 pl-4 sm:border-none sm:pl-0">
+            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100 flex-shrink-0">
               {session?.user?.name?.[0] || 'U'}
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Level {userStats?.level || 1}</span>
-              <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors whitespace-nowrap">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rank: Challenger</span>
+              <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors whitespace-nowrap text-sm">
                 {session?.user?.name || 'User'}
               </button>
             </div>
@@ -581,18 +586,18 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="current_affair" className="space-y-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-              <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
-              <Button variant="outline" className="rounded-full px-6 font-bold" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
-              <Button variant="outline" className="rounded-full px-6 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
-              <Button variant="outline" className="rounded-full px-6 font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100" onClick={() => setIsMathModalOpen(true)}>Scan Math 📸</Button>
-              <Button className="rounded-full px-8 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
+          <div className="flex flex-col xl:flex-row justify-between items-stretch lg:items-center gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row lg:flex-wrap gap-3 w-full xl:w-auto">
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => startPredefinedTest('current-affairs')}>Current Affairs</Button>
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => startPredefinedTest('general-knowledge')}>General Knowledge</Button>
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 flex-1 lg:flex-none" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
+              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 flex-1 lg:flex-none" onClick={() => setIsMathModalOpen(true)}>Scan Math 📸</Button>
+              <Button className="rounded-2xl h-12 px-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 col-span-2 md:col-span-1 lg:flex-none" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
             </div>
-            <div className="flex gap-4 w-full lg:max-w-md">
-              <Input placeholder="Search your tests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 rounded-xl bg-white border-gray-100" />
+            <div className="flex flex-col sm:flex-row gap-4 w-full xl:max-w-md">
+              <Input placeholder="Search your tests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 rounded-2xl h-12 bg-white border-gray-100 shadow-sm" />
               <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
-                <SelectTrigger className="w-[140px] rounded-xl bg-white border-gray-100">
+                <SelectTrigger className="w-full sm:w-[160px] rounded-2xl h-12 bg-white border-gray-100 shadow-sm">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
@@ -785,7 +790,7 @@ export default function Dashboard() {
                 <p className="font-black text-gray-900 mb-4">Q{idx + 1}: {q.question}</p>
                 <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
                   {q.options.map((opt, i) => (
-                    <div key={i} className={`p-3 rounded-xl border ${opt === q.correctAnswer ? 'bg-green-100 border-green-200 text-green-800' : 'bg-white border-gray-200 text-gray-600'}`}>
+                    <div key={i} className={`p-3 rounded-xl border ${i === q.correctAnswer ? 'bg-green-100 border-green-200 text-green-800' : 'bg-white border-gray-200 text-gray-600'}`}>
                       {opt}
                     </div>
                   ))}
