@@ -46,124 +46,207 @@ export async function generateMCQs(pdfText: string, topic: string, numQuestions:
   // """
   // ${truncatedText}
   // """`;
+  //   const prompt = `
+  // You are an advanced AI Question Generator capable of adapting your expertise dynamically across domains such as:
+  // - Academic subjects (Science, History, Economics, etc.)
+  // - General Knowledge
+  // - Current Affairs (recent events)
+  // - Document-based learning (PDF content)
+
+  // ---
+
+  // ### CONTEXT
+  // Topic: **${topic}**
+  // Number of Questions: ${numQuestions}
+
+  // ### SOURCE PRIORITY LOGIC (STRICT)
+
+  // 1. If "PDF Content" is meaningful:
+  //    → Generate questions STRICTLY from it
+  //    → Do NOT introduce external knowledge unless absolutely necessary
+
+  // 2. If PDF Content is weak/empty:
+  //    → Use your internal knowledge based on the topic
+
+  // 3. If topic implies "recent events" (e.g., current affairs, recent news):
+  //    → Focus ONLY on the latest reliable information
+  //    → Avoid outdated facts
+
+  // ---
+  // ### CURRENT AFFAIRS TIME RULE (CRITICAL)
+
+  // If the topic includes Current Affairs / Recent Events:
+  // → Focus ONLY on events from the **last 8–12 months**
+  // → Prefer:
+  //    - Major government decisions
+  //    - International events
+  //    - Important tech launches
+  //    - Sports winners & tournaments
+  //    - Awards & recognitions,${topic} etc
+
+  // → Avoid:
+  //    - Very recent breaking news (unstable)
+  //    - Outdated (>1 year old) events
+
+  // ---
+
+  // ### ADAPTIVE QUESTION STRATEGY
+
+  // Dynamically adjust based on content type:
+
+  // - If factual content → Use direct MCQs
+  // - If conceptual → Use reasoning-based questions
+  // - If event-based → Focus on outcomes, dates, significance
+  // - If dense PDF → Extract key insights and convert to questions
+
+  // ---
+
+  // ### DIFFICULTY DISTRIBUTION
+
+  // - 30% Easy (direct recall)
+  // - 50% Medium (understanding-based)
+  // - 20% Hard (analytical / tricky)
+
+  // ---
+
+  // ### DISTRACTOR ENGINEERING (VERY IMPORTANT)
+
+  // Each question must have 4 high-quality options:
+  // - All options must be plausible
+  // - Avoid obvious wrong answers
+  // - Use close variations, logical traps, or related concepts
+
+  // ---
+
+  // ### QUESTION VARIETY
+
+  // Include a mix of:
+  // - Direct factual questions
+  // - Conceptual understanding
+  // - Statement-based (which are correct?)
+  // - Assertion-Reason (if applicable)
+
+  // ---
+
+  // ### EXPLANATION RULES
+
+  // - Clearly justify the correct answer
+  // - Keep concise but informative
+  // - Reference PDF content when used
+
+  // ---
+
+  // ### STRICT OUTPUT FORMAT
+
+  // Return ONLY valid JSON (no markdown, no extra text):
+
+  // [
+  //   {
+  //     "question": "Question text",
+  //     "options": ["A", "B", "C", "D"],
+  //     "correctAnswer": 0,
+  //     "explanation": "Explanation"
+  //   }
+  // ]
+
+  // ---
+
+  // ### VALIDATION BEFORE OUTPUT
+
+  // - Ensure exactly ${numQuestions} questions
+  // - No duplicates
+  // - No vague wording
+  // - Ensure JSON is perfectly valid
+
+  // ---
+
+  // ### PDF CONTENT
+  // """
+  // ${truncatedText}
+  // """
+  // `;
   const prompt = `
-You are an advanced AI Question Generator capable of adapting your expertise dynamically across domains such as:
-- Academic subjects (Science, History, Economics, etc.)
-- General Knowledge
-- Current Affairs (recent events)
-- Document-based learning (PDF content)
+You are an expert MCQ generator and assessment designer.
 
----
+Your task is to generate high-quality multiple-choice questions based on the given inputs.
 
-### CONTEXT
-Topic: **${topic}**
+----------------------
+INPUT
+----------------------
+Topic: ${topic}
 Number of Questions: ${numQuestions}
 
-### SOURCE PRIORITY LOGIC (STRICT)
-
-1. If "PDF Content" is meaningful:
-   → Generate questions STRICTLY from it
-   → Do NOT introduce external knowledge unless absolutely necessary
-
-2. If PDF Content is weak/empty:
-   → Use your internal knowledge based on the topic
-
-3. If topic implies "recent events" (e.g., current affairs, recent news):
-   → Focus ONLY on the latest reliable information
-   → Avoid outdated facts
-
----
-### CURRENT AFFAIRS TIME RULE (CRITICAL)
-
-If the topic includes Current Affairs / Recent Events:
-→ Focus ONLY on events from the **last 8–12 months**
-→ Prefer:
-   - Major government decisions
-   - International events
-   - Important tech launches
-   - Sports winners & tournaments
-   - Awards & recognitions,${topic} etc
-
-→ Avoid:
-   - Very recent breaking news (unstable)
-   - Outdated (>1 year old) events
-
----
-
-### ADAPTIVE QUESTION STRATEGY
-
-Dynamically adjust based on content type:
-
-- If factual content → Use direct MCQs
-- If conceptual → Use reasoning-based questions
-- If event-based → Focus on outcomes, dates, significance
-- If dense PDF → Extract key insights and convert to questions
-
----
-
-### DIFFICULTY DISTRIBUTION
-
-- 30% Easy (direct recall)
-- 50% Medium (understanding-based)
-- 20% Hard (analytical / tricky)
-
----
-
-### DISTRACTOR ENGINEERING (VERY IMPORTANT)
-
-Each question must have 4 high-quality options:
-- All options must be plausible
-- Avoid obvious wrong answers
-- Use close variations, logical traps, or related concepts
-
----
-
-### QUESTION VARIETY
-
-Include a mix of:
-- Direct factual questions
-- Conceptual understanding
-- Statement-based (which are correct?)
-- Assertion-Reason (if applicable)
-
----
-
-### EXPLANATION RULES
-
-- Clearly justify the correct answer
-- Keep concise but informative
-- Reference PDF content when used
-
----
-
-### STRICT OUTPUT FORMAT
-
-Return ONLY valid JSON (no markdown, no extra text):
-
-[
-  {
-    "question": "Question text",
-    "options": ["A", "B", "C", "D"],
-    "correctAnswer": 0,
-    "explanation": "Explanation"
-  }
-]
-
----
-
-### VALIDATION BEFORE OUTPUT
-
-- Ensure exactly ${numQuestions} questions
-- No duplicates
-- No vague wording
-- Ensure JSON is perfectly valid
-
----
-
-### PDF CONTENT
+PDF Content:
 """
 ${truncatedText}
 """
+
+----------------------
+SOURCE RULES (STRICT)
+----------------------
+- If the PDF content contains sufficient information:
+  → Generate ALL questions strictly from it
+  → Do NOT introduce external knowledge
+
+- If the PDF content is insufficient or unclear:
+  → Use accurate internal knowledge relevant to the topic
+
+----------------------
+QUESTION DESIGN RULES
+----------------------
+- Each question must test understanding, not just recall
+- Avoid vague or ambiguous wording
+- Ensure each question is clearly answerable
+
+----------------------
+DIFFICULTY DISTRIBUTION
+----------------------
+- 30% Easy (direct facts)
+- 50% Medium (conceptual understanding)
+- 20% Hard (analytical or tricky)
+
+----------------------
+OPTIONS (CRITICAL)
+----------------------
+- Exactly 4 options per question
+- All options must be plausible and relevant
+- Avoid obviously incorrect or joke answers
+- Randomize correct answer positions
+
+----------------------
+EXPLANATIONS
+----------------------
+- Clearly explain WHY the correct answer is correct
+- Keep concise (1–3 sentences)
+- Reference the PDF content when applicable
+
+----------------------
+OUTPUT FORMAT (STRICT)
+----------------------
+Return ONLY valid JSON. No markdown, no extra text.
+
+[
+  {
+    "question": "string",
+    "options": ["string", "string", "string", "string"],
+    "correctAnswer": number,
+    "explanation": "string"
+  }
+]
+
+----------------------
+VALIDATION RULES
+----------------------
+- Exactly ${numQuestions} questions
+- No duplicate questions
+- No duplicate options within a question
+- Ensure JSON is valid and parseable
+- correctAnswer must be an index (0–3)
+
+----------------------
+FINAL INSTRUCTION
+----------------------
+Generate the output now.
 `;
   try {
     const result = await genAI.models.generateContent({
