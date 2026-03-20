@@ -5,6 +5,10 @@ import './globals.css';
 import { ThemeWrapper } from './theme-wrapper';
 import Script from 'next/script';
 
+export const metadata = {
+  icons: { icon: '/logo.png' },
+}
+
 export default function RootLayout({
   children,
 }: {

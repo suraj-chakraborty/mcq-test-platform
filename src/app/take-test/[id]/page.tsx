@@ -9,7 +9,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { LoadingSpinner } from '@/app/components/LoadingSpinner';
+import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Question {
   question: string;
@@ -140,7 +141,7 @@ export default function TakeTestPage() {
   };
 
   if (status === 'loading' || loading) {
-    return <LoadingSpinner />;
+    return <Loading />;
   }
 
   if (!tests || tests.questions.length === 0 || answers.length === 0) {
@@ -165,6 +166,12 @@ export default function TakeTestPage() {
 
   return (
     <div className="container mx-auto py-8">
+      <div className="flex items-center gap-3 mb-12">
+        <div className="h-10 w-10 bg-indigo-600 rounded-xl p-2 flex items-center justify-center shadow-lg shadow-indigo-100 shrink-0">
+          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+        </div>
+        <span className="text-2xl font-black text-gray-900 tracking-tighter">MCQ<span className="text-indigo-600">Test</span></span>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">

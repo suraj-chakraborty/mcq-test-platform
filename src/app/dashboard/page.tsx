@@ -24,8 +24,7 @@ import TestResults from '@/app/components/TestResults';
 import BattleRoom from '@/app/components/BattleRoom';
 import FlashcardDeck from '@/app/components/FlashcardDeck';
 import MathPhotoUpload from '@/app/components/MathPhotoUpload';
-import Loading from '../loading';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain } from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
@@ -115,6 +114,7 @@ export default function Dashboard() {
   const [isPredefinedModalOpen, setIsPredefinedModalOpen] = useState(false);
   const [selectedPredefinedType, setSelectedPredefinedType] = useState<'current-affairs' | 'general-knowledge' | null>(null);
   const [predefinedQuestionCount, setPredefinedQuestionCount] = useState(10);
+  const [isGeneratingPredefined, setIsGeneratingPredefined] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -314,7 +314,7 @@ export default function Dashboard() {
 
   const startPredefinedTest = async (type: 'current-affairs' | 'general-knowledge', count: number = 10) => {
     try {
-      setIsLoading(true);
+      setIsGeneratingPredefined(true);
       const response = await fetch('/api/tests/start', {
         method: 'POST',
         headers: {
@@ -332,6 +332,9 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error starting test:', error);
       toast.error('Failed to start test');
+    } finally {
+      setIsGeneratingPredefined(false);
+      setIsPredefinedModalOpen(false);
     }
   };
 
@@ -469,10 +472,10 @@ export default function Dashboard() {
 
   if (battleRoomCode && session?.user?.id) {
     return (
-      <BattleRoom 
-        roomCode={battleRoomCode} 
-        userId={session.user.id} 
-        onExit={() => setBattleRoomCode(null)} 
+      <BattleRoom
+        roomCode={battleRoomCode}
+        userId={session.user.id}
+        onExit={() => setBattleRoomCode(null)}
       />
     );
   }
@@ -487,34 +490,46 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <AnimatePresence>
+        {(isGeneratingPredefined || (isLoading && tests.length > 0)) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <Loading />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 font-medium text-sm sm:text-base">Manage your learning journey</p>
         </motion.div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }} 
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white p-2 pr-4 sm:pr-6 rounded-[2rem] sm:rounded-full shadow-xl shadow-gray-100/50 border border-gray-100 w-full lg:w-auto"
         >
           <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full border border-amber-100 text-amber-700 font-black text-sm whitespace-nowrap">
             <span>🔥</span>
             <span>{userStats?.streak || 0} Day Streak</span>
           </div>
-          
+
           <div className="hidden sm:flex flex-col gap-1 w-24">
-             <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-indigo-400">
-               <span>LVL {userStats?.level || 1}</span>
-               <span>{Math.floor(((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
-             </div>
-             <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100}%` }}
-                  className="h-full bg-indigo-500"
-                />
-             </div>
+            <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-indigo-400">
+              <span>LVL {userStats?.level || 1}</span>
+              <span>{Math.floor(((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100}%` }}
+                className="h-full bg-indigo-500"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-3 ml-auto sm:ml-0 border-l border-gray-100 pl-4 sm:border-none sm:pl-0">
@@ -548,45 +563,45 @@ export default function Dashboard() {
         </TabsList>
 
         <TabsContent value="study" className="space-y-8">
-           {isStudying ? (
-             <FlashcardDeck 
-               cards={dueFlashcards} 
-               onComplete={() => {
-                 setIsStudying(false);
-                 fetchDueCards();
-               }} 
-             />
-           ) : (
-             <div className="max-w-xl mx-auto py-12 text-center">
-                <div className="h-32 w-32 bg-indigo-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                   <Brain className="h-16 w-16 text-indigo-600" />
+          {isStudying ? (
+            <FlashcardDeck
+              cards={dueFlashcards}
+              onComplete={() => {
+                setIsStudying(false);
+                fetchDueCards();
+              }}
+            />
+          ) : (
+            <div className="max-w-xl mx-auto py-12 text-center">
+              <div className="h-32 w-32 bg-indigo-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-inner p-8">
+                <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain opacity-40 grayscale" />
+              </div>
+              <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Active Recall Lab</h2>
+              <p className="text-gray-500 font-medium mb-10 max-w-sm mx-auto">
+                {dueFlashcards.length > 0
+                  ? `You have ${dueFlashcards.length} cards due for review. Let's strengthen those neural pathways!`
+                  : "Your brain is well-rested! No cards due for review. Create new decks from your tests below."}
+              </p>
+              {dueFlashcards.length > 0 && (
+                <Button
+                  className="h-16 px-12 rounded-3xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black shadow-2xl shadow-indigo-100 mb-8"
+                  onClick={() => setIsStudying(true)}
+                >
+                  START STUDY SESSION
+                </Button>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 text-left">
+                <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">⚡</div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">How it works</h4>
+                    <p className="text-sm text-gray-500">We use the SM-2 algorithm to show you difficult questions more often, ensuring you never forget what you've learned.</p>
+                  </div>
                 </div>
-                <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Active Recall Lab</h2>
-                <p className="text-gray-500 font-medium mb-10 max-w-sm mx-auto">
-                  {dueFlashcards.length > 0 
-                    ? `You have ${dueFlashcards.length} cards due for review. Let's strengthen those neural pathways!`
-                    : "Your brain is well-rested! No cards due for review. Create new decks from your tests below."}
-                </p>
-                {dueFlashcards.length > 0 && (
-                  <Button 
-                    className="h-16 px-12 rounded-3xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black shadow-2xl shadow-indigo-100 mb-8"
-                    onClick={() => setIsStudying(true)}
-                  >
-                    START STUDY SESSION
-                  </Button>
-                )}
-                
-                <div className="grid grid-cols-1 gap-4 text-left">
-                   <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">⚡</div>
-                      <div>
-                         <h4 className="font-bold text-gray-900">How it works</h4>
-                         <p className="text-sm text-gray-500">We use the SM-2 algorithm to show you difficult questions more often, ensuring you never forget what you've learned.</p>
-                      </div>
-                   </div>
-                </div>
-             </div>
-           )}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="current_affair" className="space-y-8">
@@ -634,9 +649,9 @@ export default function Dashboard() {
                         <CardTitle className="flex justify-between items-start gap-4">
                           <span className="truncate text-xl font-black text-gray-900">{test.title}</span>
                           <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
                               title="Share"
                               onClick={(e) => {
@@ -648,9 +663,9 @@ export default function Dashboard() {
                             >
                               🔗
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-lg"
                               title="Start Battle"
                               onClick={(e) => {
@@ -660,18 +675,18 @@ export default function Dashboard() {
                             >
                               ⚔️
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-amber-600 hover:bg-amber-50 rounded-lg"
                               title="Leaderboard"
                               onClick={() => router.push(`/leaderboard/${test.id}`)}
                             >
                               🏆
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
                               title="Create Flashcards"
                               onClick={(e) => {
@@ -812,10 +827,10 @@ export default function Dashboard() {
         <DialogContent className="max-w-2xl rounded-3xl">
           <DialogHeader><DialogTitle className="text-2xl font-black">Edit Test Details</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-             <p className="text-gray-500 font-medium">Coming soon: Full inline question editing. Use the standard Edit button for now.</p>
-             <Button className="w-full bg-indigo-600" onClick={() => {
-               if(editingTest) router.push(`/edit-test/${editingTest.id}`);
-             }}>Go to Editor</Button>
+            <p className="text-gray-500 font-medium">Coming soon: Full inline question editing. Use the standard Edit button for now.</p>
+            <Button className="w-full bg-indigo-600" onClick={() => {
+              if (editingTest) router.push(`/edit-test/${editingTest.id}`);
+            }}>Go to Editor</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -839,7 +854,7 @@ export default function Dashboard() {
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setShowCreateForm(false)}>Cancel</Button>
-              <Button type="submit" className="bg-indigo-600 rounded-xl font-bold px-8" disabled={isLoading}>{isLoading ? 'Generating...' : 'Start Generation'}</Button>
+              <Button type="submit" className="bg-indigo-600 rounded-xl font-bold px-8" disabled={isLoading}>Start Generation</Button>
             </div>
           </form>
         </DialogContent>
@@ -861,12 +876,12 @@ export default function Dashboard() {
       <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
 
       {isMathModalOpen && (
-        <MathPhotoUpload 
-          onClose={() => setIsMathModalOpen(false)} 
+        <MathPhotoUpload
+          onClose={() => setIsMathModalOpen(false)}
           onSuccess={(test) => {
             setIsMathModalOpen(false);
             setSelectedTest(test);
-          }} 
+          }}
         />
       )}
       <Dialog open={isPredefinedModalOpen} onOpenChange={setIsPredefinedModalOpen}>
@@ -880,12 +895,12 @@ export default function Dashboard() {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-400">Number of Questions</label>
                 <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{predefinedQuestionCount} Questions</span>
               </div>
-              <input 
-                type="range" 
-                min="10" 
-                max="30" 
-                step="1" 
-                value={predefinedQuestionCount} 
+              <input
+                type="range"
+                min="10"
+                max="30"
+                step="1"
+                value={predefinedQuestionCount}
                 onChange={(e) => setPredefinedQuestionCount(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all"
               />
@@ -895,7 +910,7 @@ export default function Dashboard() {
                 <span>30 Qs</span>
               </div>
             </div>
-            
+
             <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 flex items-center gap-4">
               <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">⏱️</div>
               <div>
@@ -905,20 +920,20 @@ export default function Dashboard() {
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              <Button 
+              <Button
                 className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 group"
                 onClick={() => {
                   if (selectedPredefinedType) {
                     startPredefinedTest(selectedPredefinedType, predefinedQuestionCount);
-                    setIsPredefinedModalOpen(false);
                   }
                 }}
+                disabled={isGeneratingPredefined}
               >
                 START CHALLENGE <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
               </Button>
-              <Button 
-                variant="ghost" 
-                className="rounded-xl font-bold text-gray-400" 
+              <Button
+                variant="ghost"
+                className="rounded-xl font-bold text-gray-400"
                 onClick={() => setIsPredefinedModalOpen(false)}
               >
                 Go Back
