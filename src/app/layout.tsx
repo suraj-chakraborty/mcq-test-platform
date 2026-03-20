@@ -17,10 +17,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-         <ThemeWrapper>
-          {children}
-          <Toaster />
-        </ThemeWrapper>
+          <Toaster 
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              className: 'group',
+            }}
+          />
+          <ThemeWrapper>
+            {children}
+          </ThemeWrapper>
           <Script
             src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1/"}track.js`}
             data-site-id="cmlic6jl90001crhxbvgl0m0j"
