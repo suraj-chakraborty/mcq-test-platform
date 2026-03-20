@@ -15,6 +15,8 @@ interface TestResult {
   updatedAt: string;
 }
 
+import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
+
 export default function TestResultsPage() {
   const params = useParams();
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function TestResultsPage() {
         }
 
         const data = await response.json();
-        
+
         // Handle array response - find the specific attempt
         if (Array.isArray(data)) {
           const specificAttempt = data.find(attempt => attempt.id === params.id);
@@ -60,11 +62,7 @@ export default function TestResultsPage() {
   }, [params.attemptId, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!result) {
@@ -83,7 +81,7 @@ export default function TestResultsPage() {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white shadow rounded-lg p-6">
           <h1 className="text-2xl font-bold mb-6">Test Results</h1>
-          
+
           <div className="mb-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -103,7 +101,7 @@ export default function TestResultsPage() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-gray-600">Total Questions</p>
-                <p className="text-xl font-bold">{result.totalQuestions}</p>
+                <p className="text-xl font-bold">{result.totalQuestions || (result as any).questions?.length || (result.correctAnswers + result.wrongAnswers) || 0}</p>
               </div>
               <div>
                 <p className="text-gray-600">Correct Answers</p>

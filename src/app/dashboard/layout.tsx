@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
-import Loading from '../loading';
+import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { Menu, X, LayoutDashboard, FilePlus, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,9 +40,15 @@ export default function DashboardLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Logo */}
-            <div className="flex items-center">
-              <span className="text-xl font-black text-indigo-600 tracking-tighter sm:tracking-normal">
-                MCQ<span className="text-gray-900 ml-1">Test Platform</span>
+            <div
+              className="flex items-center gap-2.5 group cursor-pointer"
+              onClick={() => router.push('/dashboard')}
+            >
+              <div className="h-12 w-12 group-hover:scale-105 transition-transform">
+                <img src="icon.png" alt="Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-xl font-black text-gray-900 tracking-tight">
+                MCQ<span className="text-indigo-600">Test</span><span className="text-black pl-2">Platform</span>
               </span>
             </div>
 
@@ -63,7 +69,7 @@ export default function DashboardLayout({
               <div className="flex items-center gap-3 pl-2">
                 <span className="text-sm font-bold text-gray-700">{session?.user?.name}</span>
                 <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50" onClick={() => signOut()}>
-                   <LogOut className="h-5 w-5" />
+                  <LogOut className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -109,13 +115,13 @@ export default function DashboardLayout({
                 <div className="pt-4 border-t border-gray-100 mt-4">
                   <div className="flex items-center justify-between px-4 py-2">
                     <div className="flex items-center gap-3">
-                       <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                          {session?.user?.name?.[0] || 'U'}
-                       </div>
-                       <span className="font-bold text-gray-900">{session?.user?.name}</span>
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                        {session?.user?.name?.[0] || 'U'}
+                      </div>
+                      <span className="font-bold text-gray-900">{session?.user?.name}</span>
                     </div>
                     <Button variant="ghost" size="icon" className="text-red-500" onClick={() => signOut()}>
-                       <LogOut className="h-5 w-5" />
+                      <LogOut className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>

@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import Loading from '@/app/loading';
+import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
@@ -51,7 +51,7 @@ export default function TestResults() {
         }
         const data = await response.json();
         setAttempt(data);
-        
+
         // Trigger confetti for high scores
         const totalQs = data.totalQuestions || data.questions?.length || 1;
         const scorePercentage = Math.round((data.score / totalQs) * 100);
@@ -113,7 +113,7 @@ export default function TestResults() {
                   🎉🏆✨
                 </motion.div>
               )}
-              
+
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -122,19 +122,19 @@ export default function TestResults() {
                 <div className="inline-block p-4 rounded-full bg-indigo-50 mb-6">
                   <h2 className="text-6xl font-black text-gray-900 leading-none">
                     <span className="text-indigo-600">{attempt.score}</span>
-                    <span className="text-gray-300 text-3xl"> / {attempt.totalQuestions === 0 ? attempt.questions.length : attempt.totalQuestions}</span>
+                    <span className="text-gray-300 text-3xl"> / {attempt.totalQuestions || attempt.questions?.length || 0}</span>
                   </h2>
                 </div>
-                
+
                 <div className="flex flex-col items-center justify-center gap-4 mb-8">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     className="h-4 bg-indigo-600 rounded-full max-w-md w-full overflow-hidden"
                   >
                     <div className="h-full bg-indigo-400 opacity-50 animate-pulse" />
                   </motion.div>
-                  
+
                   <div className="flex items-center gap-6">
                     <div className="flex flex-col items-center">
                       <span className="text-3xl font-black text-gray-800">{percentage}%</span>
@@ -144,7 +144,7 @@ export default function TestResults() {
                       <>
                         <div className="h-10 w-px bg-gray-100" />
                         <div className="flex flex-col items-center">
-                          <motion.span 
+                          <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             className="text-3xl font-black text-indigo-600"
@@ -157,9 +157,8 @@ export default function TestResults() {
                     )}
                     <div className="h-10 w-px bg-gray-100" />
                     <motion.p
-                      className={`text-2xl font-black px-8 py-2 rounded-xl ${
-                        rlt === "passed" ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}
+                      className={`text-2xl font-black px-8 py-2 rounded-xl ${rlt === "passed" ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}
                       animate={percentage >= 90 ? { scale: [1, 1.05, 1], filter: 'brightness(1.1)' } : {}}
                       transition={{ repeat: Infinity, duration: 2 }}
                     >
@@ -169,12 +168,12 @@ export default function TestResults() {
                 </div>
 
                 <div className="flex gap-2 justify-center mb-6">
-                   {percentage === 100 && (
-                     <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">🎯 Perfect Score</span>
-                   )}
-                   {attempt.xpEarned && attempt.xpEarned > 150 && (
-                     <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-indigo-200">🔥 Elite Performance</span>
-                   )}
+                  {percentage === 100 && (
+                    <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">🎯 Perfect Score</span>
+                  )}
+                  {attempt.xpEarned && attempt.xpEarned > 150 && (
+                    <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-indigo-200">🔥 Elite Performance</span>
+                  )}
                 </div>
 
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
@@ -192,11 +191,10 @@ export default function TestResults() {
               {attempt.questions.map((question: any, index: number) => (
                 <div
                   key={question.id || index}
-                  className={`p-6 rounded-2xl border-2 transition-all ${
-                    question.userAnswer === question.correctAnswer
+                  className={`p-6 rounded-2xl border-2 transition-all ${question.userAnswer === question.correctAnswer
                       ? 'bg-green-50/50 border-green-100'
                       : 'bg-red-50/50 border-red-100'
-                  }`}
+                    }`}
                 >
                   <h3 className="font-bold mb-4 text-gray-800 flex gap-3">
                     <span className="bg-white rounded-lg px-2 py-1 shadow-sm text-sm border">{index + 1}</span>
@@ -210,8 +208,8 @@ export default function TestResults() {
                       const bgClass = isCorrect
                         ? 'bg-white border-green-500 text-green-700'
                         : isUserSelected
-                        ? 'bg-white border-red-500 text-red-700'
-                        : 'bg-gray-50/50 border-transparent text-gray-500';
+                          ? 'bg-white border-red-500 text-red-700'
+                          : 'bg-gray-50/50 border-transparent text-gray-500';
 
                       return (
                         <div
