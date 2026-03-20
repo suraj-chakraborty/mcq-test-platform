@@ -65,11 +65,11 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
     <div className="max-w-xl mx-auto py-10 px-4">
       <div className="flex justify-between items-center mb-8">
         <div className="flex flex-col">
-           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Study Session</span>
-           <h2 className="text-2xl font-black text-gray-900">Reviewing {sessionCards.length} Cards</h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Study Session</span>
+          <h2 className="text-2xl font-black text-gray-900">Reviewing {sessionCards.length} Cards</h2>
         </div>
         <div className="bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100 font-black text-indigo-600">
-           {currentIndex + 1} / {sessionCards.length}
+          {currentIndex + 1} / {sessionCards.length}
         </div>
       </div>
 
@@ -81,15 +81,16 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
             animate={{ rotateY: isFlipped ? 180 : 0, opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.4, type: 'spring', damping: 20 }}
-            className={`w-full h-full cursor-pointer rounded-[40px] shadow-2xl overflow-hidden ${
-              isFlipped ? 'bg-white' : 'bg-indigo-600'
-            }`}
+            className={`w-full h-full cursor-pointer rounded-[40px] shadow-2xl overflow-hidden ${isFlipped ? 'bg-white' : 'bg-indigo-600'
+              }`}
             onClick={() => !isFlipped && setIsFlipped(true)}
           >
             <div className="h-full flex flex-col p-10 items-center justify-center text-center">
               {!isFlipped ? (
                 <>
-                  <Brain className="h-16 w-16 text-indigo-300 mb-6 animate-pulse" />
+                  <div className="h-20 w-20 mb-6 animate-pulse p-2">
+                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain  opacity-40" />
+                  </div>
                   <p className="text-2xl font-bold text-white leading-tight">
                     {currentCard.question.question}
                   </p>
@@ -103,9 +104,9 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
                   </p>
                   {currentCard.question.explanation && (
                     <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 text-left">
-                       <p className="text-sm font-medium text-gray-700 leading-relaxed italic">
-                         "{currentCard.question.explanation}"
-                       </p>
+                      <p className="text-sm font-medium text-gray-700 leading-relaxed italic">
+                        "{currentCard.question.explanation}"
+                      </p>
                     </div>
                   )}
                 </div>
@@ -118,40 +119,40 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
       <div className="flex flex-col gap-6">
         <AnimatePresence>
           {isFlipped && (
-            <motion.div 
+            <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               className="grid grid-cols-4 gap-3"
             >
-               <Button onClick={() => handleReview(1)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-red-100 text-red-600 hover:bg-red-50">
-                  <XCircle className="h-5 w-5 mb-1" />
-                  <span className="text-[8px] font-black uppercase">Forget</span>
-               </Button>
-               <Button onClick={() => handleReview(3)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-amber-100 text-amber-600 hover:bg-amber-50">
-                  <RotateCcw className="h-5 w-5 mb-1" />
-                  <span className="text-[8px] font-black uppercase">Hard</span>
-               </Button>
-               <Button onClick={() => handleReview(4)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-indigo-100 text-indigo-600 hover:bg-indigo-50">
-                  <CheckCircle2 className="h-5 w-5 mb-1" />
-                  <span className="text-[8px] font-black uppercase">Good</span>
-               </Button>
-               <Button onClick={() => handleReview(5)} className="h-16 rounded-3xl flex flex-col items-center justify-center bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100">
-                  <Rocket className="h-5 w-5 mb-1" />
-                  <span className="text-[8px] font-black uppercase">Perfect</span>
-               </Button>
+              <Button onClick={() => handleReview(1)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-red-100 text-red-600 hover:bg-red-50">
+                <XCircle className="h-5 w-5 mb-1" />
+                <span className="text-[8px] font-black uppercase">Forget</span>
+              </Button>
+              <Button onClick={() => handleReview(3)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-amber-100 text-amber-600 hover:bg-amber-50">
+                <RotateCcw className="h-5 w-5 mb-1" />
+                <span className="text-[8px] font-black uppercase">Hard</span>
+              </Button>
+              <Button onClick={() => handleReview(4)} variant="outline" className="h-16 rounded-3xl flex flex-col items-center justify-center border-indigo-100 text-indigo-600 hover:bg-indigo-50">
+                <CheckCircle2 className="h-5 w-5 mb-1" />
+                <span className="text-[8px] font-black uppercase">Good</span>
+              </Button>
+              <Button onClick={() => handleReview(5)} className="h-16 rounded-3xl flex flex-col items-center justify-center bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100">
+                <Rocket className="h-5 w-5 mb-1" />
+                <span className="text-[8px] font-black uppercase">Perfect</span>
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {!isFlipped && (
-          <Button 
+          <Button
             className="h-16 rounded-3xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black shadow-xl shadow-indigo-100"
             onClick={() => setIsFlipped(true)}
           >
             REVEAL ANSWER
           </Button>
         )}
-        
+
         <Button variant="ghost" className="text-gray-400 font-bold" onClick={onComplete}>End Session</Button>
       </div>
 

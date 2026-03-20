@@ -9,6 +9,8 @@ interface Pdf {
   isReference: boolean;
 }
 
+import { LoadingSpinner as Loading } from './LoadingSpinner';
+
 export default function PdfList() {
   const [pdfs, setPdfs] = useState<Pdf[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +50,7 @@ export default function PdfList() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (pdfs.length === 0) {

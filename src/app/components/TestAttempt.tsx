@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -9,6 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Flag } from 'lucide-react';
+
+import { LoadingSpinner as Loading } from './LoadingSpinner';
 
 interface Question {
   id: string;
@@ -83,7 +86,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
 
     try {
       // Ensure we have an array of length questions.length, filling with -1 for unanswered
-      const answersArray = Array.from({ length: test.questions.length }, (_, i) => 
+      const answersArray = Array.from({ length: test.questions.length }, (_, i) =>
         answers[i] !== undefined ? answers[i] : -1
       );
 
@@ -123,10 +126,28 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
 
   return (
     <div className="container mx-auto py-8">
+      <AnimatePresence>
+        {isSubmitting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <Loading />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>{test.title}</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-indigo-600 rounded-xl p-2 flex items-center justify-center shadow-lg shadow-indigo-100 shrink-0">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain " />
+              </div>
+              <span className="text-2xl font-black text-gray-900 tracking-tighter">MCQ<span className="text-indigo-600">Test</span></span>
+              <CardTitle className="text-xl font-black text-gray-900 truncate">{test.title}</CardTitle>
+            </div>
             <div className="text-lg font-semibold">
               Time Left: {formatTime(timeLeft)}
             </div>
@@ -145,9 +166,9 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
                 <h3 className="text-xl font-black text-gray-900 leading-tight">
                   {test.questions[currentQuestionIndex].question}
                 </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl"
                   onClick={async () => {
                     const reason = prompt('What is wrong with this question? (e.g. Typo, Wrong Answer)');
@@ -208,7 +229,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
                   {isSubmitting ? 'SUBMITTING...' : 'COMPLETE TEST'}
                 </Button>
               ) : (
-                <Button 
+                <Button
                   onClick={handleNext}
                   className="h-14 px-12 rounded-2xl font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 text-lg"
                 >
