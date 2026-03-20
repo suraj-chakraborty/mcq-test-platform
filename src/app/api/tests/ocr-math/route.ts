@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { generatedMCQSchema } from '@/lib/validations/test';
+import { generatedMCQSchema } from '@/app/lib/validations/test';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 

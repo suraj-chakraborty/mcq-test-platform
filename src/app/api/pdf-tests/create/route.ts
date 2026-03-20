@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import { GoogleGenAI } from '@google/genai';
-import { generatedMCQSchema } from '@/lib/validations/test';
+import { generatedMCQSchema } from '@/app/lib/validations/test';
+import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import formidable, { File } from 'formidable';
 import { Readable } from 'stream';
 
@@ -53,6 +54,31 @@ export async function POST(req: Request) {
     if (!title || !contextPDFs.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Extract metadata for each PDF
+    const processedContextPDFs = await Promise.all(contextPDFs.map(async (f: any) => {
+      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from(""); // formidable files might need different handling
+      const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
+      return { 
+        name: f.originalFilename, 
+        url: `/uploads/${f.newFilename}`,
+        fileSize: f.size,
+        pageCount
+      };
+    }));
+
+    const processedPyqPDFs = await Promise.all(pyqPDFs.map(async (f: any) => {
+      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
+      const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
+      return { 
+        name: f.originalFilename, 
+        url: `/uploads/${f.newFilename}`,
+        fileSize: f.size,
+        pageCount
+      };
+    }));
+
+    const pdfsData = [...processedContextPDFs, ...processedPyqPDFs];
 
     const prompt = `
 You are an expert question generator for educational purposes.
@@ -116,11 +142,6 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
 
     const validQuestions = validationResult.data;
 
-    // Collate PDF metadata
-    const pdfsData = [
-      ...contextPDFs.map((f: any) => ({ name: f.originalFilename, url: `/uploads/${f.newFilename}` })),
-      ...pyqPDFs.map((f: any) => ({ name: f.originalFilename, url: `/uploads/${f.newFilename}` }))
-    ];
 
     // Create Test in Prisma with nested Questions and PDFs
     const test = await prisma.test.create({

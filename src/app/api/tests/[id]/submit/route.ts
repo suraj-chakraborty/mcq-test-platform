@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { testAttemptSchema } from '@/lib/validations/test';
+import { testAttemptSchema } from '@/app/lib/validations/test';
 
 export async function POST(
   request: Request,

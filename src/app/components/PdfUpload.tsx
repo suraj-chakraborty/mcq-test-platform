@@ -23,6 +23,7 @@ interface MCQQuestion {
 interface PdfDocument {
   id: string;
   title: string;
+  name?: string;
   url: string;
   createdAt: string;
   fileSize: number;
@@ -205,12 +206,15 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
   const filteredAndSortedPdfs = useMemo(() => {
     return pdfs
       .filter(pdf => {
-        const matchesSearch = pdf.title.toLowerCase().includes(searchQuery.toLowerCase());
+        if (!pdf) return false;
+        const pdfTitle = (pdf as any)?.title || (pdf as any)?.name || '';
+        const safeSearchQuery = searchQuery || '';
+        const matchesSearch = pdfTitle.toLowerCase().includes(safeSearchQuery.toLowerCase());
         const matchesFilter = filterType === 'all'
           ? true
           : filterType === 'with-mcqs'
-            ? pdf.mcqs?.length > 0
-            : !pdf.mcqs?.length;
+            ? (pdf.mcqs?.length || 0) > 0
+            : !(pdf.mcqs?.length || 0);
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => {
@@ -315,13 +319,13 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
                         {Truncate(pdf.title, 30)}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        Size: {(pdf.fileSize / (1024 * 1024)).toFixed(2)}MB
+                        Size: {pdf.fileSize ? (pdf.fileSize / (1024 * 1024)).toFixed(2) + 'MB' : 'N/A'}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Pages: {pdf.pageCount}
+                        Pages: {pdf.pageCount || 'N/A'}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Uploaded: {new Date(pdf.createdAt).toLocaleDateString()}
+                        Uploaded: {pdf.createdAt ? new Date(pdf.createdAt).toLocaleDateString() : 'Unknown date'}
                       </p>
                       <p className="text-sm text-gray-500">
                         MCQs: {pdf.mcqs?.length || 0}

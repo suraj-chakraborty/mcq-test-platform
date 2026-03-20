@@ -86,6 +86,8 @@ model PdfDocument {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   url         String
+  fileSize    Int?
+  pageCount   Int?
   testId      String   @db.ObjectId
   test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
 
