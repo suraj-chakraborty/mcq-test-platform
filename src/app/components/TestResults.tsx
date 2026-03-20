@@ -32,7 +32,15 @@ export default function TestResults({ results, onClose }: TestResultsProps) {
     <div className="container mx-auto py-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Test Results</CardTitle>
+          <CardTitle className="text-2xl font-black flex items-center justify-between gap-3 w-full">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-indigo-600 rounded-xl p-2 flex items-center justify-center shadow-lg shadow-indigo-100">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain " />
+              </div>
+              <span className="text-2xl font-black text-gray-900 tracking-tighter">MCQ<span className="text-indigo-600">Test</span></span>
+            </div>
+            <span className="text-gray-400 font-medium text-lg uppercase tracking-widest">Performance</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
@@ -58,9 +66,8 @@ export default function TestResults({ results, onClose }: TestResultsProps) {
                         <div>
                           <div className="text-sm text-gray-500">Your Answer</div>
                           <div
-                            className={`${
-                              result.isCorrect ? 'text-green-600' : 'text-red-600'
-                            }`}
+                            className={`${result.isCorrect ? 'text-green-600' : 'text-red-600'
+                              }`}
                           >
                             {result.yourAnswer}
                           </div>

@@ -2,15 +2,16 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { LoadingSpinner } from './LoadingSpinner';
 import Truncate from './Truncate';
 
+import { LoadingSpinner as Loading } from './LoadingSpinner';
 
 interface MCQQuestion {
   question: string;
@@ -235,14 +236,18 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
       >
         <input {...getInputProps()} />
-        {isUploading && (
-          <div className="fixed inset-0 z-50 bg-white/70 backdrop-blur-sm flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <LoadingSpinner />
-              <p className="text-gray-700 text-sm">Uploading your PDF...</p>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {isUploading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100]"
+            >
+              <Loading />
+            </motion.div>
+          )}
+        </AnimatePresence>
         {isUploading === true ? (
           <div>
             <p>Uploading {currentFiles.length} files</p>

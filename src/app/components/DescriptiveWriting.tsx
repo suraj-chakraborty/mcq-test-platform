@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { LoadingSpinner } from './LoadingSpinner';
+import { LoadingSpinner as Loading } from './LoadingSpinner';
+// import Loading from '../loading';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Sparkles } from 'lucide-react';
 import OralExam from './OralExam';
 
@@ -176,7 +178,7 @@ export default function DescriptiveWriting() {
 
   const handleSubmit = async () => {
     if (!isTestActive) return;
-    
+
     setIsSubmitting(true);
     setError(null);
     try {
@@ -235,12 +237,24 @@ export default function DescriptiveWriting() {
 
   return (
     <div className="min-h-screen p-4">
+      <AnimatePresence>
+        {(isSubmitting || isLoading) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <Loading />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Card className="max-w-4xl mx-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Descriptive Writing Practice</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="rounded-full gap-2 border-indigo-200 text-indigo-600 font-bold"
             onClick={() => setIsOralExamOpen(true)}
             disabled={isTestActive}
@@ -288,12 +302,12 @@ export default function DescriptiveWriting() {
                   disabled={isLoading}
                 />
               </div>
-              <Button 
-                onClick={startTest} 
+              <Button
+                onClick={startTest}
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? <LoadingSpinner /> : 'Start Test'}
+                Start Test
               </Button>
             </>
           ) : (
@@ -346,7 +360,7 @@ export default function DescriptiveWriting() {
                 disabled={isSubmitting}
                 className="w-full"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Answer'}
+                Submit Answer
               </Button>
             </>
           )}
@@ -410,11 +424,11 @@ export default function DescriptiveWriting() {
           )}
         </DialogContent>
       </Dialog>
-      
+
       {isOralExamOpen && (
-        <OralExam 
-          question={question || "Explain the concept you are practicing."} 
-          onClose={() => setIsOralExamOpen(false)} 
+        <OralExam
+          question={question || "Explain the concept you are practicing."}
+          onClose={() => setIsOralExamOpen(false)}
         />
       )}
     </div>

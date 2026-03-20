@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { LoadingSpinner } from './LoadingSpinner';
+import { LoadingSpinner as Loading } from './LoadingSpinner';
+// import Loading from '../loading';
 
 interface TestHistory {
   id: string;
@@ -146,7 +147,7 @@ export default function DescriptiveHistory() {
   };
 
   if (isLoading) {
-    return <div><LoadingSpinner /></div>;
+    return <Loading />;
   }
 
   return (
