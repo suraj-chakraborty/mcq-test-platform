@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileUrl = await saveFile(file);
-    const text = await extractTextFromPdf(buffer);
+    const { text, pageCount } = await extractTextFromPdf(buffer);
     const mcqs = await generateMCQs(text, topic, numQuestions);
 
     // Create a new Test with the PDF and MCQs
@@ -63,6 +63,8 @@ export async function POST(request: Request) {
             {
               name: file.name,
               url: fileUrl,
+              fileSize: file.size,
+              pageCount: pageCount,
             },
           ],
         },
