@@ -33,29 +33,37 @@ export async function POST(request: Request) {
     const { examName, question, answer, wordCount, timeLimit, timeTaken } = result.data;
 
     const prompt = `
-      You are an expert evaluator for ${examName} descriptive writing section.
-      Please evaluate the following answer and provide detailed feedback:
-      
-      Question: ${question}
-      Answer: ${answer}
-      
-      Please provide:
-      1. A score out of 100
-      2. Detailed feedback on content, structure, and language
-      3. List of strengths
-      4. List of areas to improve
-      5. Specific suggestions for improvement
-      
-      Format the response as a JSON object with these exact fields (do not include markdown wrapping):
-      {
-        "score": number,
-        "feedback": string,
-        "strengths": string[],
-        "areasToImprove": string[],
-        "suggestions": string[]
-      }
-    `;
+You are a strict, professional examiner for the ${examName} descriptive writing section. Evaluate the candidate’s response using clear grading criteria and objective reasoning.
 
+--- INPUT ---
+Question:
+${question}
+
+Answer:
+${answer}
+
+--- EVALUATION CRITERIA ---
+Assess the answer across these dimensions:
+1. Content relevance and completeness (accuracy, depth, task fulfillment)
+2. Structure and organization (clarity, coherence, logical flow)
+3. Language quality (grammar, vocabulary, tone, readability)
+
+--- INSTRUCTIONS ---
+- Assign a precise score from 0 to 100 based on overall performance.
+- Justify the score with specific references to the answer.
+- Avoid generic feedback; be concrete and actionable.
+- Keep feedback concise but insightful.
+- Do NOT include any markdown or extra commentary outside the JSON.
+
+--- OUTPUT FORMAT (STRICT JSON ONLY) ---
+{
+  "score": number,
+  "feedback": string,
+  "strengths": string[],
+  "areasToImprove": string[],
+  "suggestions": string[]
+}
+`;
     const aiResult = await genAI.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
