@@ -91,3 +91,23 @@
     @apply bg-background text-foreground;
   }
 } 
+/* Custom Sonner Toast Styling */
+[data-sonner-toast] {
+  @apply !rounded-[1.25rem] !border-2 !shadow-2xl !p-4 !font-black !tracking-tight !backdrop-blur-md;
+}
+
+[data-sonner-toast][data-type='success'] {
+  @apply !bg-emerald-50/90 !border-emerald-500/20 !text-emerald-900;
+}
+
+[data-sonner-toast][data-type='error'] {
+  @apply !bg-rose-50/90 !border-rose-500/20 !text-rose-900;
+}
+
+[data-sonner-toast][data-type='info'] {
+  @apply !bg-indigo-50/90 !border-indigo-500/20 !text-indigo-900;
+}
+
+[data-sonner-toast] [data-close-button] {
+  @apply !bg-white/50 !border-transparent !text-current hover:!bg-white !transition-colors;
+}

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import PdfUpload from '@/app/components/PdfUpload';
 import PdfList from '@/app/components/PdfList';
-import { Toaster } from 'react-hot-toast';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import UserProfile from '@/app/components/UserProfile';

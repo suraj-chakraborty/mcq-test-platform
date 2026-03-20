@@ -4,14 +4,10 @@ export const metadata = {
   icons: { icon: '/logo.png' },
 }
 
-export default function RootLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  )
+  return <>{children}</>;
 }
