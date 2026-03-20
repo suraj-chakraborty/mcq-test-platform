@@ -75,6 +75,7 @@ export async function GET(
     const formattedAttempt = {
       ...attempt,
       questions: attempt.test.questions,
+      totalQuestions: attempt.test.questions.length,
     };
 
     return NextResponse.json(formattedAttempt);
