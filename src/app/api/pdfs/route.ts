@@ -20,12 +20,31 @@ export async function GET() {
           userId: session.user.id
         }
       },
+      include: {
+        test: {
+          select: {
+            createdAt: true,
+            _count: {
+              select: { questions: true }
+            }
+          }
+        }
+      },
       orderBy: {
         id: 'desc'
       }
     });
 
-    return NextResponse.json({ pdfs });
+    const pdfsWithTitle = pdfs.map(pdf => ({
+      ...pdf,
+      title: pdf.name,
+      createdAt: pdf.test.createdAt,
+      mcqs: { length: pdf.test._count.questions }, // Mocking mcqs.length for UI compatibility
+      fileSize: pdf.fileSize,
+      pageCount: pdf.pageCount
+    }));
+
+    return NextResponse.json({ pdfs: pdfsWithTitle });
   } catch (error) {
     console.error('Error fetching PDFs:', error);
     return NextResponse.json(

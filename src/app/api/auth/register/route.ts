@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/app/lib/prisma';
-import { registerSchema } from '@/lib/validations/auth';
+import { registerSchema } from '@/app/lib/validations/auth';
 import { sendEmail } from '@/app/lib/send-mail';
 
 export async function POST(req: Request) {

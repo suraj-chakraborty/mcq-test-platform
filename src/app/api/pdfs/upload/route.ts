@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const fileUrl = await saveFile(file);
-        const text = await extractTextFromPdf(buffer);
+        const { text, pageCount } = await extractTextFromPdf(buffer);
         const mcqs = await safeGenerateMCQs(text, topic, numQuestions);
 
         // Create Test + Questions + PdfDocument
@@ -84,7 +84,9 @@ export async function POST(request: Request) {
               create: [
                 {
                   name: file.name,
-                  url: fileUrl
+                  url: fileUrl,
+                  fileSize: file.size,
+                  pageCount: pageCount
                 }
               ]
             }
