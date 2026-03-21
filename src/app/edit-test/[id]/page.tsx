@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import EditTest from '@/app/components/EditTest';
 import { toast } from 'sonner';
+import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 
 
 interface Question {
@@ -48,9 +49,7 @@ export default function EditTestPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">Loading...</div>
-      </div>
+      <Loading />
     );
   }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import PDFTestAttempt from '@/app/components/PDFTestAttempt';
+import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 
 export default function AttemptTestPage() {
   const { data: session, status } = useSession();
@@ -39,7 +40,7 @@ export default function AttemptTestPage() {
   }, [session, params.id]);
 
   if (status === 'loading' || isLoading) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   if (!session || !test) {

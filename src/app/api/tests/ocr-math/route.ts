@@ -99,8 +99,8 @@ Format the response EXACTLY as a JSON object with this structure:
       }
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       test,
       originalQuestion: parsed.originalQuestion,
       solutionSteps: parsed.solutionSteps,

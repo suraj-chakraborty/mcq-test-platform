@@ -305,7 +305,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         <div>
           <h2 className="text-xl font-semibold">Uploaded PDFs</h2>
           {isLoading ? (
-            <p>Loading...</p>
+            <Loading />
           ) : (
             <div className="space-y-4">
               {filteredAndSortedPdfs.map((pdf) => (

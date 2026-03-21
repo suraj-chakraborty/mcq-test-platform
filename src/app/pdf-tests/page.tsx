@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import PDFTestCreator from '@/app/components/PDFTestCreator';
+import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 
 export default function PDFTestsPage() {
   const { data: session, status } = useSession();
@@ -16,7 +17,7 @@ export default function PDFTestsPage() {
   }, [status, router]);
 
   if (status === 'loading') {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   if (!session) {

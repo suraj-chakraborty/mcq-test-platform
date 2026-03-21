@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 
 interface Question {
   id: string;
@@ -34,8 +35,8 @@ export default function TakeTest() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // useEffect(() => {
-    // TODO: Fetch test data from API
-    // For now, using mock data
+  // TODO: Fetch test data from API
+  // For now, using mock data
   //   const mockTest: Test = {
   //     id: '1',
   //     title: 'Sample Test',
@@ -92,7 +93,7 @@ export default function TakeTest() {
 
   const handleSubmit = async () => {
     if (!test) return;
-    
+
     setIsSubmitting(true);
     try {
       // TODO: Submit answers to API
@@ -110,7 +111,7 @@ export default function TakeTest() {
   };
 
   if (!test) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   const progress = ((currentQuestion + 1) / test.questions.length) * 100;
@@ -130,13 +131,13 @@ export default function TakeTest() {
         </CardHeader>
         <CardContent>
           <Progress value={progress} className="mb-6" />
-          
+
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-4">
               Question {currentQuestion + 1} of {test.questions.length}
             </h3>
             <p className="text-xl mb-4">{test.questions[currentQuestion].question}</p>
-            
+
             <RadioGroup
               value={answers[currentQuestion].toString()}
               onValueChange={handleAnswerSelect}

@@ -59,8 +59,8 @@ export async function POST(req: Request) {
     const processedContextPDFs = await Promise.all(contextPDFs.map(async (f: any) => {
       const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from(""); // formidable files might need different handling
       const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
-      return { 
-        name: f.originalFilename, 
+      return {
+        name: f.originalFilename,
         url: `/uploads/${f.newFilename}`,
         fileSize: f.size,
         pageCount
@@ -70,8 +70,8 @@ export async function POST(req: Request) {
     const processedPyqPDFs = await Promise.all(pyqPDFs.map(async (f: any) => {
       const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
       const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
-      return { 
-        name: f.originalFilename, 
+      return {
+        name: f.originalFilename,
         url: `/uploads/${f.newFilename}`,
         fileSize: f.size,
         pageCount
