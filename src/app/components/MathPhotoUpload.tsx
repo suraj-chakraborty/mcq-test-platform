@@ -100,8 +100,8 @@ export default function MathPhotoUpload({ onSuccess, onClose }: MathPhotoUploadP
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   <div className="lg:col-span-5 space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 pl-1">Input Snap</h4>
-                    <div className="rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-100/50 border-8 border-white bg-white aspect-[4/3]">
-                      <img src={image!} alt="Snap" className="w-full h-full object-contain" />
+                    <div className="rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-100/50 border border-white bg-white/50 backdrop-blur-sm aspect-[4/3] ring-1 ring-black/5 hover:scale-[1.02] transition-transform duration-500">
+                      <img src={image!} alt="Snap" className="w-full h-full object-contain p-4" />
                     </div>
                   </div>
                   <div className="lg:col-span-7 space-y-4 pt-1">
@@ -220,11 +220,37 @@ export default function MathPhotoUpload({ onSuccess, onClose }: MathPhotoUploadP
           <CardContent className="p-8">
             <div className="mb-8">
               {image ? (
-                <div className="relative group rounded-3xl overflow-hidden shadow-lg aspect-video bg-gray-100">
+                <div className="relative group rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5 aspect-video bg-gray-50 flex items-center justify-center">
                   <img src={image} alt="Problem" className="w-full h-full object-contain" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                    <Button variant="secondary" className="rounded-2xl font-bold" onClick={() => setImage(null)}>Remove</Button>
+                  
+                  {isProcessing && (
+                    <motion.div 
+                      initial={{ top: '-10%' }}
+                      animate={{ top: '110%' }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      className="absolute left-0 right-0 h-1.5 bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.8)] z-20"
+                    />
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-8 z-30">
+                    <Button 
+                      variant="secondary" 
+                      className="rounded-full font-black text-[10px] uppercase tracking-widest bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/40 px-6 py-4 h-auto shadow-xl"
+                      onClick={() => setImage(null)}
+                      disabled={isProcessing}
+                    >
+                      <X className="mr-2 h-4 w-4" /> Replace Image
+                    </Button>
                   </div>
+
+                  {isProcessing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-indigo-600/5 backdrop-blur-[1px] z-10 animate-pulse">
+                        <div className="bg-white/90 backdrop-blur-md px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-3 border border-white">
+                          <Loader2 className="h-4 w-4 text-indigo-600 animate-spin" />
+                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Digitalizing...</span>
+                        </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div

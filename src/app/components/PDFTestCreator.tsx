@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LoadingSpinner as Loading } from './LoadingSpinner';
 
 interface PDFFile {
   name: string;
@@ -187,7 +188,7 @@ export default function PDFTestCreator() {
 
       const data = await response.json();
       if (data.success) {
-        setTests(tests.map(t => 
+        setTests(tests.map(t =>
           t.id === testId ? { ...t, questions: updatedQuestions } : t
         ));
         toast.success('Question updated successfully');
@@ -198,7 +199,7 @@ export default function PDFTestCreator() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   return (
@@ -302,11 +303,10 @@ export default function PDFTestCreator() {
                         {question.options.map((option, optIndex) => (
                           <div
                             key={optIndex}
-                            className={`p-2 rounded ${
-                              option === question.correctAnswer
+                            className={`p-2 rounded ${option === question.correctAnswer
                                 ? 'bg-green-100'
                                 : 'bg-gray-100'
-                            }`}
+                              }`}
                           >
                             {option}
                           </div>

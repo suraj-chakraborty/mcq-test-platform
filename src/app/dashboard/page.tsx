@@ -765,26 +765,42 @@ export default function Dashboard() {
               <Button className="bg-indigo-600 hover:bg-indigo-700 px-8 rounded-xl font-bold h-12" onClick={() => setShowCreateForm(true)}>New PYQ Test</Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {pdfTests.length > 0 ? (
                 pdfTests.map((test) => (
-                  <Card key={test.id} className="border-none shadow-xl shadow-gray-100 bg-white rounded-2xl overflow-hidden group">
-                    <CardHeader className="bg-indigo-50/50">
-                      <div className="flex justify-between items-start gap-4">
-                        <CardTitle className="text-lg font-black text-gray-900 line-clamp-1">{test.title}</CardTitle>
-                        <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-600 border border-indigo-100 shadow-sm">PYQ</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-6 space-y-6">
-                      <p className="text-gray-500 text-sm font-medium line-clamp-2">{test.description}</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        <Button className="w-full bg-gray-900 hover:bg-black rounded-xl font-black h-12" onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}>Attempt Now</Button>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Button variant="outline" className="rounded-xl font-bold h-10 text-xs px-2" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)}>View</Button>
-                          <Button variant="outline" className="rounded-xl font-bold h-10 text-xs px-2" onClick={() => setEditingTest(test)}>Edit</Button>
-                          <Button variant="ghost" className="rounded-xl font-bold h-10 text-xs px-2 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => setTestToDelete(test)}>Delete</Button>
+                  <Card key={test.id} className="border border-gray-100/60 shadow-sm hover:shadow-md bg-white rounded-[1.5rem] overflow-hidden group transition-all duration-300">
+                    <CardHeader className="p-5 pb-0">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center p-2 shrink-0 border border-gray-100">
+                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                          </div>
+                          <div className="flex flex-col items-start justify-center">
+                            <CardTitle className="text-[17px] font-black text-gray-900 tracking-tight leading-none mb-1 inline-block max-w-[140px] truncate">{test.title}</CardTitle>
+                            <span className="text-[9px] font-bold uppercase text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded tracking-widest inline-block whitespace-nowrap">PYQ TEST</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg shrink-0" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View">👁️</Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg shrink-0" onClick={() => setEditingTest(test)} title="Edit">✏️</Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0" onClick={() => setTestToDelete(test)} title="Delete">🗑️</Button>
                         </div>
                       </div>
+                    </CardHeader>
+                    
+                    <CardContent className="p-5 pt-4 flex flex-col gap-4">
+                      {test.description ? (
+                         <p className="text-gray-500 text-sm font-medium line-clamp-2 leading-relaxed h-[40px]">{test.description}</p>
+                      ) : (
+                         <div className="h-[40px] w-full" />
+                      )}
+                      
+                      <Button 
+                        onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}
+                        className="w-full h-11 bg-gray-900 hover:bg-black text-white rounded-[0.85rem] font-black text-[11px] uppercase tracking-wider transition-all shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
+                      >
+                        Attempt Now <span className="ml-2 font-serif text-lg leading-none">→</span>
+                      </Button>
                     </CardContent>
                   </Card>
                 ))
