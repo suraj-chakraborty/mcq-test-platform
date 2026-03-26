@@ -2,77 +2,117 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { GoogleGenAI } from '@google/genai';
+import { getGenAIInstance } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
-import formidable, { File } from 'formidable';
-import { Readable } from 'stream';
+import { saveFile } from '@/app/lib/fileStorage';
 
-// Helper: Convert Web Request to Node.js IncomingMessage
-async function webRequestToIncomingMessage(request: Request): Promise<any> {
-  const readable = Readable.fromWeb(request.body as any);
-  const headers = Object.fromEntries(request.headers.entries());
-
-  return Object.assign(readable, {
-    headers,
-    method: request.method,
-    url: '',
-  });
-}
-
-// Parse multipart form data using formidable
-async function parseFormData(req: Request): Promise<{ fields: any; files: any }> {
-  const incoming = await webRequestToIncomingMessage(req);
-  const form = formidable({ multiples: true, keepExtensions: true });
-
-  return new Promise((resolve, reject) => {
-    form.parse(incoming, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
-    });
-  });
-}
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { fields, files } = await parseFormData(req);
-    const title = fields.title?.[0] || '';
-    const description = fields.description?.[0] || '';
-    const topic = fields.domainTopic || 'General';
-    const numQuestions = parseInt(fields.numQuestions || '10');
+    const formData = await req.formData();
+    const title = formData.get('title')?.toString() || '';
+    const description = formData.get('description')?.toString() || '';
+    const topic = formData.get('domainTopic')?.toString() || 'General';
+    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10');
 
-    const contextPDFs = Array.isArray(files.contextPDF) ? files.contextPDF : [files.contextPDF].filter(Boolean);
-    const pyqPDFs = Array.isArray(files.pyqPDF) ? files.pyqPDF : [files.pyqPDF].filter(Boolean);
+    // Extract files from form data
+    const contextPDFs = formData.getAll('contextPDF').filter(f => f instanceof File) as File[];
+    const pyqPDFs = formData.getAll('pyqPDF').filter(f => f instanceof File) as File[];
 
-    if (!title || !contextPDFs.length) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!title || contextPDFs.length === 0) {
+      return NextResponse.json({ error: 'Missing required fields (title or context PDFs)' }, { status: 400 });
     }
 
-    // Extract metadata for each PDF
+    let contextText = "";
+    let pyqText = "";
+    const inlineDataParts: any[] = [];
+
+    // Extract metadata and text/buffer for each Context PDF
     const processedContextPDFs = await Promise.all(contextPDFs.map(async (f: any) => {
-      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from(""); // formidable files might need different handling
-      const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
+      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
+      const buffer = Buffer.from(arrayBuffer);
+      let pageCount = 1;
+      let text = "";
+      
+      try {
+        const result = await extractTextFromPdf(buffer);
+        text = result.text;
+        pageCount = result.pageCount;
+      } catch (e) {
+        console.log(`Context PDF ${f.originalFilename} failed text extraction, using native vision.`);
+        inlineDataParts.push({
+          inlineData: {
+            data: buffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        });
+      }
+
+      if (text && text.length >= 50) {
+        contextText += `\n--- Context Document: ${f.name} ---\n${text}\n`;
+      } else if (text) {
+        // Text extracted but very short, send to vision as well just in case
+        inlineDataParts.push({
+          inlineData: {
+            data: buffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        });
+      }
+
+      const fileUrl = await saveFile(f);
+
       return {
-        name: f.originalFilename,
-        url: `/uploads/${f.newFilename}`,
+        name: f.name || 'document.pdf',
+        url: fileUrl,
         fileSize: f.size,
         pageCount
       };
     }));
 
+    // Extract metadata and text/buffer for each PYQ PDF
     const processedPyqPDFs = await Promise.all(pyqPDFs.map(async (f: any) => {
       const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
-      const { pageCount } = await (arrayBuffer.length > 0 ? extractTextFromPdf(Buffer.from(arrayBuffer)) : { pageCount: 0 });
+      const buffer = Buffer.from(arrayBuffer);
+      let pageCount = 1;
+      let text = "";
+      
+      try {
+        const result = await extractTextFromPdf(buffer);
+        text = result.text;
+        pageCount = result.pageCount;
+      } catch (e) {
+        console.log(`PYQ PDF ${f.name} failed text extraction, using native vision.`);
+        inlineDataParts.push({
+          inlineData: {
+            data: buffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        });
+      }
+
+      if (text && text.length >= 50) {
+        pyqText += `\n--- PYQ Document: ${f.name} ---\n${text}\n`;
+      } else if (text) {
+        inlineDataParts.push({
+          inlineData: {
+            data: buffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        });
+      }
+
+      const fileUrl = await saveFile(f);
+
       return {
-        name: f.originalFilename,
-        url: `/uploads/${f.newFilename}`,
+        name: f.name || 'document.pdf',
+        url: fileUrl,
         fileSize: f.size,
         pageCount
       };
@@ -84,22 +124,55 @@ export async function POST(req: Request) {
 You are an expert question generator for educational purposes.
 
 The primary topic for these questions is: **${topic}**.
-
 Your task is to generate **${numQuestions}** multiple-choice questions (MCQs).
 
 Please adhere to the following guidelines:
-1.  **Content Source:** All questions must be *strictly and exclusively* based on the content provided within the "Context PDFs". Do not introduce any outside information or concepts.
-2.  **Relevance:** All questions must be relevant to the specified topic: "${topic}".
-3.  **Difficulty Level:** The difficulty level of the generated questions should match the examples implicitly found in the "Previous Year PDFs".
-4.  **Options:** Each question must include exactly 4 distinct options.
-5.  **Explanation:** Provide a clear, concise explanation for the correct answer, directly referencing the "Context PDFs" content where the information can be found.
-6.  **Difficulty Rating:** Indicate the difficulty level for each question (easy, medium, or hard).
 
-**Context PDFs:**
-${contextPDFs.map((f: File) => f.originalFilename).join('\n')}
+----------------------
+SOURCE RULES (STRICT)
+----------------------
+1. All questions must be strictly and exclusively based on the content provided within the "Context PDFs" (attached as text below or as PDF documents via vision). Do not introduce outside information.
+2. The difficulty level of the generated questions should match the examples implicitly found in the "Previous Year PDFs" (PYQ).
 
-**Previous Year PDFs (for difficulty reference):**
-${pyqPDFs.map((f: File) => f.originalFilename).join('\n')}
+----------------------
+DATA FILTERING RULES (CRITICAL)
+----------------------
+- DO NOT generate questions about coaching classes, institute names, tutor names, or promotional material present in the PDFs.
+- DO NOT generate questions about phone numbers, email addresses, websites, or contact information.
+- Ignore watermarks, headers, footers, page numbers, and irrelevant administrative details.
+- Focus strictly on academic, conceptual, or topical knowledge related to the subject.
+
+----------------------
+QUESTION PATTERNS & FORMATTING (CRITICAL)
+----------------------
+Generate a diverse mixture of question patterns based on the given context to make the test engaging.
+Strongly enforce a mixture of the following formats:
+1. **Standard Single Correct**: Direct question with 4 options.
+2. **Passage/Scenario-Based**: Provide a detailed paragraph or scenario *inside the 'question' field itself*, followed by a specific question based on it. Use double newlines (\n\n) to separate the scenario from the question.
+3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines. The 4 options must be the standard evaluative choices.
+4. **Matching Type**: Present **List I** and **List II** clearly. Use newlines (\n) to list each item (e.g., A. Item1 \n B. Item2). The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
+5. **Multiple Statements**: Use **Statement I**, **Statement II**, etc., on separate lines. The 4 options should ask which are correct.
+
+**FORMATTING RULES:**
+- Use **double newlines (\n\n)** between major sections (e.g., between a passage and the question).
+- Use **bold markdown (**text**)** for headers like **List I**, **List II**, **Assertion (A)**, **Reason (R)**, and **Statement I**.
+- Keep the overall question clear and professional.
+- YOU MUST USE ESCAPED NEWLINES (\n) IN THE JSON RESPONSE TO SEPARATE THESE SECTIONS. DO NOT PUT EVERYTHING ON ONE LINE.
+
+----------------------
+QUESTION DESIGN & FORMAT RULES
+----------------------
+- CRITICAL: REGARDLESS of the pattern used above, every single question MUST be formatted to have EXACTLY 4 distinct options, and EXACTLY ONE correct answer index (0-3).
+- Do NOT generate actual multi-select or 'true/false' questions unless they are adapted to fit the standard 4-option single-select format as described above.
+- Each question must test understanding, not just recall
+- Avoid vague or ambiguous wording
+- Ensure each question is clearly answerable
+
+**Context PDFs Extracted Text:**
+${contextText.slice(0, 50000) /* limit text to avoid overwhelming context */}
+
+**PYQ PDFs Extracted Text:**
+${pyqText.slice(0, 50000)}
 
 Format the response EXACTLY as a JSON array of question objects (do not wrap in an outer object):
 [
@@ -108,14 +181,18 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
     "correctAnswer": 0,
     "explanation": "Explanation for the correct answer, referencing context.",
-    "difficulty": "easy"
+    "difficulty": "easy" // or "medium", "hard"
   }
 ]
 `;
 
+    const genAI = getGenAIInstance();
     const aiResult = await genAI.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents: [
+        ...inlineDataParts,
+        prompt
+      ],
       config: {
         responseMimeType: "application/json",
       }

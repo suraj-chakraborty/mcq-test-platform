@@ -39,6 +39,8 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
+    if (showResults) return;
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -51,7 +53,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [showResults, test.id]);
 
   const handleAnswerChange = (questionIndex: number, answer: string) => {
     setAnswers((prev) => ({
@@ -133,7 +135,8 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
               
               <div className="space-y-8">
                 {test.questions && test.questions.map((question, index) => {
-                   const isCorrect = answers[index] === question.correctAnswer;
+                   const correctOptionText = question.options[Number(question.correctAnswer)];
+                   const isCorrect = answers[index] === correctOptionText;
                    const isAnswered = answers[index] !== undefined;
                    
                    return (
@@ -143,10 +146,22 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
                            {index + 1}
                          </span>
                          <div className="flex-1 w-full">
-                            <p className="font-bold text-[15px] sm:text-[17px] text-gray-800 mb-6 leading-relaxed">{question.question}</p>
+                            <div className="font-bold text-[15px] sm:text-[17px] text-gray-800 mb-6 leading-relaxed whitespace-pre-line">
+                               {question.question.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+                                 if (part.startsWith('**') && part.endsWith('**')) {
+                                   const isHeader = /Statement|List|Assertion|Reason|Scenario|Passage/i.test(part);
+                                   return (
+                                     <span key={i}>
+                                       {isHeader && i > 0 && <br />}
+                                       <strong className="font-black text-gray-900">{part.slice(2, -2)}</strong>
+                                     </span>
+                                   );
+                                 }
+                                 return part;
+                               })}</div>
                             <div className="grid grid-cols-1 gap-3 mb-6">
                               {question.options.map((option, optIndex) => {
-                                 const isThisOptionCorrect = option === question.correctAnswer;
+                                 const isThisOptionCorrect = option === correctOptionText;
                                  const isThisOptionSelected = answers[index] === option;
                                  
                                  return (
@@ -173,9 +188,9 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                                  Explanation
                                </div>
-                              <p className="text-sm text-gray-700 font-medium leading-relaxed">
-                                {question.explanation}
-                              </p>
+                              <p className="text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-line">
+                                 {question.explanation}
+                               </p>
                             </div>
                          </div>
                       </div>
@@ -264,9 +279,19 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
                      <div className="shrink-0 w-8 h-8 bg-[#eef2ff] rounded-full flex items-center justify-center font-black text-xs text-[#4f46e5] mt-0.5">
                        Q
                      </div>
-                     <p className="font-bold text-[17px] text-gray-900 leading-snug tracking-tight w-full">
-                       {currentQ.question}
-                     </p>
+                     <div className="font-bold text-[17px] text-gray-900 leading-snug tracking-tight w-full whitespace-pre-line">
+                       {currentQ.question.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+                         if (part.startsWith('**') && part.endsWith('**')) {
+                           const isHeader = /Statement|List|Assertion|Reason|Scenario|Passage/i.test(part);
+                           return (
+                             <span key={i}>
+                               {isHeader && i > 0 && <br />}
+                               <strong className="font-black text-indigo-700">{part.slice(2, -2)}</strong>
+                             </span>
+                           );
+                         }
+                         return part;
+                       })}</div>
                   </div>
                   
                   <RadioGroup

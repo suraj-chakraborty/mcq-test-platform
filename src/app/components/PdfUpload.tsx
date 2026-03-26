@@ -150,12 +150,14 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         } catch (error) {
           console.error('Error processing response:', error);
           toast.error(error instanceof Error ? error.message : 'Upload failed');
+          setIsUploading(false);
         }
       });
 
       xhr.onerror = () => {
         toast.error('Network error');
         onUploadError?.();
+        setIsUploading(false);
       };
 
       xhr.open('POST', '/api/pdfs/upload');
@@ -165,9 +167,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Upload failed');
-    } finally {
       setIsUploading(false);
-
     }
   };
 
@@ -201,6 +201,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
     accept: ACCEPTED_FILE_TYPES,
     multiple: true,
     disabled: isUploading,
+    maxSize: MAX_FILE_SIZE,
   });
 
   const filteredAndSortedPdfs = useMemo(() => {
