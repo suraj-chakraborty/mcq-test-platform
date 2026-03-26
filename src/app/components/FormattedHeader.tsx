@@ -96,7 +96,7 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
                  </div>
                  <div className="text-[15px] font-bold text-gray-800 leading-relaxed pt-1">
                     {item.split(/(\*\*.*?\*\*)/g).map((sub, j) => 
-                      sub.startsWith('**') ? <strong key={j} className="text-[#4f46e5] font-black">{sub.slice(2, -2)}</strong> : sub
+                      (sub.startsWith('**') && sub.endsWith('**')) ? <strong key={j} className="text-[#4f46e5] font-black">{sub.slice(2, -2)}</strong> : sub
                     )}
                  </div>
               </div>
@@ -122,13 +122,13 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
        return (
           <div className="space-y-4">
              {processed.map((item, i) => (
-                <div key={i} className={item.isAsser ? "p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 relative" : "p-6 bg-gray-50/50 rounded-3xl border border-gray-100 relative"}>
-                   <div className="absolute top-4 right-6 text-[8px] font-black uppercase tracking-widest text-gray-300">
+                <div key={i} className={item.isAsser ? "p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex flex-col gap-3" : "p-6 bg-gray-50/50 rounded-3xl border border-gray-100 flex flex-col gap-3"}>
+                   <div className="text-[10px] font-black uppercase tracking-widest text-[#4f46e5]/60">
                       {item.isAsser ? "Assertion (A)" : "Reason (R)"}
                    </div>
-                   <div className="text-[15px] leading-relaxed pr-20 font-bold text-gray-800">
+                   <div className="text-[15px] leading-relaxed font-bold text-gray-800">
                       {item.text.split(/(\*\*.*?\*\*)/g).map((sub, j) => 
-                        sub.startsWith('**') ? <strong key={j} className="text-[#4f46e5] font-black">{sub.slice(2, -2)}</strong> : sub
+                        (sub.startsWith('**') && sub.endsWith('**')) ? <strong key={j} className="text-[#4f46e5] font-black">{sub.slice(2, -2)}</strong> : sub
                       )}
                    </div>
                 </div>

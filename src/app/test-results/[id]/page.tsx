@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FormattedHeader } from '@/app/components/FormattedHeader';
 import confetti from 'canvas-confetti';
 
 interface Question {
@@ -188,43 +189,56 @@ export default function TestResults() {
 
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Detailed Analysis</h3>
-              {attempt.questions.map((question: any, index: number) => (
-                <div
-                  key={question.id || index}
-                  className={`p-6 rounded-2xl border-2 transition-all ${question.userAnswer === question.correctAnswer
-                      ? 'bg-green-50/50 border-green-100'
-                      : 'bg-red-50/50 border-red-100'
-                    }`}
-                >
-                  <h3 className="font-bold mb-4 text-gray-800 flex gap-3">
-                    <span className="bg-white rounded-lg px-2 py-1 shadow-sm text-sm border">{index + 1}</span>
-                    {question.question}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {question.options.map((option: string, optionIndex: number) => {
-                      const isCorrect = optionIndex === question.correctAnswer;
-                      const isUserSelected = optionIndex === question.userAnswer;
+              {attempt.questions.map((question: any, index: number) => {
+                const userSelectedOptionIndex = attempt.answers[index];
+                const isCorrect = userSelectedOptionIndex === question.correctAnswer;
+                
+                return (
+                  <div
+                    key={question.id || index}
+                    className={`p-6 rounded-2xl border-2 transition-all ${isCorrect
+                        ? 'bg-green-50/50 border-green-100'
+                        : userSelectedOptionIndex === -1 
+                          ? 'bg-gray-50 border-gray-100'
+                          : 'bg-red-50/50 border-red-100'
+                      }`}
+                  >
+                    <div className="font-bold mb-6 text-gray-900 flex gap-4 items-start">
+                      <span className={`shrink-0 rounded-xl w-8 h-8 flex items-center justify-center shadow-sm text-xs border font-black ${isCorrect ? 'bg-green-100 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-400'}`}>
+                        {index + 1}
+                      </span>
+                      <div className="flex-1 text-lg leading-tight">
+                        <FormattedHeader text={question.question} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {question.options.map((option: string, optionIndex: number) => {
+                        const isThisCorrect = optionIndex === question.correctAnswer;
+                        const isThisUserSelected = optionIndex === userSelectedOptionIndex;
 
-                      const bgClass = isCorrect
-                        ? 'bg-white border-green-500 text-green-700'
-                        : isUserSelected
-                          ? 'bg-white border-red-500 text-red-700'
-                          : 'bg-gray-50/50 border-transparent text-gray-500';
+                        const bgClass = isThisCorrect
+                          ? 'bg-white border-green-500 text-green-700'
+                          : isThisUserSelected
+                            ? 'bg-white border-red-500 text-red-700'
+                            : 'bg-gray-50/50 border-transparent text-gray-500';
 
-                      return (
-                        <div
-                          key={optionIndex}
-                          className={`p-3 rounded-xl border-2 transition-all flex justify-between items-center ${bgClass}`}
-                        >
-                          <span className="text-sm font-medium">{option}</span>
-                          {isCorrect && <span className="text-xs font-black uppercase tracking-tighter">Correct</span>}
-                          {isUserSelected && !isCorrect && <span className="text-xs font-black uppercase tracking-tighter">Error</span>}
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div
+                            key={optionIndex}
+                            className={`p-3 rounded-xl border-2 transition-all flex justify-between items-center ${bgClass}`}
+                          >
+                            <span className="text-sm font-medium">{option}</span>
+                            <div className="flex items-center gap-2">
+                               {isThisCorrect && <span className="text-[10px] font-black uppercase tracking-tighter bg-green-100 px-1.5 py-0.5 rounded text-green-700">Correct</span>}
+                               {isThisUserSelected && !isThisCorrect && <span className="text-[10px] font-black uppercase tracking-tighter bg-red-100 px-1.5 py-0.5 rounded text-red-700">Your Choice</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-16 pt-8 border-t flex flex-col sm:flex-row justify-center gap-4">
