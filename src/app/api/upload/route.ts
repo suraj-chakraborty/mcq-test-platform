@@ -10,7 +10,7 @@ import { saveFile } from '@/app/lib/fileStorage';
 import { mkdir } from 'fs/promises';
 import path from 'path';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
-import { generateMCQs } from '@/app/lib/ai';
+import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -48,8 +48,35 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const fileUrl = await saveFile(file);
-    const { text, pageCount } = await extractTextFromPdf(buffer);
-    const mcqs = await generateMCQs(text, topic, numQuestions);
+    
+    let mcqs: any[] = [];
+    let pageCount = 1;
+    let extractedText = "";
+
+    try {
+      const { text, pageCount: pc } = await extractTextFromPdf(buffer);
+      extractedText = text;
+      pageCount = pc;
+    } catch (e) {
+      console.log("PDF text extraction failed or insufficient text. Falling back to Gemini Vision OCR.", e);
+      try {
+         const data = await pdfParse(buffer);
+         pageCount = data.numpages || 1;
+      } catch (innerE) {
+         console.warn("Could not determine page count, defaulting to 1.");
+      }
+    }
+
+    if (extractedText && extractedText.length >= 50) {
+      mcqs = await generateMCQs(extractedText, topic, numQuestions);
+    } else {
+      console.log("Using Gemini Vision OCR for MCQ generation...");
+      mcqs = await generateMCQsFromPdfBuffer(buffer, topic, numQuestions);
+    }
+
+    if (!mcqs || mcqs.length === 0) {
+      return NextResponse.json({ error: 'Failed to generate MCQs from this PDF. Please try a different document.' }, { status: 400 });
+    }
 
     // Create a new Test with the PDF and MCQs
     const test = await (prisma.test as any).create({

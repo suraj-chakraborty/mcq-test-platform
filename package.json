@@ -4,7 +4,7 @@
     "private": true,
     "description": "A platform for creating and managing MCQ tests with features like PDF parsing, file uploads, and descriptive writing analysis with AI.",
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev --webpack",
         "build": "npm run test && next build",
         "start": "next start",
         "lint": "next lint",
@@ -39,7 +39,7 @@
         "cloudinary": "^2.7.0",
         "clsx": "^2.1.1",
         "formidable": "^3.5.4",
-        "framer-motion": "^12.37.0",
+        "framer-motion": "^11.18.2",
         "lucide-react": "^0.344.0",
         "next": "^16.1.0",
         "next-auth": "^4.24.6",

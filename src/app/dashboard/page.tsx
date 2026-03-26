@@ -867,6 +867,26 @@ export default function Dashboard() {
               <label className="text-xs font-black uppercase tracking-widest text-gray-400">PYQ PDF (Previous Questions)</label>
               <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'pyq')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100 cursor-pointer" />
             </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Number of Questions</label>
+                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{formData.numQuestions} Questions</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="30"
+                step="1"
+                value={formData.numQuestions}
+                onChange={(e) => setFormData(p => ({ ...p, numQuestions: parseInt(e.target.value) }))}
+                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all"
+              />
+              <div className="flex justify-between text-[10px] font-bold text-gray-400">
+                <span>10 Qs</span>
+                <span>20 Qs</span>
+                <span>30 Qs</span>
+              </div>
+            </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setShowCreateForm(false)}>Cancel</Button>
               <Button type="submit" className="bg-indigo-600 rounded-xl font-bold px-8" disabled={isLoading}>Start Generation</Button>

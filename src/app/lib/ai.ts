@@ -15,156 +15,20 @@ const mcqSchema = z.array(z.object({
   explanation: z.string(),
 }));
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
+export const getGenAIInstance = () => {
+  const keysString = process.env.GOOGLE_AI_API_KEYS;
+  if (keysString) {
+    const keys = keysString.split(',').map(k => k.trim()).filter(Boolean);
+    if (keys.length > 0) {
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      return new GoogleGenAI({ apiKey: randomKey });
+    }
+  }
+  return new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
+};
 
 export async function generateMCQs(pdfText: string, topic: string, numQuestions: number): Promise<MCQQuestion[]> {
   const truncatedText = pdfText.slice(0, 6000);
-  //   const prompt = `
-  // You are a teaching assistant.
-  // The topic for these questions is: **${topic}**.
-
-  // Your task is to generate ${numQuestions} multiple-choice questions (MCQs) *strictly and exclusively* based on the provided "PDF Content" below, and relevant to the specified topic. Ensure that every question, its options, and the correct answer can be directly inferred or found within the given text. Do not introduce any outside information or concepts *until you are completely sure about the information*.
-
-  // Each question should have:
-
-  //  - "question": The question statement
-  //  - "options": An array of 4 answer options
-  //  - "correctAnswer": Index of the correct option (0-based)
-  //  - "explanation": A brief explanation of the answer, referencing the provided text where applicable.
-
-  // Return the response EXACTLY as a JSON array (do not wrap it in an object):
-  // [
-  //   {
-  //     "question": "Sample text",
-  //     "options": ["A", "B", "C", "D"],
-  //     "correctAnswer": 0,
-  //     "explanation": "Because..."
-  //   }
-  // ]
-
-  // PDF Content:
-  // """
-  // ${truncatedText}
-  // """`;
-  //   const prompt = `
-  // You are an advanced AI Question Generator capable of adapting your expertise dynamically across domains such as:
-  // - Academic subjects (Science, History, Economics, etc.)
-  // - General Knowledge
-  // - Current Affairs (recent events)
-  // - Document-based learning (PDF content)
-
-  // ---
-
-  // ### CONTEXT
-  // Topic: **${topic}**
-  // Number of Questions: ${numQuestions}
-
-  // ### SOURCE PRIORITY LOGIC (STRICT)
-
-  // 1. If "PDF Content" is meaningful:
-  //    → Generate questions STRICTLY from it
-  //    → Do NOT introduce external knowledge unless absolutely necessary
-
-  // 2. If PDF Content is weak/empty:
-  //    → Use your internal knowledge based on the topic
-
-  // 3. If topic implies "recent events" (e.g., current affairs, recent news):
-  //    → Focus ONLY on the latest reliable information
-  //    → Avoid outdated facts
-
-  // ---
-  // ### CURRENT AFFAIRS TIME RULE (CRITICAL)
-
-  // If the topic includes Current Affairs / Recent Events:
-  // → Focus ONLY on events from the **last 8–12 months**
-  // → Prefer:
-  //    - Major government decisions
-  //    - International events
-  //    - Important tech launches
-  //    - Sports winners & tournaments
-  //    - Awards & recognitions,${topic} etc
-
-  // → Avoid:
-  //    - Very recent breaking news (unstable)
-  //    - Outdated (>1 year old) events
-
-  // ---
-
-  // ### ADAPTIVE QUESTION STRATEGY
-
-  // Dynamically adjust based on content type:
-
-  // - If factual content → Use direct MCQs
-  // - If conceptual → Use reasoning-based questions
-  // - If event-based → Focus on outcomes, dates, significance
-  // - If dense PDF → Extract key insights and convert to questions
-
-  // ---
-
-  // ### DIFFICULTY DISTRIBUTION
-
-  // - 30% Easy (direct recall)
-  // - 50% Medium (understanding-based)
-  // - 20% Hard (analytical / tricky)
-
-  // ---
-
-  // ### DISTRACTOR ENGINEERING (VERY IMPORTANT)
-
-  // Each question must have 4 high-quality options:
-  // - All options must be plausible
-  // - Avoid obvious wrong answers
-  // - Use close variations, logical traps, or related concepts
-
-  // ---
-
-  // ### QUESTION VARIETY
-
-  // Include a mix of:
-  // - Direct factual questions
-  // - Conceptual understanding
-  // - Statement-based (which are correct?)
-  // - Assertion-Reason (if applicable)
-
-  // ---
-
-  // ### EXPLANATION RULES
-
-  // - Clearly justify the correct answer
-  // - Keep concise but informative
-  // - Reference PDF content when used
-
-  // ---
-
-  // ### STRICT OUTPUT FORMAT
-
-  // Return ONLY valid JSON (no markdown, no extra text):
-
-  // [
-  //   {
-  //     "question": "Question text",
-  //     "options": ["A", "B", "C", "D"],
-  //     "correctAnswer": 0,
-  //     "explanation": "Explanation"
-  //   }
-  // ]
-
-  // ---
-
-  // ### VALIDATION BEFORE OUTPUT
-
-  // - Ensure exactly ${numQuestions} questions
-  // - No duplicates
-  // - No vague wording
-  // - Ensure JSON is perfectly valid
-
-  // ---
-
-  // ### PDF CONTENT
-  // """
-  // ${truncatedText}
-  // """
-  // `;
   const prompt = `
 You are an expert MCQ generator and assessment designer.
 
@@ -192,8 +56,35 @@ SOURCE RULES (STRICT)
   → Use accurate internal knowledge relevant to the topic
 
 ----------------------
-QUESTION DESIGN RULES
+DATA FILTERING RULES (CRITICAL)
 ----------------------
+- DO NOT generate questions about coaching classes, institute names, tutor names, or promotional material.
+- DO NOT generate questions about phone numbers, email addresses, websites, or contact information found in the text.
+- Ignore headers, footers, page numbers, and irrelevant administrative details.
+- Focus strictly on academic, conceptual, or topical knowledge related to the subject.
+
+----------------------
+QUESTION PATTERNS & FORMATTING (CRITICAL)
+----------------------
+Generate a diverse mixture of question patterns based on the given context to make the test engaging.
+Strongly enforce a mixture of the following formats:
+1. **Standard Single Correct**: Direct question with 4 options.
+2. **Passage/Scenario-Based**: Provide a detailed paragraph or scenario *inside the 'question' field itself*, followed by a specific question based on it. Use double newlines (\n\n) to separate the scenario from the question.
+3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines. The 4 options must be the standard evaluative choices.
+4. **Matching Type**: Present **List I** and **List II** clearly. Use newlines (\n) to list each item (e.g., A. Item1 \n B. Item2). The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
+5. **Multiple Statements**: Use **Statement I**, **Statement II**, etc., on separate lines. The 4 options should ask which are correct.
+
+**FORMATTING RULES:**
+- Use **double newlines (\n\n)** between major sections (e.g., between a passage and the question).
+- Use **bold markdown (**text**)** for headers like **List I**, **List II**, **Assertion (A)**, **Reason (R)**, and **Statement I**.
+- Keep the overall question clear and professional.
+- YOU MUST USE ESCAPED NEWLINES (\n) IN THE JSON RESPONSE TO SEPARATE THESE SECTIONS. DO NOT PUT EVERYTHING ON ONE LINE.
+
+----------------------
+QUESTION DESIGN & FORMAT RULES
+----------------------
+- CRITICAL: REGARDLESS of the pattern used above, every single question MUST be formatted to have EXACTLY 4 distinct options, and EXACTLY ONE correct answer index (0-3).
+- Do NOT generate actual multi-select or 'true/false' questions unless they are adapted to fit the standard 4-option single-select format as described above.
 - Each question must test understanding, not just recall
 - Avoid vague or ambiguous wording
 - Ensure each question is clearly answerable
@@ -249,6 +140,7 @@ FINAL INSTRUCTION
 Generate the output now.
 `;
   try {
+    const genAI = getGenAIInstance();
     const result = await genAI.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -278,6 +170,157 @@ Generate the output now.
     return validation.data;
   } catch (error) {
     console.error('Gemini MCQ generation error:', error);
+    return [];
+  }
+}
+
+export async function generateMCQsFromPdfBuffer(pdfBuffer: Buffer, topic: string, numQuestions: number): Promise<MCQQuestion[]> {
+  const prompt = `
+You are an expert MCQ generator and assessment designer.
+
+Your task is to generate high-quality multiple-choice questions based on the attached PDF document.
+You have native vision and document understanding capabilities. Please read the document thoroughly.
+
+----------------------
+INPUT
+----------------------
+Topic: ${topic}
+Number of Questions: ${numQuestions}
+
+----------------------
+SOURCE RULES (STRICT)
+----------------------
+- Extract information directly from the text, images, charts, and diagrams in the PDF.
+- If the PDF content contains sufficient information:
+  → Generate ALL questions strictly from it
+  → Do NOT introduce external knowledge
+- If the PDF content is insufficient or unclear:
+  → Use accurate internal knowledge relevant to the topic
+
+----------------------
+DATA FILTERING RULES (CRITICAL)
+----------------------
+- DO NOT generate questions about coaching classes, institute names, tutor names, or promotional material present in the PDF.
+- DO NOT generate questions about phone numbers, email addresses, websites, or contact information.
+- Ignore watermarks, headers, footers, page numbers, and irrelevant administrative details.
+- Focus strictly on academic, conceptual, or topical knowledge related to the subject.
+
+----------------------
+QUESTION PATTERNS & FORMATTING (CRITICAL)
+----------------------
+Generate a diverse mixture of question patterns based on the given context to make the test engaging.
+Strongly enforce a mixture of the following formats:
+1. **Standard Single Correct**: Direct question with 4 options.
+2. **Passage/Scenario-Based**: Provide a detailed paragraph or scenario *inside the 'question' field itself*, followed by a specific question based on it. Use double newlines (\n\n) to separate the scenario from the question.
+3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines. The 4 options must be the standard evaluative choices.
+4. **Matching Type**: Present **List I** and **List II** clearly. Use newlines (\n) to list each item (e.g., A. Item1 \n B. Item2). The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
+5. **Multiple Statements**: Use **Statement I**, **Statement II**, etc., on separate lines. The 4 options should ask which are correct.
+
+**FORMATTING RULES:**
+- Use **double newlines (\n\n)** between major sections (e.g., between a passage and the question).
+- Use **bold markdown (**text**)** for headers like **List I**, **List II**, **Assertion (A)**, **Reason (R)**, and **Statement I**.
+- Keep the overall question clear and professional.
+- YOU MUST USE ESCAPED NEWLINES (\n) IN THE JSON RESPONSE TO SEPARATE THESE SECTIONS. DO NOT PUT EVERYTHING ON ONE LINE.
+
+----------------------
+QUESTION DESIGN & FORMAT RULES
+----------------------
+- CRITICAL: REGARDLESS of the pattern used above, every single question MUST be formatted to have EXACTLY 4 distinct options, and EXACTLY ONE correct answer index (0-3).
+- Do NOT generate actual multi-select or 'true/false' questions unless they are adapted to fit the standard 4-option single-select format as described above.
+- Each question must test understanding, not just recall
+- Avoid vague or ambiguous wording
+- Ensure each question is clearly answerable
+
+----------------------
+DIFFICULTY DISTRIBUTION
+----------------------
+- 30% Easy (direct facts)
+- 50% Medium (conceptual understanding)
+- 20% Hard (analytical or tricky)
+
+----------------------
+OPTIONS (CRITICAL)
+----------------------
+- Exactly 4 options per question
+- All options must be plausible and relevant
+- Avoid obviously incorrect or joke answers
+- Randomize correct answer positions
+
+----------------------
+EXPLANATIONS
+----------------------
+- Clearly explain WHY the correct answer is correct
+- Keep concise (1–3 sentences)
+- Reference the PDF content when applicable
+
+----------------------
+OUTPUT FORMAT (STRICT)
+----------------------
+Return ONLY valid JSON. No markdown, no extra text.
+
+[
+  {
+    "question": "string",
+    "options": ["string", "string", "string", "string"],
+    "correctAnswer": number,
+    "explanation": "string"
+  }
+]
+
+----------------------
+VALIDATION RULES
+----------------------
+- Exactly ${numQuestions} questions
+- No duplicate questions
+- No duplicate options within a question
+- Ensure JSON is valid and parseable
+- correctAnswer must be an index (0–3)
+
+----------------------
+FINAL INSTRUCTION
+----------------------
+Generate the output now.
+`;
+
+  try {
+    const genAI = getGenAIInstance();
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          inlineData: {
+            data: pdfBuffer.toString("base64"),
+            mimeType: "application/pdf"
+          }
+        },
+        prompt
+      ],
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (!result.text) {
+      throw new Error("No text returned by Gemini");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(result.text);
+    } catch (e) {
+      console.error("Gemini JSON Parse Error in Buffer Mode:", e, result.text);
+      return [];
+    }
+
+    const validation = mcqSchema.safeParse(parsed);
+    if (!validation.success) {
+      console.error("Gemini Validation Error in Buffer Mode:", validation.error.format());
+      return [];
+    }
+
+    return validation.data;
+  } catch (error) {
+    console.error('Gemini Buffer MCQ generation error:', error);
     return [];
   }
 }
