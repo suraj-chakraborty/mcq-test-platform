@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Flag } from 'lucide-react';
 
 import { LoadingSpinner as Loading } from './LoadingSpinner';
+import { FormattedHeader } from './FormattedHeader';
 
 interface Question {
   id: string;
@@ -164,7 +165,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
             <div>
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-black text-gray-900 leading-tight">
-                  {test.questions[currentQuestionIndex].question}
+                  <FormattedHeader text={test.questions[currentQuestionIndex].question} isAttempt={true} />
                 </h3>
                 <Button
                   variant="ghost"

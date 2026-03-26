@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FormattedHeader } from '@/app/components/FormattedHeader';
 
 interface Question {
   question: string;
@@ -185,10 +186,12 @@ export default function TakeTestPage() {
           <Progress value={progress} className="mb-6" />
 
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-4">
+            <h3 className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-6 px-1">
               Question {currentQuestion + 1} of {tests.questions.length}
             </h3>
-            <p className="text-xl mb-4">{tests.questions[currentQuestion].question}</p>
+            <div className="font-bold text-xl text-gray-900 leading-snug mb-8">
+              <FormattedHeader text={tests.questions[currentQuestion].question} isAttempt={true} />
+            </div>
 
             <RadioGroup
               value={answers[currentQuestion]?.toString() ?? ''}
@@ -196,26 +199,55 @@ export default function TakeTestPage() {
               className="space-y-4"
             >
               {tests.questions[currentQuestion].options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`}>{option}</Label>
-                </div>
+                <Label 
+                  key={index} 
+                  htmlFor={`option-${index}`}
+                  className={`
+                    flex items-center space-x-4 p-5 rounded-3xl border-2 transition-all cursor-pointer group
+                    ${answers[currentQuestion] === index 
+                      ? 'border-indigo-600 bg-indigo-50/50' 
+                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <div className={`
+                    h-6 w-6 rounded-full border-2 flex items-center justify-center transition-colors
+                    ${answers[currentQuestion] === index ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'}
+                  `}>
+                    <RadioGroupItem value={index.toString()} id={`option-${index}`} className="sr-only" />
+                    {answers[currentQuestion] === index && <div className="h-2 w-2 rounded-full bg-white" />}
+                  </div>
+                  <span className={`text-lg font-bold transition-colors ${answers[currentQuestion] === index ? 'text-gray-900' : 'text-gray-600'}`}>
+                    {option}
+                  </span>
+                </Label>
               ))}
             </RadioGroup>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between pt-10 border-t border-gray-50 mt-10">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handlePrevious}
               disabled={currentQuestion === 0}
+              className="h-14 px-8 rounded-2xl font-black text-gray-400 uppercase tracking-widest text-[10px] hover:text-gray-900"
             >
-              Previous
+              ← PREVIOUS
             </Button>
             {currentQuestion === tests.questions.length - 1 ? (
-              <Button onClick={handleSubmit}>Submit Test</Button>
+              <Button 
+                onClick={handleSubmit}
+                className="h-14 px-12 rounded-2xl font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 text-[10px] uppercase tracking-widest text-white transition-all hover:-translate-y-0.5"
+              >
+                COMPLETE TEST
+              </Button>
             ) : (
-              <Button onClick={handleNext}>Next</Button>
+              <Button 
+                onClick={handleNext}
+                className="h-14 px-12 rounded-2xl font-black bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-100 text-[10px] uppercase tracking-widest text-white transition-all hover:-translate-y-0.5"
+              >
+                NEXT QUESTION →
+              </Button>
             )}
           </div>
         </CardContent>
