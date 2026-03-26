@@ -66,19 +66,32 @@ DATA FILTERING RULES (CRITICAL)
 ----------------------
 QUESTION PATTERNS & FORMATTING (CRITICAL)
 ----------------------
-Generate a diverse mixture of question patterns based on the given context to make the test engaging.
+Generate a diverse mixture of question patterns based on the given context.
 Strongly enforce a mixture of the following formats:
 1. **Standard Single Correct**: Direct question with 4 options.
-2. **Passage/Scenario-Based**: Provide a detailed paragraph or scenario *inside the 'question' field itself*, followed by a specific question based on it. Use double newlines (\n\n) to separate the scenario from the question.
-3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines. The 4 options must be the standard evaluative choices.
-4. **Matching Type**: Present **List I** and **List II** clearly. Use newlines (\n) to list each item (e.g., A. Item1 \n B. Item2). The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
-5. **Multiple Statements**: Use **Statement I**, **Statement II**, etc., on separate lines. The 4 options should ask which are correct.
+2. **Passage/Scenario-Based**: Paragraph followed by a question. Use \n\n separator.
+3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines.
+
+4. **Matching Type**: Present **List I:** and **List II:** to be matched. 
+   - **List I:** must use labels A, B, C, D.
+   - **List II:** must use labels 1, 2, 3, 4.
+   - **Example Structure:**
+     Match the indicators with their values:
+     **List I:**
+     A. Fiscal Deficit
+     B. CPI Inflation
+     **List II:**
+     1. 4.5%
+     2. 5.1%
+5. **Multiple Statements**: Use **Statement I:**, **Statement II:**, etc.
+   - Each statement clearly numbered.
+   - Follow with a question like "Which of the above statements are correct?".
 
 **FORMATTING RULES:**
-- Use **double newlines (\n\n)** between major sections (e.g., between a passage and the question).
-- Use **bold markdown (**text**)** for headers like **List I**, **List II**, **Assertion (A)**, **Reason (R)**, and **Statement I**.
-- Keep the overall question clear and professional.
-- YOU MUST USE ESCAPED NEWLINES (\n) IN THE JSON RESPONSE TO SEPARATE THESE SECTIONS. DO NOT PUT EVERYTHING ON ONE LINE.
+
+- Use **double newlines (\n\n)** between a passage/scenario and the question.
+- Use **bold markdown (**text**)** for headers like **List I:**, **List II:**, **Assertion (A):**, **Reason (R):**, and **Statement I:**.
+- **CRITICAL:** Use escaped newlines (\n) in JSON to ensure each list item and statement is on its own line. DO NOT clump items into a single line.
 
 ----------------------
 QUESTION DESIGN & FORMAT RULES
@@ -213,7 +226,25 @@ Strongly enforce a mixture of the following formats:
 1. **Standard Single Correct**: Direct question with 4 options.
 2. **Passage/Scenario-Based**: Provide a detailed paragraph or scenario *inside the 'question' field itself*, followed by a specific question based on it. Use double newlines (\n\n) to separate the scenario from the question.
 3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines. The 4 options must be the standard evaluative choices.
-4. **Matching Type**: Present **List I** and **List II** clearly. Use newlines (\n) to list each item (e.g., A. Item1 \n B. Item2). The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
+
+4. **Matching Type**: Present **List I** and **List II** to be matched. 
+   - **List I** must use labels A, B, C, D.
+   - **List II** must use labels 1, 2, 3, 4.
+   - **CRITICAL FORMAT:** You MUST put each item on a NEW LINE.
+   - **EXAMPLE STRUCTURE:**
+     Match the indicators with their values:
+     
+     **List I**
+     A. Fiscal Deficit
+     B. CPI Inflation
+     C. GDP Growth
+     D. Repo Rate
+     
+     **List II**
+     1. 4.5%
+     2. 5.1%
+     3. 7.2%
+     4. 6.5% The 4 options must be combinations like 'A-1, B-2, C-3, D-4'.
 5. **Multiple Statements**: Use **Statement I**, **Statement II**, etc., on separate lines. The 4 options should ask which are correct.
 
 **FORMATTING RULES:**
