@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useRouter } from 'next/navigation';
+import { FormattedHeader } from './FormattedHeader';
 
 interface QuestionResult {
   question: string;
@@ -61,7 +62,9 @@ export default function TestResults({ results, onClose }: TestResultsProps) {
                 <Card key={index}>
                   <CardContent className="pt-6">
                     <div className="space-y-4">
-                      <div className="font-medium">{result.question}</div>
+                      <div className="font-bold text-lg text-gray-900 leading-tight">
+                        <FormattedHeader text={result.question} />
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <div className="text-sm text-gray-500">Your Answer</div>

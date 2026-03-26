@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LoadingSpinner as Loading } from './LoadingSpinner';
+import { FormattedHeader } from './FormattedHeader';
 
 interface PDFFile {
   name: string;
@@ -297,8 +298,10 @@ export default function PDFTestCreator() {
                 <h3 className="font-semibold">Questions</h3>
                 <div className="space-y-4 mt-2">
                   {test.questions.map((question, index) => (
-                    <div key={index} className="border rounded p-4">
-                      <p className="font-medium">{question.question}</p>
+                    <div key={index} className="border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <div className="font-bold text-lg text-gray-900 leading-tight mb-4">
+                        <FormattedHeader text={question.question} />
+                      </div>
                       <div className="mt-2">
                         {question.options.map((option, optIndex) => (
                           <div
