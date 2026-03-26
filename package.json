@@ -5,7 +5,7 @@
     "description": "A platform for creating and managing MCQ tests with features like PDF parsing, file uploads, and descriptive writing analysis with AI.",
     "scripts": {
         "dev": "next dev --webpack",
-        "build": "npm run test && next build",
+        "build": "npm run test && next build --webpack",
         "start": "next start",
         "lint": "next lint",
         "test": "jest",
