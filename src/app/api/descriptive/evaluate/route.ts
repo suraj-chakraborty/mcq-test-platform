@@ -64,7 +64,7 @@ Assess the answer across these dimensions:
 `;
     const genAI = getGenAIInstance();
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-3.6-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",

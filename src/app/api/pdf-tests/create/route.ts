@@ -169,7 +169,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
 
     const genAI = getGenAIInstance();
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-3.6-flash',
       contents: [...inlineDataParts, prompt],
       config: {
         responseMimeType: 'application/json',
