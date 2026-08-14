@@ -51,6 +51,7 @@ export async function POST(
 
     const score = correctAnswers;
     const totalQuestions = questions.length;
+    const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
 
     // Save test attempt
     const testAttempt = await prisma.testAttempt.create({
@@ -64,13 +65,24 @@ export async function POST(
       }
     });
 
+    // Gamification Integration
+    const { processGamification } = await import('@/app/lib/gamification');
+    const gamificationResult = await processGamification(
+      session.user.id,
+      score,
+      totalQuestions,
+      0,
+      testAttempt.id
+    );
+
     return NextResponse.json({
       success: true,
       attempt: {
         id: testAttempt.id,
         score,
-        answers,
         totalQuestions,
+        percentage,
+        answers,
         test: {
           id: test.id,
           title: test.title,
@@ -79,6 +91,7 @@ export async function POST(
         completedAt: testAttempt.completedAt,
       },
       attemptId: testAttempt.id,
+      gamification: gamificationResult
     });
   } catch (error) {
     console.error('Error submitting test:', error);
