@@ -1,6 +1,5 @@
-
 import { NextResponse } from 'next/server';
-import { generateMCQs } from '@/app/lib/ai';
+import { generateMCQsUniversal } from '@/app/lib/ai';
 import { prisma } from '@/app/lib/prisma';
 import { saveFile } from '@/app/lib/fileStorage';
 import { getServerSession } from 'next-auth';
@@ -12,18 +11,31 @@ import path from 'path';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-export const maxDuration = 30; // Increased for multiple large PDFs
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+export const maxDuration = 60; // Extended for large scanned PDFs
 
-async function safeGenerateMCQs(text: string, topic: string, numQuestions: number, timeoutMs = 15000): Promise<any[]> {
+async function safeGenerateMCQs(
+  buffer: Buffer,
+  text: string,
+  isScanned: boolean,
+  topic: string,
+  numQuestions: number,
+  timeoutMs = 45000
+): Promise<any[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const result = await generateMCQs(text, topic, numQuestions);
+    const result = await generateMCQsUniversal({
+      pdfBuffer: buffer,
+      pdfText: text,
+      isScanned,
+      topic,
+      numQuestions,
+    });
     return result;
   } catch (err) {
     console.warn('MCQ generation failed or timed out:', err);
-    return []; // fallback
+    return [];
   } finally {
     clearTimeout(timeout);
   }
@@ -44,31 +56,35 @@ export async function POST(request: Request) {
     }
 
     const topic = formData.get('domainTopic')?.toString() || 'General';
-    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
+    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
 
     const uploadDir = path.join('/tmp', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch {
+      // Ignored for environments where /tmp isn't writeable directly
+    }
 
     const results = await Promise.allSettled(
       files.map(async (file) => {
-        if (file.type !== 'application/pdf') {
+        if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
           throw new Error(`File ${file.name} is not a PDF`);
         }
         if (file.size > MAX_FILE_SIZE) {
-          throw new Error(`File ${file.name} exceeds max size`);
+          throw new Error(`File ${file.name} exceeds maximum size of 25MB`);
         }
 
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const fileUrl = await saveFile(file);
-        const { text, pageCount } = await extractTextFromPdf(buffer);
-        const mcqs = await safeGenerateMCQs(text, topic, numQuestions);
+        const { text, pageCount, isScanned } = await extractTextFromPdf(buffer);
+        const mcqs = await safeGenerateMCQs(buffer, text, isScanned, topic, numQuestions);
 
-        // Create Test + Questions + PdfDocument
+        // Create Test + Questions with Proof Citations + PdfDocument
         const test = await prisma.test.create({
           data: {
             userId: session.user.id,
-            title: file.name,
+            title: file.name.replace(/\.pdf$/i, ''),
             description: `Test generated from ${file.name} (Topic: ${topic})`,
             duration: 30,
             questions: {
@@ -77,8 +93,11 @@ export async function POST(request: Request) {
                 options: q.options,
                 correctAnswer: q.correctAnswer,
                 explanation: q.explanation || '',
-                difficulty: q.difficulty || 'medium'
-              }))
+                difficulty: q.difficulty || 'medium',
+                proofQuote: q.proofQuote || '',
+                pageReference: q.pageReference || 'Document Reference',
+                citationType: q.citationType || 'VERBATIM_PROOF',
+              })),
             },
             pdfs: {
               create: [
@@ -86,20 +105,20 @@ export async function POST(request: Request) {
                   name: file.name,
                   url: fileUrl,
                   fileSize: file.size,
-                  pageCount: pageCount
-                }
-              ]
-            }
-          } as any,
+                  pageCount: pageCount,
+                },
+              ],
+            },
+          },
           include: {
             pdfs: true,
-            questions: true
-          } as any
+            questions: true,
+          },
         });
 
         return {
-          test: test as any,
-          mcqs: (test as any).questions
+          test,
+          mcqs: test.questions,
         };
       })
     );
@@ -131,4 +150,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

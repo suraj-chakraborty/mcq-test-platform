@@ -2,15 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGenAIInstance } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,7 +21,7 @@ export async function POST(req: Request) {
     // Extract base64 content
     const base64Data = image.split(',')[1] || image;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const ai = getGenAIInstance();
 
     const prompt = `
 Analyze this image containing a math problem.
@@ -57,22 +55,28 @@ Format the response EXACTLY as a JSON object with this structure:
 }
 `;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg',
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.7-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64Data,
+              },
+            },
+          ],
         },
-      },
-    ]);
+      ],
+    });
 
-    const responseText = result.response.text();
+    const responseText = response.text || '';
     const cleanJson = responseText.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
 
-    // Validate with Zod (using our existing schema parts)
-    // We might need to adjust the schema if it expects just an array
     const validationResult = generatedMCQSchema.safeParse(parsed.questions);
     if (!validationResult.success) {
       throw new Error('AI output failed validation');
@@ -81,22 +85,22 @@ Format the response EXACTLY as a JSON object with this structure:
     const test = await prisma.test.create({
       data: {
         userId: session.user.id,
-        title: parsed.title,
-        description: parsed.description,
+        title: parsed.title || 'Math Practice Test',
+        description: parsed.description || 'Practice questions based on an uploaded image.',
         duration: 30,
         questions: {
-          create: validationResult.data.map(q => ({
+          create: validationResult.data.map((q) => ({
             question: q.question,
             options: q.options,
             correctAnswer: q.correctAnswer,
             explanation: q.explanation,
-            difficulty: q.difficulty || 'medium'
-          }))
-        }
+            difficulty: q.difficulty || 'medium',
+          })),
+        },
       },
       include: {
-        questions: true
-      }
+        questions: true,
+      },
     });
 
     return NextResponse.json({
@@ -104,7 +108,7 @@ Format the response EXACTLY as a JSON object with this structure:
       test,
       originalQuestion: parsed.originalQuestion,
       solutionSteps: parsed.solutionSteps,
-      finalAnswer: parsed.finalAnswer
+      finalAnswer: parsed.finalAnswer,
     });
   } catch (error) {
     console.error('OCR Math error:', error);
