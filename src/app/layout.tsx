@@ -28,12 +28,14 @@ export default function RootLayout({
           <ThemeWrapper>
             {children}
           </ThemeWrapper>
-          <Script
-            src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1/"}track.js`}
-            data-site-id="cmlic6jl90001crhxbvgl0m0j"
-            strategy="afterInteractive"
-            defer
+          {process.env.NEXT_PUBLIC_TRACKER_URL && (
+            <Script
+              src={process.env.NEXT_PUBLIC_TRACKER_URL}
+              data-site-id="cmlic6jl90001crhxbvgl0m0j"
+              strategy="afterInteractive"
+              defer
             />
+          )}
       </body>
     </html>
   );

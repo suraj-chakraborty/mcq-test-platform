@@ -27,18 +27,18 @@ export default function Navbar() {
                   Tests
                 </Link>
                 <button
-                  onClick={() => signOut()}
-                  className="text-gray-700 hover:text-gray-900"
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                  className="text-gray-700 hover:text-gray-900 font-medium"
                 >
                   Sign Out
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className="text-gray-700 hover:text-gray-900">
+                <Link href="/auth/signin" className="text-gray-700 hover:text-gray-900 font-medium">
                   Login
                 </Link>
-                <Link href="/register" className="text-gray-700 hover:text-gray-900">
+                <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-700 font-bold">
                   Register
                 </Link>
               </>
