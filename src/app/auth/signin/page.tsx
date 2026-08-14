@@ -38,17 +38,6 @@ export default function SignIn() {
     setLastAttemptTime(now);
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Login failed');
-      }
-
       const result = await signIn('credentials', {
         email,
         password,
@@ -56,9 +45,10 @@ export default function SignIn() {
       });
 
       if (result?.error) {
-        toast.error('Invalid credentials.');
+        toast.error(result.error || 'Invalid credentials.');
         setLoading(false);
       } else {
+        toast.success('Welcome back!');
         router.push('/dashboard');
       }
     } catch (error) {
