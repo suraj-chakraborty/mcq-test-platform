@@ -42,53 +42,20 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const answersRef = React.useRef<Record<number, number>>({});
+  answersRef.current = answers;
+
   const [timeLeft, setTimeLeft] = useState((test.timeLimit || test.duration || 30) * 60);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionIndex]: answerIndex,
-    }));
-  };
-
-  const handleNext = () => {
-    if (currentQuestionIndex < test.questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(nextIndex);
-      onQuestionChange?.(nextIndex);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = React.useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      // Ensure we have an array of length questions.length, filling with -1 for unanswered
+      const currentAnswers = answersRef.current;
       const answersArray = Array.from({ length: test.questions.length }, (_, i) =>
-        answers[i] !== undefined ? answers[i] : -1
+        currentAnswers[i] !== undefined ? currentAnswers[i] : -1
       );
 
       const response = await fetch('/api/tests/submit', {
@@ -114,6 +81,42 @@ export default function TestAttempt({ test, onComplete, onQuestionChange }: Test
       toast.error(error instanceof Error ? error.message : 'Failed to submit test');
     } finally {
       setIsSubmitting(false);
+    }
+  }, [test.id, test.questions.length, isSubmitting, onComplete]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [handleSubmit]);
+
+  const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionIndex]: answerIndex,
+    }));
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < test.questions.length - 1) {
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      onQuestionChange?.(nextIndex);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 

@@ -18,7 +18,7 @@ export default function UploadPage() {
 
   useEffect(() => {
     if (!session) {
-      router.push('/login');
+      router.push('/auth/signin');
     }
   }, [session, router]);
 

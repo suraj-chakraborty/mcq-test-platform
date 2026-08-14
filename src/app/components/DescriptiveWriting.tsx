@@ -141,20 +141,25 @@ export default function DescriptiveWriting() {
 
   // Timer functionality
   useEffect(() => {
-    if (isTestActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      handleSubmit();
-    }
+    if (!isTestActive) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [isTestActive, timeLeft]);
+  }, [isTestActive]);
 
   // Word count tracking
   useEffect(() => {

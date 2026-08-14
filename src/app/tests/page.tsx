@@ -26,7 +26,7 @@ export default function TestsPage() {
 
   useEffect(() => {
     if (!session) {
-      router.push('/login');
+      router.push('/auth/signin');
       return;
     }
 
@@ -37,7 +37,7 @@ export default function TestsPage() {
     try {
       const res = await fetch('/api/pdfs');
       const data = await res.json();
-      setPdfs(data.pdfs);
+      setPdfs(data.pdfs || []);
     } catch (error) {
       console.error('Error fetching PDFs:', error);
     }
@@ -53,24 +53,35 @@ export default function TestsPage() {
     setError('');
 
     try {
+      const normalizedType = testType === 'current_affairs' 
+        ? 'current-affairs' 
+        : testType === 'general' 
+        ? 'general-knowledge' 
+        : 'pdf';
+
       const res = await fetch('/api/tests/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          testType,
+          type: normalizedType,
           pdfIds: selectedPdfs,
         }),
       });
 
-      const data = await res.json();
+      const data = await responseData(res);
 
       if (!res.ok) {
-        throw new Error(data.message || 'Something went wrong');
+        throw new Error(data.error || data.message || 'Something went wrong');
       }
 
-      router.push(`/tests/${data.id}`);
+      const testId = data.testId || data.id;
+      if (testId) {
+        router.push(`/take-test/${testId}`);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -79,6 +90,14 @@ export default function TestsPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const responseData = async (res: Response) => {
+    try {
+      return await res.json();
+    } catch {
+      return {};
     }
   };
 
