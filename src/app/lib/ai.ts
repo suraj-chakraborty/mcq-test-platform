@@ -15,10 +15,10 @@ export interface MCQQuestion {
 
 export const mcqSchema = z.array(
   z.object({
-    question: z.string(),
-    options: z.array(z.string()).length(4),
+    question: z.string().min(5),
+    options: z.array(z.string().min(1)).length(4),
     correctAnswer: z.number().int().min(0).max(3),
-    explanation: z.string(),
+    explanation: z.string().optional().default(''),
     difficulty: z.enum(['easy', 'medium', 'hard']).default('medium').optional(),
     proofQuote: z.string().optional().default(''),
     pageReference: z.string().optional().default(''),
@@ -39,69 +39,125 @@ export const getGenAIInstance = () => {
 };
 
 const PROMPT_TEMPLATE = (context: string, topic: string, numQuestions: number, isBufferMode: boolean) => `
-You are an expert assessment designer, curriculum examiner, and fact-verification auditor.
+You are a master pedagogical assessment architect and subject-matter expert for competitive examinations.
 
-Your task is to generate high-quality, authentic multiple-choice questions based STRICTLY on the attached document content.
-
-----------------------
-INPUT
-----------------------
-Topic: ${topic}
-Number of Questions: ${numQuestions}
-
-${isBufferMode ? 'Document: Attached PDF (Multimodal Vision & Text)' : `Document Text Content:\n"""\n${context}\n"""`}
+Your task is to generate **${numQuestions}** SMART, highly relevant, and pedagogically sound Multiple-Choice Questions (MCQs) strictly based on the provided document content.
 
 ----------------------
-CRITICAL CITATION & PROOF INSTRUCTIONS (MUST FOLLOW)
+INPUT DETAILS
 ----------------------
-For EVERY question you generate, you MUST provide:
-1. "proofQuote": The EXACT verbatim sentence or excerpt from the document that proves beyond doubt why the chosen option is correct.
-2. "pageReference": The specific page number or section header where this proof is located (e.g., "Page 3", "Page 14, Section 2.1").
-3. "citationType": 
-   - Set to "VERBATIM_PROOF" if the exact quote is directly present in the text/images.
-   - Set to "LOGICAL_DEDUCTION" if the answer is a mathematical derivation or conceptual inference.
+Subject/Topic: ${topic}
+Requested Question Count: ${numQuestions}
+
+${isBufferMode ? 'Document: Attached PDF (Direct Visual, Structural, and Textual Analysis)' : `Document Text Content:\n"""\n${context}\n"""`}
 
 ----------------------
-SOURCE & FILTERING RULES
+STEP 1: AUTOMATIC DOCUMENT ARCHETYPE DETECTION & QUESTION STRATEGY
 ----------------------
-- Extract information directly from text, images, charts, diagrams, and formulas.
-- DO NOT generate questions about coaching institutes, tutor names, phone numbers, or promotional material.
-- Ignore headers, footers, watermarks, and administrative metadata.
-- Focus strictly on core academic concepts, principles, data, and problem-solving.
+Analyze the document's content type and adapt the question style accordingly:
+
+1. **VOCABULARY / ENGLISH LANGUAGE / GRAMMAR (e.g. Word lists, Idioms, Phrasal verbs, Grammar rules)**:
+   - Generate:
+     - Contextual Synonyms & Antonyms (e.g., "Which of the following is the most accurate SYNONYM for '**COMMEND**'?")
+     - Sentence Completion / Fill in the blanks (e.g., "Select the word that best completes the sentence: 'The committee found the evidence ______ and dismissed the claim.'")
+     - Precise Definition & Correct Usage in Sentences.
+     - One-word substitutions or analogy pairs.
+   - **DO NOT** create broken matching tables or awkward list codes for word lists. Keep each vocabulary question focused, clean, and testing one or two target words clearly.
+
+2. **MATHEMATICS / QUANTITATIVE APTITUDE / PHYSICS / NUMERICALS**:
+   - Generate applied word problems, formula calculations, logical step deductions, and numerical problem solving with clear mathematical parameters.
+
+3. **SCIENCE / MEDICINE / ENGINEERING / BIOLOGY**:
+   - Test biological functions, chemical processes, laws of physics, structural components, cause-and-effect mechanisms, and diagnostic/practical applications.
+
+4. **HISTORY / POLITY / LAW / GENERAL STUDIES**:
+   - Test conceptual significance, constitutional articles, chronology, policy impacts, and historical facts.
 
 ----------------------
-QUESTION PATTERNS (Mixture strongly encouraged)
+STEP 2: STRICT QUESTION STRUCTURAL INTEGRITY
 ----------------------
-1. **Standard Single Correct**: Direct conceptual/factual question with 4 options.
-2. **Passage/Scenario-Based**: Paragraph scenario in the question followed by a question.
-3. **Assertion-Reasoning**: **Assertion (A):** and **Reason (R):** formatted on separate lines.
-4. **Matching Type**: **List I** and **List II** with pairs to match.
-5. **Multiple Statements**: **Statement I**, **Statement II** evaluated together.
+- **Standard Single Correct**: Direct question prompt followed by 4 distinct plausible options.
+- **Passage-Based**: Provide a concise passage in the 'question' field, followed by double newlines (\n\n) and the actual question.
+- **Matching Questions (ONLY when source content explicitly contains natural 4x4 pairs)**:
+  If used, you MUST format it cleanly with exact labels:
+  "Match the items in List I with List II:
+
+  **List I:**
+  A. [Item 1]
+  B. [Item 2]
+  C. [Item 3]
+  D. [Item 4]
+
+  **List II:**
+  1. [Pair 1]
+  2. [Pair 2]
+  3. [Pair 3]
+  4. [Pair 4]"
+  The options must be: "(A)-1, (B)-2, (C)-3, (D)-4", etc.
+  **NEVER** generate incomplete lists, single-letter placeholders (like "1. t"), or malformed headers.
+
+- **Assertion-Reasoning (ONLY for analytical subjects)**:
+  "**Assertion (A):** [Statement A]
+  **Reason (R):** [Statement R]"
 
 ----------------------
-FORMAT & DIFFICULTY
+STEP 3: CITATION & VERIFIED PROOF
+----------------------
+For every question:
+1. "proofQuote": The exact sentence or passage from the document that proves why the correct answer is true.
+2. "pageReference": The specific page number or section header (e.g., "Page 4, Word List 2", "Page 15, Section 3").
+3. "citationType": "VERBATIM_PROOF" if directly quoted, or "LOGICAL_DEDUCTION" if derived.
+
+----------------------
+RULES & CONSTRAINTS
 ----------------------
 - Exactly 4 distinct options per question.
 - Exactly 1 correct answer index (0, 1, 2, or 3).
-- Difficulty distribution: ~30% Easy, ~50% Medium, ~20% Hard.
-- Explanations: Clear, concise breakdown of why the answer is correct with proof reference.
+- Difficulty: ~30% Easy, ~50% Medium, ~20% Hard.
+- No duplicate questions. No trivia about coaching centers, phone numbers, or institute watermarks.
 
 ----------------------
-OUTPUT FORMAT (STRICT JSON ONLY)
+OUTPUT FORMAT (STRICT JSON ARRAY ONLY)
 ----------------------
 [
   {
-    "question": "string",
-    "options": ["string", "string", "string", "string"],
+    "question": "Question text",
+    "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
     "correctAnswer": 0,
-    "explanation": "string",
+    "explanation": "Clear explanation of why this answer is correct.",
     "difficulty": "medium",
-    "proofQuote": "Exact sentence quoted from the document proving the answer.",
+    "proofQuote": "Exact excerpt from the document verifying the answer.",
     "pageReference": "Page X, Section Y",
     "citationType": "VERBATIM_PROOF"
   }
 ]
 `;
+
+async function executeGeminiWithFallback(contents: any[]): Promise<string> {
+  const genAI = getGenAIInstance();
+  const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+
+  for (const model of models) {
+    try {
+      const result = await genAI.models.generateContent({
+        model,
+        contents,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        },
+      });
+
+      if (result.text) {
+        return result.text;
+      }
+    } catch (err) {
+      console.warn(`[executeGeminiWithFallback] Model ${model} failed, attempting next:`, err);
+    }
+  }
+
+  throw new Error('All Gemini generation attempts failed');
+}
 
 export async function generateMCQsUniversal(params: {
   pdfBuffer?: Buffer;
@@ -118,31 +174,22 @@ export async function generateMCQsUniversal(params: {
     numQuestions = 10,
   } = params;
 
-  const genAI = getGenAIInstance();
-
   // Mode 1: Scanned PDF or pure visual/image PDF -> Multimodal Vision Processing
   if (isScanned && pdfBuffer) {
     console.log('[generateMCQsUniversal] Using Multimodal Vision pipeline for scanned/visual PDF');
     const prompt = PROMPT_TEMPLATE('', topic, numQuestions, true);
 
     try {
-      const result = await genAI.models.generateContent({
-        model: 'gemini-3.7-flash',
-        contents: [
-          {
-            inlineData: {
-              data: pdfBuffer.toString('base64'),
-              mimeType: 'application/pdf',
-            },
+      const text = await executeGeminiWithFallback([
+        {
+          inlineData: {
+            data: pdfBuffer.toString('base64'),
+            mimeType: 'application/pdf',
           },
-          prompt,
-        ],
-        config: {
-          responseMimeType: 'application/json',
         },
-      });
+        prompt,
+      ]);
 
-      const text = result.text || '';
       const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
       const validated = mcqSchema.safeParse(parsed);
       if (validated.success) {
@@ -166,15 +213,7 @@ export async function generateMCQsUniversal(params: {
       const sectionPrompt = PROMPT_TEMPLATE(sections[i], `${topic} (Section ${i + 1}/${sections.length})`, targetCount, false);
 
       try {
-        const result = await genAI.models.generateContent({
-          model: 'gemini-3.7-flash',
-          contents: sectionPrompt,
-          config: {
-            responseMimeType: 'application/json',
-          },
-        });
-
-        const text = result.text || '';
+        const text = await executeGeminiWithFallback([sectionPrompt]);
         const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
         const validated = mcqSchema.safeParse(parsed);
         if (validated.success) {
@@ -207,15 +246,7 @@ export async function generateMCQsUniversal(params: {
     }
     contents.push(prompt);
 
-    const result = await genAI.models.generateContent({
-      model: 'gemini-3.7-flash',
-      contents,
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
-
-    const text = result.text || '';
+    const text = await executeGeminiWithFallback(contents);
     const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
     const validated = mcqSchema.safeParse(parsed);
     if (validated.success) {
@@ -238,26 +269,28 @@ export async function generateMCQsFromPdfBuffer(pdfBuffer: Buffer, topic: string
 }
 
 function sanitizeCitations(questions: any[], sourceText: string): MCQQuestion[] {
-  return questions.map((q) => {
-    let citationType: 'VERBATIM_PROOF' | 'LOGICAL_DEDUCTION' = 'VERBATIM_PROOF';
+  return questions
+    .filter((q) => q.question && q.options && q.options.length === 4 && q.correctAnswer >= 0 && q.correctAnswer <= 3)
+    .map((q) => {
+      let citationType: 'VERBATIM_PROOF' | 'LOGICAL_DEDUCTION' = 'VERBATIM_PROOF';
 
-    if (q.proofQuote && sourceText) {
-      const normalizedSource = sourceText.toLowerCase().replace(/\s+/g, ' ');
-      const normalizedQuote = q.proofQuote.toLowerCase().replace(/\s+/g, ' ');
-      if (!normalizedSource.includes(normalizedQuote.slice(0, 30))) {
-        citationType = 'LOGICAL_DEDUCTION';
+      if (q.proofQuote && sourceText) {
+        const normalizedSource = sourceText.toLowerCase().replace(/\s+/g, ' ');
+        const normalizedQuote = q.proofQuote.toLowerCase().replace(/\s+/g, ' ');
+        if (!normalizedSource.includes(normalizedQuote.slice(0, 25))) {
+          citationType = 'LOGICAL_DEDUCTION';
+        }
       }
-    }
 
-    return {
-      question: q.question,
-      options: q.options,
-      correctAnswer: q.correctAnswer,
-      explanation: q.explanation,
-      difficulty: q.difficulty || 'medium',
-      proofQuote: q.proofQuote || '',
-      pageReference: q.pageReference || 'Document Reference',
-      citationType: q.citationType || citationType,
-    };
-  });
+      return {
+        question: q.question.trim(),
+        options: q.options.map((opt: string) => String(opt).trim()),
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation ? q.explanation.trim() : '',
+        difficulty: q.difficulty || 'medium',
+        proofQuote: q.proofQuote ? q.proofQuote.trim() : '',
+        pageReference: q.pageReference ? q.pageReference.trim() : 'Document Reference',
+        citationType: q.citationType || citationType,
+      };
+    });
 }

@@ -56,7 +56,7 @@ Format the response EXACTLY as a JSON object with this structure:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-3.6-flash',
       contents: [
         {
           role: 'user',
