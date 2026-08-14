@@ -23,7 +23,7 @@ export async function PUT(
       );
     }
 
-    const test = await prisma.test.findUnique({
+    const test = await prisma.test.findFirst({
       where: { id, userId: session.user.id }
     });
 

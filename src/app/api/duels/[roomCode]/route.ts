@@ -71,7 +71,21 @@ export async function GET(
       include: {
         host: { select: { id: true, name: true } },
         guest: { select: { id: true, name: true } },
-        test: { select: { title: true, questions: true } }
+        test: {
+          select: {
+            id: true,
+            title: true,
+            duration: true,
+            questions: {
+              select: {
+                id: true,
+                question: true,
+                options: true,
+                difficulty: true,
+              }
+            }
+          }
+        }
       }
     });
 

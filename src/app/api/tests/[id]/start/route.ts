@@ -26,11 +26,11 @@ export async function GET(
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
-    // Format questions
+    // Format questions (strip correctAnswer & explanation to prevent cheating)
     const formattedQuestions = test.questions.map((q) => ({
+      id: q.id,
       question: q.question,
       options: q.options,
-      correctAnswer: q.correctAnswer,
     }));
 
     return NextResponse.json({

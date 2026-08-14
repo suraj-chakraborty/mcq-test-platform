@@ -24,28 +24,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Calculate score
-    let correctAnswers = 0;
+    // Parse answers whether submitted as an array or object map
     const questions = test.questions;
+    const answersArray: number[] = questions.map((_, index) => {
+      if (Array.isArray(answers)) {
+        const val = answers[index];
+        return typeof val === 'number' ? val : parseInt(val ?? '-1', 10);
+      } else if (answers && typeof answers === 'object') {
+        const val = answers[index] ?? answers[String(index)];
+        return val !== undefined && val !== null ? parseInt(String(val), 10) : -1;
+      }
+      return -1;
+    });
 
+    // Calculate raw correct answers count
+    let correctAnswers = 0;
     questions.forEach((question, index) => {
-      // Logic assumes answers is an object or array indexed by question index
-      if (answers[index] === (question.correctAnswer + "")) { // Handling possible string conversion in legacy frontend
-        correctAnswers++;
-      } else if (answers[index] === question.correctAnswer) {
+      if (answersArray[index] === question.correctAnswer) {
         correctAnswers++;
       }
     });
 
-    const score = Math.round((correctAnswers / test.questions.length) * 100);
+    const rawScore = correctAnswers;
+    const percentage = Math.round((correctAnswers / questions.length) * 100);
 
-    // Save attempt
+    // Save attempt with raw correct count as score
     const attempt = await prisma.testAttempt.create({
       data: {
         userId: session.user.id,
         testId,
-        answers: Array.isArray(answers) ? answers.map(a => parseInt(a)) : [], // Convert to array of ints
-        score,
+        answers: answersArray,
+        score: rawScore,
         completed: true,
         completedAt: new Date(),
       }
@@ -55,7 +64,7 @@ export async function POST(request: Request) {
     const { processGamification } = await import('@/app/lib/gamification');
     const gamificationResult = await processGamification(
       session.user.id,
-      score,
+      rawScore,
       test.questions.length,
       timeTaken || 0,
       attempt.id
@@ -63,7 +72,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      score,
+      score: rawScore,
+      totalQuestions: questions.length,
+      percentage,
       attempt,
       gamification: gamificationResult
     });
