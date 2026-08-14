@@ -6,7 +6,7 @@ import { prisma } from '@/app/lib/prisma';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -15,7 +15,14 @@ export async function GET() {
     // Fetch MCQ attempts
     const mcqAttempts = await prisma.testAttempt.findMany({
       where: { userId },
-      select: { score: true, createdAt: true, test: { select: { questions: { select: { id: true } } } } }
+      include: {
+        test: {
+          select: {
+            title: true,
+            questions: { select: { id: true } }
+          }
+        }
+      }
     });
 
     // Fetch Descriptive tests
@@ -27,22 +34,39 @@ export async function GET() {
     const totalMcqTests = mcqAttempts.length;
     const totalDescriptiveTests = (descriptiveTests as any[]).length;
 
-    // Calculate MCQ average score (normalized to 100)
-    let totalMcqScore = 0;
+    // Calculate MCQ average score (normalized to percentage)
+    let totalMcqPercentage = 0;
+    let validMcqAttemptsCount = 0;
+
     mcqAttempts.forEach((attempt: any) => {
-      const qCount = attempt.test.questions.length || 1;
-      totalMcqScore += (attempt.score / qCount) * 100;
+      const qCount = attempt.test?.questions?.length || 0;
+      if (qCount > 0) {
+        const attemptPercentage = (Math.min(attempt.score, qCount) / qCount) * 100;
+        totalMcqPercentage += attemptPercentage;
+        validMcqAttemptsCount++;
+      }
     });
-    const avgMcqScore = totalMcqTests > 0 ? totalMcqScore / totalMcqTests : 0;
+
+    const avgMcqScore = validMcqAttemptsCount > 0 ? totalMcqPercentage / validMcqAttemptsCount : 0;
 
     // Calculate Descriptive average score
-    const totalDescScore = (descriptiveTests as any[]).reduce((acc: number, curr: any) => acc + curr.score, 0);
+    const totalDescScore = (descriptiveTests as any[]).reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
     const avgDescScore = totalDescriptiveTests > 0 ? totalDescScore / totalDescriptiveTests : 0;
 
     // Combined recent activity
     const activity = [
-      ...mcqAttempts.map((a: any) => ({ type: 'mcq', score: a.score, date: a.createdAt })),
-      ...(descriptiveTests as any[]).map((d: any) => ({ type: 'descriptive', score: d.score, date: d.createdAt, title: d.examName }))
+      ...mcqAttempts.map((a: any) => ({
+        type: 'mcq',
+        score: a.score,
+        date: a.createdAt,
+        title: a.test?.title || 'MCQ Test'
+      })),
+      ...(descriptiveTests as any[]).map((d: any) => ({
+        type: 'descriptive',
+        score: d.score,
+        date: d.createdAt,
+        title: d.examName || 'Descriptive Test'
+      }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return NextResponse.json({

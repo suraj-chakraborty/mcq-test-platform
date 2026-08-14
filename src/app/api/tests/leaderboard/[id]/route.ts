@@ -8,32 +8,46 @@ export async function GET(
   try {
     const { id: testId } = await params;
 
-    // Fetch top 10 attempts for this test
+    // Fetch attempts for this test
     const attempts = await prisma.testAttempt.findMany({
       where: { testId },
       include: {
         user: {
           select: {
+            id: true,
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
       orderBy: [
         { score: 'desc' },
-        { createdAt: 'asc' } // Faster completion (earlier date) wins tie
+        { createdAt: 'asc' },
       ],
-      take: 10
+      take: 50,
     });
+
+    // Deduplicate by user so each user appears only once with their best score
+    const seenUsers = new Set<string>();
+    const uniqueLeaderboard: any[] = [];
+
+    for (const a of attempts) {
+      const userId = a.userId || a.user?.id || a.id;
+      if (!seenUsers.has(userId)) {
+        seenUsers.add(userId);
+        uniqueLeaderboard.push({
+          id: a.id,
+          userName: a.user?.name || (a.user?.email ? a.user.email.split('@')[0] : 'Anonymous'),
+          score: a.score,
+          date: a.createdAt,
+        });
+      }
+      if (uniqueLeaderboard.length >= 10) break;
+    }
 
     return NextResponse.json({
       success: true,
-      leaderboard: attempts.map((a: any) => ({
-        id: a.id,
-        userName: a.user?.name || 'Anonymous',
-        score: a.score,
-        date: a.createdAt
-      }))
+      leaderboard: uniqueLeaderboard,
     });
 
   } catch (error) {
