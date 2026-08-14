@@ -1,30 +1,37 @@
 import nodemailer from 'nodemailer';
 
 export const sendEmail = async (to: string, subject: string, text: string) => {
+  const user = process.env.EMAIL_USER;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-  const testAccount = await nodemailer.createTestAccount()
+  if (!user) {
+    console.warn(`[sendEmail] EMAIL_USER not configured. Skipping email to ${to}: "${subject}"`);
+    return;
+  }
 
   const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    type: "OAuth2",
-    user: process.env.EMAIL_USER,
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-  },
+    service: 'gmail',
+    auth: {
+      type: 'OAuth2',
+      user,
+      clientId,
+      clientSecret,
+      refreshToken,
+    },
   });
 
   try {
     await transporter.sendMail({
-    from:  `"MCQ Test Platform" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    text,
-  });
-  console.log(`mail send to ${to}`)
+      from: `"MCQ Test Platform" <${user}>`,
+      to,
+      subject,
+      text,
+    });
+    console.log(`[sendEmail] Email successfully sent to ${to}`);
   } catch (error) {
-    console.log("Failed to send mail")
-    console.log(error)
+    console.error(`[sendEmail] Failed to send email to ${to}:`, error);
+    throw new Error('Failed to send verification email');
   }
 };

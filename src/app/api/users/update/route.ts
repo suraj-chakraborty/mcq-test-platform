@@ -11,15 +11,18 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, email, mongodbUrl } = await request.json();
+    const body = await request.json();
+    const name = typeof body.name === 'string' ? body.name.trim() : undefined;
+
+    if (name !== undefined && (name.length < 2 || name.length > 50)) {
+      return NextResponse.json({ error: 'Name must be between 2 and 50 characters' }, { status: 400 });
+    }
 
     // Update user details
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        name,
-        email,
-        mongodbUrl,
+        ...(name ? { name } : {}),
       },
     });
 

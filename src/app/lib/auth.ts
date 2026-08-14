@@ -33,6 +33,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid password');
         }
 
+        if (!user.isVerified) {
+          throw new Error('Please verify your email with OTP before logging in');
+        }
+
         return {
           id: user.id,
           name: user.name,
@@ -49,7 +53,7 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   pages: {
-    signIn: '/login',
+    signIn: '/auth/signin',
   },
   callbacks: {
     async jwt({ token, user, account }) {
