@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,14 +37,55 @@ export default function TakeTestPage() {
   const [tests, setTests] = useState<Test | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  const answersRef = useRef<number[]>([]);
+  answersRef.current = answers;
+
+  const testsRef = useRef<Test | null>(null);
+  testsRef.current = tests;
+
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
   }, [status, router]);
+
+  const handleSubmit = useCallback(async () => {
+    const currentTest = testsRef.current;
+    if (!currentTest || isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/tests/${currentTest.id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: currentTest.id, answers: answersRef.current }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit test');
+      }
+
+      if (data.attemptId) {
+        router.push(`/test-results/${data.attemptId}`);
+      } else {
+        toast.error('Failed to get test results ID');
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      toast.error('Failed to submit test. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, router]);
 
   useEffect(() => {
     const fetchTest = async () => {
@@ -76,25 +117,25 @@ export default function TakeTestPage() {
   }, [session, params.id, router]);
 
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            handleSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (!tests || timeLeft <= 0) return;
 
-      return () => clearInterval(timer);
-    }
-  }, [timeLeft]);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [tests?.id, handleSubmit]);
 
   const handleAnswerSelect = (value: string) => {
     const newAnswers = [...answers];
-    newAnswers[currentQuestion] = parseInt(value);
+    newAnswers[currentQuestion] = parseInt(value, 10);
     setAnswers(newAnswers);
   };
 
@@ -107,37 +148,6 @@ export default function TakeTestPage() {
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion((prev) => prev - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!tests) return;
-
-    try {
-      const response = await fetch(`/api/tests/${tests.id}/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: tests.id, answers, questions: tests.questions }),
-      });
-
-      const data = await response.json();
-      console.log("take testdata", data)
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit test');
-      }
-
-      if (data.attemptId) {
-        router.push(`/test-results/${data.attemptId}`);
-      } else {
-        toast.error('Failed to get test results ID');
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('Error submitting test:', error);
-      toast.error('Failed to submit test. Please try again.');
     }
   };
 

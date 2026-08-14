@@ -44,6 +44,8 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
       }
     } catch (err) {
       console.error('Failed to poll room:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,9 +72,9 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
     return <div className="p-20 text-center font-black animate-pulse">Initializing Battle Field...</div>;
   }
 
-  if (!room) return <div className="p-20 text-center">Room Error</div>;
+  if (!room) return <div className="p-20 text-center font-bold text-gray-500">Room Not Found</div>;
 
-  const isHost = userId === room.host.id;
+  const isHost = userId === room.host?.id;
 
   if (isTestActive && room.status === 'ACTIVE') {
     return (
@@ -101,12 +103,15 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
     );
   }
 
+  const hostName = room.host?.name || 'Host';
+  const guestName = room.guest?.name || 'Opponent';
+
   return (
     <div className="container mx-auto max-w-2xl pt-20">
       <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
         <CardHeader className="bg-indigo-600 text-white p-8 text-center">
           <CardTitle className="text-3xl font-black">🔥 Battle Room</CardTitle>
-          <p className="opacity-80 font-bold uppercase tracking-widest text-xs mt-2">{room.test.title}</p>
+          <p className="opacity-80 font-bold uppercase tracking-widest text-xs mt-2">{room.test?.title || 'Battle MCQ'}</p>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
           <div className="bg-gray-50 rounded-2xl p-6 text-center border-2 border-dashed border-gray-200">
@@ -118,9 +123,9 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
           <div className="grid grid-cols-2 gap-8 items-center py-4">
              <div className="flex flex-col items-center gap-3">
                 <div className="h-20 w-20 rounded-2xl bg-indigo-100 flex items-center justify-center text-3xl font-bold text-indigo-600 shadow-inner">
-                   {room.host.name[0]}
+                   {hostName[0]?.toUpperCase() || 'H'}
                 </div>
-                <span className="font-black text-gray-900">{room.host.name}</span>
+                <span className="font-black text-gray-900">{hostName}</span>
                 <span className="text-[10px] font-black text-indigo-400 uppercase">Host</span>
              </div>
 
@@ -128,9 +133,9 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
                 {room.guest ? (
                   <>
                     <div className="h-20 w-20 rounded-2xl bg-amber-100 flex items-center justify-center text-3xl font-bold text-amber-600 shadow-inner">
-                      {room.guest.name[0]}
+                      {guestName[0]?.toUpperCase() || 'G'}
                     </div>
-                    <span className="font-black text-gray-900">{room.guest.name}</span>
+                    <span className="font-black text-gray-900">{guestName}</span>
                     <span className="text-[10px] font-black text-amber-400 uppercase">Opponent</span>
                   </>
                 ) : (
