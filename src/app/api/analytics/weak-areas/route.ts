@@ -6,58 +6,54 @@ import { prisma } from '@/app/lib/prisma';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.id;
 
     // Analyze weak areas based on MCQ performance
-    // We'll look at tests where the user scored < 60%
-    const weakAttempts = await prisma.testAttempt.findMany({
-      where: {
-        userId,
-        // Manual filter needed as we don't store percentage directly in DB comfortably for query
-      },
+    const attempts = await prisma.testAttempt.findMany({
+      where: { userId },
       include: {
         test: {
           include: {
-            questions: true
-          }
-        }
-      }
+            questions: true,
+          },
+        },
+      },
     });
 
-    const topicStats: Record<string, { total: number, correct: number }> = {};
+    const topicStats: Record<string, { totalQuestions: number; correct: number; attempts: number }> = {};
 
-    weakAttempts.forEach(attempt => {
+    attempts.forEach((attempt) => {
+      if (!attempt.test?.questions) return;
       const qCount = attempt.test.questions.length;
       if (qCount === 0) return;
-      
-      const percentage = (attempt.score / qCount) * 100;
-      const topic = attempt.test.title || 'General'; // Using title as a proxy for topic for now
+
+      const topic = attempt.test.title || 'General';
 
       if (!topicStats[topic]) {
-        topicStats[topic] = { total: 0, correct: 0 };
+        topicStats[topic] = { totalQuestions: 0, correct: 0, attempts: 0 };
       }
-      topicStats[topic].total += qCount;
-      topicStats[topic].correct += attempt.score;
+      topicStats[topic].totalQuestions += qCount;
+      topicStats[topic].correct += Math.min(attempt.score, qCount);
+      topicStats[topic].attempts += 1;
     });
 
     const weakAreas = Object.entries(topicStats)
       .map(([topic, stats]) => ({
         topic,
-        accuracy: Math.round((stats.correct / stats.total) * 100),
-        attempts: stats.total / (stats.total / 10) // rough proxy
+        accuracy: stats.totalQuestions > 0 ? Math.round((stats.correct / stats.totalQuestions) * 100) : 0,
+        attempts: stats.attempts,
       }))
-      .filter(area => area.accuracy < 70)
+      .filter((area) => area.accuracy < 75)
       .sort((a, b) => a.accuracy - b.accuracy);
 
     return NextResponse.json({
       success: true,
-      weakAreas: weakAreas.slice(0, 5)
+      weakAreas: weakAreas.slice(0, 5),
     });
-
   } catch (error) {
     console.error('Weak areas error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
