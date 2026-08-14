@@ -16,6 +16,10 @@ interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
+  explanation?: string;
+  proofQuote?: string;
+  pageReference?: string;
+  citationType?: 'VERBATIM_PROOF' | 'LOGICAL_DEDUCTION';
 }
 
 interface TestAttempt {
@@ -236,6 +240,47 @@ export default function TestResults() {
                         );
                       })}
                     </div>
+
+                    {question.explanation && (
+                      <div className="mt-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                          Explanation
+                        </div>
+                        <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
+                          {question.explanation}
+                        </p>
+                      </div>
+                    )}
+
+                    {question.proofQuote && (
+                      <div className="mt-3 bg-emerald-50/80 p-4 rounded-xl border border-emerald-200/80">
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                              Verified from Source
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {question.pageReference && (
+                              <span className="bg-white text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
+                                📄 {question.pageReference}
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
+                              question.citationType === 'LOGICAL_DEDUCTION'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-200 text-emerald-900'
+                            }`}>
+                              {question.citationType === 'LOGICAL_DEDUCTION' ? '💡 Logical Deduction' : '🛡️ Verbatim Proof'}
+                            </span>
+                          </div>
+                        </div>
+                        <blockquote className="text-xs text-emerald-950 font-medium italic border-l-2 border-emerald-400 pl-3 leading-relaxed">
+                          "{question.proofQuote}"
+                        </blockquote>
+                      </div>
+                    )}
                   </div>
                 );
               })}
