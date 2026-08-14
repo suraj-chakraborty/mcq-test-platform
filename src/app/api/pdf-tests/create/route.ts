@@ -7,7 +7,6 @@ import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { saveFile } from '@/app/lib/fileStorage';
 
-
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,170 +18,136 @@ export async function POST(req: Request) {
     const title = formData.get('title')?.toString() || '';
     const description = formData.get('description')?.toString() || '';
     const topic = formData.get('domainTopic')?.toString() || 'General';
-    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10');
+    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
 
     // Extract files from form data
-    const contextPDFs = formData.getAll('contextPDF').filter(f => f instanceof File) as File[];
-    const pyqPDFs = formData.getAll('pyqPDF').filter(f => f instanceof File) as File[];
+    const contextPDFs = formData.getAll('contextPDF').filter((f) => f instanceof File) as File[];
+    const pyqPDFs = formData.getAll('pyqPDF').filter((f) => f instanceof File) as File[];
 
     if (!title || contextPDFs.length === 0) {
       return NextResponse.json({ error: 'Missing required fields (title or context PDFs)' }, { status: 400 });
     }
 
-    let contextText = "";
-    let pyqText = "";
+    let contextText = '';
+    let pyqText = '';
     const inlineDataParts: any[] = [];
 
     // Extract metadata and text/buffer for each Context PDF
-    const processedContextPDFs = await Promise.all(contextPDFs.map(async (f: any) => {
-      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
-      const buffer = Buffer.from(arrayBuffer);
-      let pageCount = 1;
-      let text = "";
-      
-      try {
-        const result = await extractTextFromPdf(buffer);
-        text = result.text;
-        pageCount = result.pageCount;
-      } catch (e) {
-        console.log(`Context PDF ${f.originalFilename} failed text extraction, using native vision.`);
-        inlineDataParts.push({
-          inlineData: {
-            data: buffer.toString("base64"),
-            mimeType: "application/pdf"
+    const processedContextPDFs = await Promise.all(
+      contextPDFs.map(async (f: File) => {
+        const arrayBuffer = (await f.arrayBuffer?.()) || Buffer.from('');
+        const buffer = Buffer.from(arrayBuffer);
+        let pageCount = 1;
+        let text = '';
+
+        try {
+          const result = await extractTextFromPdf(buffer);
+          text = result.text;
+          pageCount = result.pageCount;
+          if (result.isScanned) {
+            inlineDataParts.push({
+              inlineData: {
+                data: buffer.toString('base64'),
+                mimeType: 'application/pdf',
+              },
+            });
           }
-        });
-      }
+        } catch (e) {
+          console.log(`Context PDF ${f.name} failed text extraction, using native vision.`);
+          inlineDataParts.push({
+            inlineData: {
+              data: buffer.toString('base64'),
+              mimeType: 'application/pdf',
+            },
+          });
+        }
 
-      if (text && text.length >= 50) {
-        contextText += `\n--- Context Document: ${f.name} ---\n${text}\n`;
-      } else if (text) {
-        // Text extracted but very short, send to vision as well just in case
-        inlineDataParts.push({
-          inlineData: {
-            data: buffer.toString("base64"),
-            mimeType: "application/pdf"
-          }
-        });
-      }
+        if (text && text.length >= 50) {
+          contextText += `\n--- Context Document: ${f.name} ---\n${text}\n`;
+        }
 
-      const fileUrl = await saveFile(f);
+        const fileUrl = await saveFile(f);
 
-      return {
-        name: f.name || 'document.pdf',
-        url: fileUrl,
-        fileSize: f.size,
-        pageCount
-      };
-    }));
+        return {
+          name: f.name || 'document.pdf',
+          url: fileUrl,
+          fileSize: f.size,
+          pageCount,
+        };
+      })
+    );
 
     // Extract metadata and text/buffer for each PYQ PDF
-    const processedPyqPDFs = await Promise.all(pyqPDFs.map(async (f: any) => {
-      const arrayBuffer = await (f as any).arrayBuffer?.() || Buffer.from("");
-      const buffer = Buffer.from(arrayBuffer);
-      let pageCount = 1;
-      let text = "";
-      
-      try {
-        const result = await extractTextFromPdf(buffer);
-        text = result.text;
-        pageCount = result.pageCount;
-      } catch (e) {
-        console.log(`PYQ PDF ${f.name} failed text extraction, using native vision.`);
-        inlineDataParts.push({
-          inlineData: {
-            data: buffer.toString("base64"),
-            mimeType: "application/pdf"
+    const processedPyqPDFs = await Promise.all(
+      pyqPDFs.map(async (f: File) => {
+        const arrayBuffer = (await f.arrayBuffer?.()) || Buffer.from('');
+        const buffer = Buffer.from(arrayBuffer);
+        let pageCount = 1;
+        let text = '';
+
+        try {
+          const result = await extractTextFromPdf(buffer);
+          text = result.text;
+          pageCount = result.pageCount;
+          if (result.isScanned) {
+            inlineDataParts.push({
+              inlineData: {
+                data: buffer.toString('base64'),
+                mimeType: 'application/pdf',
+              },
+            });
           }
-        });
-      }
+        } catch (e) {
+          console.log(`PYQ PDF ${f.name} failed text extraction, using native vision.`);
+          inlineDataParts.push({
+            inlineData: {
+              data: buffer.toString('base64'),
+              mimeType: 'application/pdf',
+            },
+          });
+        }
 
-      if (text && text.length >= 50) {
-        pyqText += `\n--- PYQ Document: ${f.name} ---\n${text}\n`;
-      } else if (text) {
-        inlineDataParts.push({
-          inlineData: {
-            data: buffer.toString("base64"),
-            mimeType: "application/pdf"
-          }
-        });
-      }
+        if (text && text.length >= 50) {
+          pyqText += `\n--- PYQ Document: ${f.name} ---\n${text}\n`;
+        }
 
-      const fileUrl = await saveFile(f);
+        const fileUrl = await saveFile(f);
 
-      return {
-        name: f.name || 'document.pdf',
-        url: fileUrl,
-        fileSize: f.size,
-        pageCount
-      };
-    }));
+        return {
+          name: f.name || 'document.pdf',
+          url: fileUrl,
+          fileSize: f.size,
+          pageCount,
+        };
+      })
+    );
 
     const pdfsData = [...processedContextPDFs, ...processedPyqPDFs];
 
     const prompt = `
-You are an expert question generator for educational purposes.
+You are an expert question generator, exam author, and fact-verification auditor.
 
 The primary topic for these questions is: **${topic}**.
-Your task is to generate **${numQuestions}** multiple-choice questions (MCQs).
-
-Please adhere to the following guidelines:
+Your task is to generate **${numQuestions}** high-yield multiple-choice questions (MCQs).
 
 ----------------------
-SOURCE RULES (STRICT)
+CRITICAL VERIFIABLE PROOF & CITATION RULES
 ----------------------
-1. All questions must be strictly and exclusively based on the content provided within the "Context PDFs" (attached as text below or as PDF documents via vision). Do not introduce outside information.
-2. The difficulty level of the generated questions should match the examples implicitly found in the "Previous Year PDFs" (PYQ).
+For every question, you MUST include:
+1. "proofQuote": The EXACT verbatim sentence or excerpt from the documents that proves why the correct answer is correct.
+2. "pageReference": The specific page number or section (e.g., "Page 12, Section 3.1").
+3. "citationType": "VERBATIM_PROOF" if directly quoted, or "LOGICAL_DEDUCTION" if conceptually derived.
 
 ----------------------
-DATA FILTERING RULES (CRITICAL)
+SOURCE & QUESTION GUIDELINES
 ----------------------
-- DO NOT generate questions about coaching classes, institute names, tutor names, or promotional material present in the PDFs.
-- DO NOT generate questions about phone numbers, email addresses, websites, or contact information.
-- Ignore watermarks, headers, footers, page numbers, and irrelevant administrative details.
-- Focus strictly on academic, conceptual, or topical knowledge related to the subject.
-
-----------------------
-QUESTION PATTERNS & FORMATTING (CRITICAL)
-----------------------
-Generate a diverse mixture of question patterns based on the given context.
-Strongly enforce a mixture of the following formats:
-1. **Standard Single Correct**: Direct question with 4 options.
-2. **Passage/Scenario-Based**: Paragraph followed by a question. Use \n\n separator.
-3. **Assertion-Reasoning**: Use **Assertion (A):** and **Reason (R):** on separate lines.
-
-4. **Matching Type**: Present **List I:** and **List II:** to be matched. 
-   - **List I:** must use labels A, B, C, D.
-   - **List II:** must use labels 1, 2, 3, 4.
-   - **Example Structure:**
-     Match the indicators with their values:
-     **List I:**
-     A. Fiscal Deficit
-     B. CPI Inflation
-     **List II:**
-     1. 4.5%
-     2. 5.1%
-5. **Multiple Statements**: Use **Statement I:**, **Statement II:**, etc.
-   - Each statement clearly numbered.
-   - Follow with a question like "Which of the above statements are correct?".
-
-**FORMATTING RULES:**
-
-- Use **double newlines (\n\n)** between a passage/scenario and the question.
-- Use **bold markdown (**text**)** for headers like **List I:**, **List II:**, **Assertion (A):**, **Reason (R):**, and **Statement I:**.
-- **CRITICAL:** Use escaped newlines (\n) in JSON to ensure each list item and statement is on its own line. DO NOT clump items into a single line.
-
-----------------------
-QUESTION DESIGN & FORMAT RULES
-----------------------
-- CRITICAL: REGARDLESS of the pattern used above, every single question MUST be formatted to have EXACTLY 4 distinct options, and EXACTLY ONE correct answer index (0-3).
-- Do NOT generate actual multi-select or 'true/false' questions unless they are adapted to fit the standard 4-option single-select format as described above.
-- Each question must test understanding, not just recall
-- Avoid vague or ambiguous wording
-- Ensure each question is clearly answerable
+1. All questions must be strictly based on the provided Context PDFs (attached as text or via vision).
+2. Question difficulty must match the style of the Previous Year PDFs (PYQ).
+3. Generate a rich mixture of question types: Standard Single Correct, Passage-Based, Assertion-Reasoning, List Matching, Multiple Statements.
+4. Format: Exactly 4 distinct options per question, exactly 1 correct answer index (0-3).
 
 **Context PDFs Extracted Text:**
-${contextText.slice(0, 50000) /* limit text to avoid overwhelming context */}
+${contextText.slice(0, 50000)}
 
 **PYQ PDFs Extracted Text:**
 ${pyqText.slice(0, 50000)}
@@ -193,22 +158,22 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     "question": "Question text",
     "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
     "correctAnswer": 0,
-    "explanation": "Explanation for the correct answer, referencing context.",
-    "difficulty": "easy" // or "medium", "hard"
+    "explanation": "Clear explanation referencing context.",
+    "difficulty": "medium",
+    "proofQuote": "Exact sentence quoted from the document proving the answer.",
+    "pageReference": "Page X, Section Y",
+    "citationType": "VERBATIM_PROOF"
   }
 ]
 `;
 
     const genAI = getGenAIInstance();
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [
-        ...inlineDataParts,
-        prompt
-      ],
+      model: 'gemini-3.7-flash',
+      contents: [...inlineDataParts, prompt],
       config: {
-        responseMimeType: "application/json",
-      }
+        responseMimeType: 'application/json',
+      },
     });
 
     if (!aiResult.text) {
@@ -217,21 +182,20 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
 
     let parsedQuestions;
     try {
-      parsedQuestions = JSON.parse(aiResult.text);
+      parsedQuestions = JSON.parse(aiResult.text.replace(/```json|```/g, '').trim());
     } catch (err) {
-      console.error("Failed to parse JSON:", err);
+      console.error('Failed to parse JSON:', err);
       return NextResponse.json({ error: 'Invalid JSON format received from AI' }, { status: 400 });
     }
 
     // Validate generated MCQs with Zod
     const validationResult = generatedMCQSchema.safeParse(parsedQuestions);
     if (!validationResult.success) {
-      console.error("AI Output failed schema validation:", validationResult.error.format());
+      console.error('AI Output failed schema validation:', validationResult.error.format());
       return NextResponse.json({ error: 'AI produced invalid question structure' }, { status: 500 });
     }
 
     const validQuestions = validationResult.data;
-
 
     // Create Test in Prisma with nested Questions and PDFs
     const test = await prisma.test.create({
@@ -239,24 +203,27 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
         userId: session.user.id,
         title,
         description,
-        duration: 60, // Default duration
+        duration: 60,
         questions: {
-          create: validQuestions.map(q => ({
+          create: validQuestions.map((q) => ({
             question: q.question,
             options: q.options,
             correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            // mapping difficulty omitted for brevity, fallback logic works
-          }))
+            explanation: q.explanation || '',
+            difficulty: q.difficulty || 'medium',
+            proofQuote: q.proofQuote || '',
+            pageReference: q.pageReference || 'Document Reference',
+            citationType: q.citationType || 'VERBATIM_PROOF',
+          })),
         },
         pdfs: {
-          create: pdfsData
-        }
+          create: pdfsData,
+        },
       },
       include: {
         questions: true,
-        pdfs: true
-      }
+        pdfs: true,
+      },
     });
 
     return NextResponse.json({ success: true, test });

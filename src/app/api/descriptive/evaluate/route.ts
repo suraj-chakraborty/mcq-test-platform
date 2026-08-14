@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { GoogleGenAI } from '@google/genai';
+import { getGenAIInstance } from '@/app/lib/ai';
 import { z } from 'zod';
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 const evaluationInputSchema = z.object({
   examName: z.string(),
@@ -64,8 +62,9 @@ Assess the answer across these dimensions:
   "suggestions": string[]
 }
 `;
+    const genAI = getGenAIInstance();
     const aiResult = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.7-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
