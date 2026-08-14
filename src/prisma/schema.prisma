@@ -121,6 +121,11 @@ model Question {
   explanation   String?
   difficulty    String   @default("medium")
   
+  // Verifiable Citation & Proof Fields
+  proofQuote    String?  // Exact verbatim quote from PDF
+  pageReference String?  // e.g. "Page 42, Section 3.2"
+  citationType  String?  // "VERBATIM_PROOF" | "LOGICAL_DEDUCTION"
+  
   flashcards    Flashcard[]
   audits        QuestionAudit[]
 
