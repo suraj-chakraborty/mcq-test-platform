@@ -13,6 +13,8 @@ import Truncate from './Truncate';
 
 import { LoadingSpinner as Loading } from './LoadingSpinner';
 
+import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+
 interface MCQQuestion {
   question: string;
   options: string[];
@@ -37,44 +39,62 @@ interface PdfUploadProps {
   onUploadError?: () => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
 } as const;
 
 export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadError }: PdfUploadProps) {
-  const router = useRouter()
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentFiles, setCurrentFiles] = useState<File[]>([]);
-  const [mcqs, setMcqs] = useState<MCQQuestion[]>([]);
-  const [showMcqs, setShowMcqs] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'with-mcqs' | 'without-mcqs'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'size'>('date');
+  const [selectedTopic, setSelectedTopic] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [selectedPdfs, setSelectedPdfs] = useState<string[]>([]);
   const [showModal, ShowModal] = useState(false);
+  const [currentFiles, setCurrentFiles] = useState<File[]>([]);
   const [numQuestions, setNumQuestions] = useState(10);
   const [domainTopic, setDomainTopic] = useState('');
-
-  useEffect(() => {
-    fetchPdfs();
-  }, []);
+  const [mcqs, setMcqs] = useState<MCQQuestion[]>([]);
+  const [showMcqs, setShowMcqs] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isTestStarting, setIsTestStarting] = useState(false);
+  const [testStartError, setTestStartError] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchPdfs = async () => {
     try {
-      setIsLoading(true);
-      const res = await fetch('/api/pdfs');
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        ...(searchTerm && { search: searchTerm }),
+        ...(selectedTopic && selectedTopic !== 'all' && { topic: selectedTopic }),
+      });
+
+      const res = await fetch(`/api/pdfs?${queryParams}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch PDFs');
+      }
       const data = await res.json();
-      setPdfs(data.pdfs || []);
+      setPdfs(data.pdfs || data.data || []);
+      setTotalPages(data.pagination?.totalPages || 1);
     } catch (err) {
-      toast.error('Failed to fetch PDFs');
+      console.error('Error fetching PDFs:', err);
+      toast.error('Failed to load PDFs');
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPdfs();
+  }, [page, searchTerm, selectedTopic]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => {
@@ -82,7 +102,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         toast.error(`File ${file.name} exceeds max size of ${MAX_FILE_SIZE / 1024 / 1024}MB`);
         return false;
       }
-      if (!(file.type in ACCEPTED_FILE_TYPES)) {
+      if (!(file.type in ACCEPTED_FILE_TYPES) && !file.name.endsWith('.pdf')) {
         toast.error(`File ${file.name} is not a PDF`);
         return false;
       }
@@ -90,7 +110,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
     });
     if (validFiles.length === 0) return;
     setCurrentFiles(validFiles);
-    ShowModal(true)
+    ShowModal(true);
   }, []);
 
   const handleUploadWithForm = async () => {
@@ -99,74 +119,54 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
       return;
     }
     setIsUploading(true);
-    setUploadProgress(0);
-
-    const formData = new FormData();
-    currentFiles.forEach(file => {
-      formData.append('files', file);
-      formData.append('numQuestions', numQuestions.toString());
-      formData.append('domainTopic', domainTopic);
-    });
+    setUploadProgress(10);
+    onUploadPending?.();
 
     try {
-      const xhr = new XMLHttpRequest();
+      // 1. Direct upload each PDF file to Cloudinary (bypasses Netlify 4.5MB limit)
+      toast.info('Uploading documents to secure cloud storage...');
+      const uploadedList = await Promise.all(
+        currentFiles.map((file) =>
+          uploadPdfDirectToCloudinary(file, (percent) => {
+            setUploadProgress(Math.max(10, Math.min(90, percent)));
+          })
+        )
+      );
 
-      xhr.upload.addEventListener('progress', (event) => {
-        // console.log("event",event)
-        // console.log(event.lengthComputable, event.loaded, event.total);
-        if (event.lengthComputable) {
-          const percentCompleted = Math.round((event.loaded * 100) / event.total);
-          setUploadProgress(percentCompleted);
-          setIsUploading(true)
-        }
-        onUploadPending?.();
+      setUploadProgress(95);
+      toast.info('Synthesizing questions & source citations...');
+
+      // 2. Post lightweight JSON payload to Next.js API
+      const response = await fetch('/api/pdfs/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          directUploads: uploadedList,
+          numQuestions: numQuestions.toString(),
+          domainTopic,
+        }),
       });
 
-      xhr.addEventListener('load', () => {
-        try {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            if (!xhr.responseText) {
-              throw new Error('Empty response from server');
-            }
-            const data = JSON.parse(xhr.responseText);
-            setMcqs(data.mcqs || []);
-            setShowMcqs(true);
-            toast.success('PDFs uploaded and processed successfully');
-            onUploadSuccess?.();
-            setIsUploading(false);
-            fetchPdfs();
-          } else {
-            let errorMessage = 'Upload failed';
-            if (xhr.responseText) {
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                errorMessage = errorData.error || errorMessage;
-              } catch (parseError) {
-                console.error('Failed to parse error response:', parseError);
-              }
-            }
-            throw new Error(errorMessage);
-          }
-        } catch (error) {
-          console.error('Error processing response:', error);
-          toast.error(error instanceof Error ? error.message : 'Upload failed');
-          setIsUploading(false);
-        }
-      });
+      const data = await response.json();
 
-      xhr.onerror = () => {
-        toast.error('Network error');
-        onUploadError?.();
-        setIsUploading(false);
-      };
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to process PDFs');
+      }
 
-      xhr.open('POST', '/api/pdfs/upload');
-      setIsUploading(true);
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.send(formData);
+      setUploadProgress(100);
+      setMcqs(data.mcqs || []);
+      setShowMcqs(true);
+      ShowModal(false);
+      toast.success('PDFs uploaded and questions synthesized successfully!');
+      onUploadSuccess?.();
+      fetchPdfs();
     } catch (err) {
       console.error('Upload error:', err);
-      toast.error('Upload failed');
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
+      onUploadError?.();
+    } finally {
       setIsUploading(false);
     }
   };
