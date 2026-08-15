@@ -60,80 +60,116 @@ import {
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
 
 interface CardTheme {
-  badge: string;
   badgeClass: string;
   tagClass: string;
   borderClass: string;
   btnClass: string;
-  defaultTags: string[];
+  hoverGradient: string;
 }
 
 const DYNAMIC_THEMES: CardTheme[] = [
   {
-    badge: 'Standard Test',
     badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50',
     tagClass: 'bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40',
     borderClass: 'border-blue-100 hover:border-blue-300 dark:border-neutral-800',
     btnClass: 'bg-[#3B82F6] hover:bg-[#2563EB] text-white',
-    defaultTags: ['Current Affairs', 'General Knowledge'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-blue-50/30 hover:to-blue-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-blue-950/30',
   },
   {
-    badge: 'Quantitative & Logic',
     badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50',
     tagClass: 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40',
     borderClass: 'border-emerald-100 hover:border-emerald-300 dark:border-neutral-800',
     btnClass: 'bg-[#10B981] hover:bg-[#059669] text-white',
-    defaultTags: ['Mathematics', 'Quantitative Aptitude'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-emerald-50/30 hover:to-emerald-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-emerald-950/30',
   },
   {
-    badge: 'Document Synthesis',
     badgeClass: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50',
     tagClass: 'bg-purple-50/80 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-100 dark:border-purple-900/40',
     borderClass: 'border-purple-100 hover:border-purple-300 dark:border-neutral-800',
     btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white',
-    defaultTags: ['Banking PO', 'Exam Prep'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-purple-50/30 hover:to-purple-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-purple-950/30',
   },
   {
-    badge: 'Competitive Duel',
     badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50',
     tagClass: 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-100 dark:border-amber-900/40',
     borderClass: 'border-amber-100 hover:border-amber-300 dark:border-neutral-800',
     btnClass: 'bg-[#EA580C] hover:bg-[#C2410C] text-white',
-    defaultTags: ['General Knowledge', 'History'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-amber-50/30 hover:to-amber-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-amber-950/30',
   },
   {
-    badge: 'Benchmark PYQ',
     badgeClass: 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/50',
     tagClass: 'bg-sky-50/80 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-100 dark:border-sky-900/40',
     borderClass: 'border-sky-100 hover:border-sky-300 dark:border-neutral-800',
     btnClass: 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white',
-    defaultTags: ['Official Papers', 'Exam Pattern'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-sky-50/30 hover:to-sky-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-sky-950/30',
   },
   {
-    badge: 'Descriptive Evaluation',
     badgeClass: 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900/50',
     tagClass: 'bg-teal-50/80 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-100 dark:border-teal-900/40',
     borderClass: 'border-teal-100 hover:border-teal-300 dark:border-neutral-800',
     btnClass: 'bg-[#0D9488] hover:bg-[#0F766E] text-white',
-    defaultTags: ['Essay Writing', 'Analysis'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-teal-50/30 hover:to-teal-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-teal-950/30',
   },
   {
-    badge: 'Formula & Equation',
     badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50',
     tagClass: 'bg-rose-50/80 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-100 dark:border-rose-900/40',
     borderClass: 'border-rose-100 hover:border-rose-300 dark:border-neutral-800',
     btnClass: 'bg-[#E11D48] hover:bg-[#BE123C] text-white',
-    defaultTags: ['Mathematics', 'Data Interpretation'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-rose-50/30 hover:to-rose-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-rose-950/30',
   },
   {
-    badge: 'Logic & Reasoning',
     badgeClass: 'bg-violet-50 text-violet-700 border-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900/50',
     tagClass: 'bg-violet-50/80 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border border-violet-100 dark:border-violet-900/40',
     borderClass: 'border-violet-100 hover:border-violet-300 dark:border-neutral-800',
     btnClass: 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white',
-    defaultTags: ['Reasoning', 'Logical Ability'],
+    hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-violet-50/30 hover:to-violet-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-violet-950/30',
   },
 ];
+
+function getTestTopic(test: { title: string; description?: string }): string {
+  if (test.description) {
+    const match = test.description.match(/(?:Topic:\s*|for topic:\s*)([^)\n,]+)/i);
+    if (match && match[1]?.trim()) {
+      return match[1].trim();
+    }
+  }
+
+  const title = test.title || '';
+  const lower = title.toLowerCase();
+
+  if (lower.includes('hindu') || lower.includes('express') || lower.includes('affair') || lower.includes('news') || lower.includes('monthly')) {
+    return 'Current Affairs';
+  }
+  if (lower.includes('math') || lower.includes('quant') || lower.includes('algebra') || lower.includes('geometry') || lower.includes('arithmetic')) {
+    return 'Quantitative Aptitude';
+  }
+  if (lower.includes('reason') || lower.includes('logic') || lower.includes('puzzle') || lower.includes('deduction')) {
+    return 'Logical Reasoning';
+  }
+  if (lower.includes('english') || lower.includes('vocab') || lower.includes('grammar') || lower.includes('comprehension')) {
+    return 'English Language';
+  }
+  if (lower.includes('science') || lower.includes('physics') || lower.includes('chemistry') || lower.includes('biology')) {
+    return 'General Science';
+  }
+  if (lower.includes('history') || lower.includes('ancient') || lower.includes('medieval') || lower.includes('modern')) {
+    return 'History';
+  }
+  if (lower.includes('polity') || lower.includes('constitution') || lower.includes('civics')) {
+    return 'Indian Polity';
+  }
+  if (lower.includes('geography') || lower.includes('climate') || lower.includes('map')) {
+    return 'Geography';
+  }
+  if (lower.includes('economy') || lower.includes('banking') || lower.includes('finance')) {
+    return 'Economy & Banking';
+  }
+  if (lower.includes('pyq') || lower.includes('previous year')) {
+    return 'Previous Year Paper';
+  }
+
+  return 'General Knowledge';
+}
 
 interface Question {
   id: string;
@@ -236,6 +272,7 @@ export default function Dashboard() {
         tagClass: 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40',
         borderClass: 'border-indigo-100 hover:border-indigo-300 dark:border-neutral-800',
         btnClass: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-indigo-50/30 hover:to-indigo-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-indigo-950/30',
       }));
     }
     if (cardPalette === 'emerald') {
@@ -245,6 +282,7 @@ export default function Dashboard() {
         tagClass: 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40',
         borderClass: 'border-emerald-100 hover:border-emerald-300 dark:border-neutral-800',
         btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-emerald-50/30 hover:to-emerald-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-emerald-950/30',
       }));
     }
     if (cardPalette === 'slate') {
@@ -254,6 +292,7 @@ export default function Dashboard() {
         tagClass: 'bg-slate-50 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200/70 dark:border-neutral-700',
         borderClass: 'border-gray-200/90 hover:border-gray-300 dark:border-neutral-800',
         btnClass: 'bg-slate-900 hover:bg-black dark:bg-neutral-800 dark:hover:bg-neutral-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-slate-50/40 hover:to-slate-100/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-neutral-800/40',
       }));
     }
     return DYNAMIC_THEMES;
@@ -631,7 +670,7 @@ export default function Dashboard() {
   }
 
   if (selectedTest) {
-    return <TestAttempt test={selectedTest} onComplete={handleTestComplete} />;
+    return <TestAttempt test={selectedTest} onComplete={handleTestComplete} onExit={() => setSelectedTest(null)} />;
   }
 
   if (showResults && currentResults) {
@@ -919,7 +958,7 @@ export default function Dashboard() {
               <AnimatePresence mode="popLayout">
                 {displayedTests.map((test, index) => {
                   const theme = cardThemes[index % cardThemes.length];
-                  const tags = theme.defaultTags;
+                  const topic = getTestTopic(test);
 
                   return (
                     <motion.div
@@ -929,45 +968,38 @@ export default function Dashboard() {
                       exit={{ opacity: 0, scale: 0.98 }}
                       transition={{ duration: 0.25, delay: index * 0.04 }}
                     >
-                      <Card className={`flex flex-col justify-between h-full bg-white dark:bg-neutral-900 border ${theme.borderClass} shadow-sm hover:shadow-md transition-all rounded-xl p-4 sm:p-5 group`}>
+                      <Card className={`flex flex-col justify-between h-full bg-white dark:bg-neutral-900 border ${theme.borderClass} ${theme.hoverGradient} shadow-sm hover:shadow-md transition-all duration-300 rounded-xl p-4 sm:p-5 group`}>
                         <div className="space-y-3">
-                          {/* Top Badge & Action Icons */}
+                          {/* Top Topic Badge & Action Icons */}
                           <div className="flex items-center justify-between">
-                            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${theme.badgeClass}`}>
-                              {theme.badge}
+                            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-wide border ${theme.badgeClass}`}>
+                              {topic}
                             </span>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => router.push(`/edit-test/${test.id}`)}
-                                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                                title="Edit Test"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
+                            <div className="flex items-center gap-1.5">
                               <button
                                 onClick={() => {
                                   const url = `${window.location.origin}/take-test/${test.id}`;
                                   navigator.clipboard.writeText(url);
                                   toast.success('Link copied!');
                                 }}
-                                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all"
                                 title="Share Link"
                               >
-                                <Share2 className="w-3.5 h-3.5" />
+                                <Share2 className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleCreateBattle(test.id)}
-                                className="p-1 rounded text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 hover:scale-105 transition-all"
                                 title="Start Battle"
                               >
-                                <Swords className="w-3.5 h-3.5" />
+                                <Swords className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => createFlashcards(test.id)}
-                                className="p-1 rounded text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:scale-105 transition-all"
                                 title="Create Flashcards"
                               >
-                                <Brain className="w-3.5 h-3.5" />
+                                <Brain className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -977,28 +1009,16 @@ export default function Dashboard() {
                             {test.title}
                           </h3>
 
-                          {/* Category Pills */}
-                          <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {tags.map((tag: string, tIdx: number) => (
-                              <span
-                                key={tIdx}
-                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${theme.tagClass}`}
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-
                           {/* Meta Stats */}
                           <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 font-medium pt-1">
                             <span className="flex items-center gap-1.5">
-                              <FileText className="w-3.5 h-3.5 text-gray-400" /> {test.questions.length} Qs
+                              <FileText className="w-4 h-4 text-gray-400" /> {test.questions.length} Qs
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-gray-400" /> {test.duration}m
+                              <Clock className="w-4 h-4 text-gray-400" /> {test.duration}m
                             </span>
                             <span className="flex items-center gap-1.5">
-                              <BarChart3 className="w-3.5 h-3.5 text-gray-400" /> Medium
+                              <BarChart3 className="w-4 h-4 text-gray-400" /> Medium
                             </span>
                           </div>
 
@@ -1137,7 +1157,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {pdfTests.length > 0 ? (
                 pdfTests.map((test) => (
-                  <Card key={test.id} className="border border-gray-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 rounded-xl overflow-hidden group transition-all">
+                  <Card key={test.id} className="border border-gray-200 dark:border-neutral-800 shadow-sm hover:shadow-md bg-white dark:bg-neutral-900 hover:bg-gradient-to-br hover:from-white hover:via-indigo-50/30 hover:to-indigo-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-indigo-950/30 rounded-xl overflow-hidden group transition-all duration-300">
                     <CardHeader className="p-4 pb-0">
                       <div className="flex justify-between items-start gap-3">
                         <div className="flex items-center gap-2.5">
@@ -1153,15 +1173,15 @@ export default function Dashboard() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5 text-gray-400">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-gray-900 rounded-md shrink-0" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View Preview">
-                            <Eye className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-lg shrink-0 transition-colors" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View Preview">
+                            <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-gray-900 rounded-md shrink-0" onClick={() => setEditingTest(test)} title="Edit Test">
-                            <Pencil className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-lg shrink-0 transition-colors" onClick={() => setEditingTest(test)} title="Edit Test">
+                            <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-rose-600 rounded-md shrink-0" onClick={() => setTestToDelete(test)} title="Delete Test">
-                            <Trash2 className="w-3.5 h-3.5" />
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-rose-600 rounded-lg shrink-0 transition-colors" onClick={() => setTestToDelete(test)} title="Delete Test">
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
