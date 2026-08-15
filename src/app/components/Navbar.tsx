@@ -195,6 +195,7 @@ export default function Navbar() {
                 {/* Mobile Menu Toggle (Only on mobile) */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Toggle Menu"
                   className="md:hidden p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-neutral-800"
                 >
                   {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
