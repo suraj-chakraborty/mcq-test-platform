@@ -95,76 +95,77 @@ export default function TestResults() {
   let rlt = percentage >= 50 ? "passed" : "failed";
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-4 sm:py-8 px-2.5 sm:px-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, type: "spring" }}
+        transition={{ duration: 0.4, type: "spring" }}
       >
-        <Card className="max-w-4xl mx-auto overflow-hidden shadow-2xl shadow-indigo-100 border-none">
-          <CardHeader className="bg-white border-b py-8">
-            <CardTitle className="text-gray-400 text-sm font-bold uppercase tracking-widest text-center">Test Results Identification</CardTitle>
-            <p className="text-center font-mono text-gray-500">{attempt.id}</p>
+        <Card className="max-w-4xl mx-auto overflow-hidden shadow-2xl shadow-indigo-100 dark:shadow-none border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl">
+          <CardHeader className="bg-white dark:bg-neutral-900 border-b border-gray-100 dark:border-neutral-800 py-4 sm:py-6 px-4 sm:px-6">
+            <CardTitle className="text-gray-400 text-xs sm:text-sm font-black uppercase tracking-widest text-center">Test Performance Summary</CardTitle>
+            <p className="text-center font-mono text-gray-500 text-xs truncate max-w-xs mx-auto">{attempt.id}</p>
           </CardHeader>
-          <CardContent className="pt-12 px-8 pb-12">
-            <div className="text-center mb-16 relative">
+          <CardContent className="pt-6 sm:pt-10 px-3.5 sm:px-8 pb-8 sm:pb-12">
+            <div className="text-center mb-8 sm:mb-12 relative">
               {percentage >= 80 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1.2 }}
-                  transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-                  className="absolute -top-16 left-1/2 -translate-x-1/2 text-6xl pointer-events-none"
+                  transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
+                  className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2 text-4xl sm:text-6xl pointer-events-none"
                 >
                   🎉🏆✨
                 </motion.div>
               )}
 
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
+                initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
               >
-                <div className="inline-block p-4 rounded-full bg-indigo-50 mb-6">
-                  <h2 className="text-6xl font-black text-gray-900 leading-none">
-                    <span className="text-indigo-600">{attempt.score}</span>
-                    <span className="text-gray-300 text-3xl"> / {attempt.totalQuestions || attempt.questions?.length || 0}</span>
+                <div className="inline-block p-3 sm:p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 mb-4 sm:mb-6">
+                  <h2 className="text-4xl sm:text-6xl font-black text-gray-900 dark:text-white leading-none">
+                    <span className="text-indigo-600 dark:text-indigo-400">{attempt.score}</span>
+                    <span className="text-gray-300 dark:text-gray-600 text-2xl sm:text-3xl font-semibold"> / {attempt.totalQuestions || attempt.questions?.length || 0}</span>
                   </h2>
                 </div>
 
-                <div className="flex flex-col items-center justify-center gap-4 mb-8">
+                <div className="flex flex-col items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 max-w-md mx-auto">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
-                    className="h-4 bg-indigo-600 rounded-full max-w-md w-full overflow-hidden"
+                    className="h-3 sm:h-4 bg-indigo-600 rounded-full w-full overflow-hidden"
                   >
                     <div className="h-full bg-indigo-400 opacity-50 animate-pulse" />
                   </motion.div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="flex flex-col items-center">
-                      <span className="text-3xl font-black text-gray-800">{percentage}%</span>
+                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-3 sm:gap-6 w-full pt-2">
+                    <div className="flex flex-col items-center px-2">
+                      <span className="text-2xl sm:text-3xl font-black text-gray-800 dark:text-white">{percentage}%</span>
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Accuracy</span>
                     </div>
-                    {attempt.xpEarned && (
+                    {attempt.xpEarned ? (
                       <>
-                        <div className="h-10 w-px bg-gray-100" />
-                        <div className="flex flex-col items-center">
+                        <div className="h-8 w-px bg-gray-200 dark:bg-neutral-800 hidden sm:block" />
+                        <div className="flex flex-col items-center px-2">
                           <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="text-3xl font-black text-indigo-600"
+                            className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400"
                           >
                             +{attempt.xpEarned}
                           </motion.span>
                           <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">XP Earned</span>
                         </div>
                       </>
-                    )}
-                    <div className="h-10 w-px bg-gray-100" />
+                    ) : null}
+                    <div className="h-8 w-px bg-gray-200 dark:bg-neutral-800 hidden sm:block" />
                     <motion.p
-                      className={`text-2xl font-black px-8 py-2 rounded-xl ${rlt === "passed" ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}
-                      animate={percentage >= 90 ? { scale: [1, 1.05, 1], filter: 'brightness(1.1)' } : {}}
+                      className={`text-sm sm:text-lg font-black px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl ${
+                        rlt === "passed" ? 'bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                      }`}
+                      animate={percentage >= 90 ? { scale: [1, 1.05, 1] } : {}}
                       transition={{ repeat: Infinity, duration: 2 }}
                     >
                       {rlt === "passed" ? 'EXCELLENT' : 'KEEP TRYING'}
@@ -172,19 +173,19 @@ export default function TestResults() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 justify-center mb-6">
+                <div className="flex flex-wrap gap-2 justify-center mb-4 sm:mb-6">
                   {percentage === 100 && (
-                    <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-amber-200">🎯 Perfect Score</span>
+                    <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border border-amber-200 dark:border-amber-800">🎯 Perfect Score</span>
                   )}
                   {attempt.xpEarned && attempt.xpEarned > 150 && (
-                    <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border border-indigo-200">🔥 Elite Performance</span>
+                    <span className="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border border-indigo-200 dark:border-indigo-800">🔥 Elite Performance</span>
                   )}
                 </div>
 
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
                   Completed on{' '}
                   {new Date(attempt.completedAt || attempt.updatedAt).toLocaleString('en-US', {
-                    dateStyle: 'long',
+                    dateStyle: 'medium',
                     timeStyle: 'short',
                   })}
                 </p>
@@ -192,7 +193,7 @@ export default function TestResults() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Detailed Analysis</h3>
+              <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-neutral-800 pb-2">Detailed Question Review</h3>
               {attempt.questions.map((question: any, index: number) => {
                 const userSelectedOptionIndex = attempt.answers[index];
                 const isCorrect = userSelectedOptionIndex === question.correctAnswer;
@@ -200,41 +201,46 @@ export default function TestResults() {
                 return (
                   <div
                     key={question.id || index}
-                    className={`p-6 rounded-2xl border-2 transition-all ${isCorrect
-                        ? 'bg-green-50/50 border-green-100'
+                    className={`p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border transition-all ${
+                      isCorrect
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'
                         : userSelectedOptionIndex === -1 
-                          ? 'bg-gray-50 border-gray-100'
-                          : 'bg-red-50/50 border-red-100'
-                      }`}
+                          ? 'bg-slate-50/60 dark:bg-neutral-800/30 border-slate-200 dark:border-neutral-800'
+                          : 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
+                    }`}
                   >
-                    <div className="font-bold mb-6 text-gray-900 flex gap-4 items-start">
-                      <span className={`shrink-0 rounded-xl w-8 h-8 flex items-center justify-center shadow-sm text-xs border font-black ${isCorrect ? 'bg-green-100 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-400'}`}>
+                    <div className="font-bold mb-4 text-gray-900 dark:text-white flex gap-2.5 sm:gap-3 items-start">
+                      <span className={`shrink-0 rounded-lg w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs font-black ${
+                        isCorrect
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
+                          : 'bg-slate-100 text-slate-600 dark:bg-neutral-800 dark:text-slate-400'
+                      }`}>
                         {index + 1}
                       </span>
-                      <div className="flex-1 text-lg leading-tight">
+                      <div className="flex-1 text-sm sm:text-base leading-snug">
                         <FormattedHeader text={question.question} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       {question.options.map((option: string, optionIndex: number) => {
                         const isThisCorrect = optionIndex === question.correctAnswer;
                         const isThisUserSelected = optionIndex === userSelectedOptionIndex;
 
                         const bgClass = isThisCorrect
-                          ? 'bg-white border-green-500 text-green-700'
+                          ? 'bg-white dark:bg-neutral-900 border-emerald-500 text-emerald-800 dark:text-emerald-300 font-semibold'
                           : isThisUserSelected
-                            ? 'bg-white border-red-500 text-red-700'
-                            : 'bg-gray-50/50 border-transparent text-gray-500';
+                            ? 'bg-white dark:bg-neutral-900 border-rose-500 text-rose-800 dark:text-rose-300'
+                            : 'bg-white/60 dark:bg-neutral-900/60 border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-gray-400';
 
                         return (
                           <div
                             key={optionIndex}
-                            className={`p-3 rounded-xl border-2 transition-all flex justify-between items-center ${bgClass}`}
+                            className={`p-2.5 sm:p-3 rounded-xl border transition-all flex justify-between items-center text-xs sm:text-sm ${bgClass}`}
                           >
-                            <span className="text-sm font-medium">{option}</span>
-                            <div className="flex items-center gap-2">
-                               {isThisCorrect && <span className="text-[10px] font-black uppercase tracking-tighter bg-green-100 px-1.5 py-0.5 rounded text-green-700">Correct</span>}
-                               {isThisUserSelected && !isThisCorrect && <span className="text-[10px] font-black uppercase tracking-tighter bg-red-100 px-1.5 py-0.5 rounded text-red-700">Your Choice</span>}
+                            <span className="flex-1 pr-2">{option}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                               {isThisCorrect && <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded">Correct</span>}
+                               {isThisUserSelected && !isThisCorrect && <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-900 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded">Your Choice</span>}
                             </div>
                           </div>
                         );
@@ -242,11 +248,11 @@ export default function TestResults() {
                     </div>
 
                     {question.explanation && (
-                      <div className="mt-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
-                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      <div className="mt-3 sm:mt-4 bg-white/80 dark:bg-neutral-900/80 p-3 sm:p-4 rounded-xl border border-gray-200/80 dark:border-neutral-800">
+                        <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
                           Explanation
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
+                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
                           {question.explanation}
                         </p>
                       </div>
