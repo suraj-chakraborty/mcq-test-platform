@@ -7,6 +7,7 @@ import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import pdfParse from 'pdf-parse';
 import { saveFile } from '@/app/lib/fileStorage';
+import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
 
@@ -20,29 +21,37 @@ export async function POST(request: Request) {
     const contentType = request.headers.get('content-type') || '';
     let fileName = 'document.pdf';
     let fileUrl = '';
+    let publicId = '';
     let buffer: Buffer | null = null;
     let fileSize = 0;
     let topic = 'General';
     let numQuestions = 10;
+    let extractedText = '';
+    let pageCount = 1;
 
     if (contentType.includes('application/json')) {
       const body = await request.json();
       fileUrl = body.pdfUrl || body.url || '';
+      publicId = body.publicId || '';
       fileName = body.fileName || body.name || 'document.pdf';
       fileSize = body.fileSize || 0;
       topic = body.domainTopic || body.topic || 'General';
       numQuestions = parseInt(body.numQuestions || '10', 10);
+      extractedText = body.text || '';
+      pageCount = body.pageCount || 1;
 
       if (!fileUrl) {
         return NextResponse.json({ error: 'No PDF URL provided' }, { status: 400 });
       }
 
-      // Download buffer from Cloudinary URL
-      const res = await fetch(fileUrl);
-      if (!res.ok) {
-        return NextResponse.json({ error: 'Failed to download PDF from storage' }, { status: 400 });
+      // If client provided text layer, we don't need to download buffer unless empty
+      if (!extractedText || extractedText.length < 50) {
+        try {
+          buffer = await downloadCloudinaryPdf(fileUrl, publicId);
+        } catch (e) {
+          console.warn('Could not download buffer for upload route:', e);
+        }
       }
-      buffer = Buffer.from(await res.arrayBuffer());
     } else {
       const formData = await request.formData();
       const file = formData.get('file') as File;
@@ -64,37 +73,36 @@ export async function POST(request: Request) {
       fileUrl = await saveFile(file);
     }
 
-    if (!buffer) {
-      return NextResponse.json({ error: 'Failed to process document buffer' }, { status: 400 });
-    }
-
-    let mcqs: any[] = [];
-    let pageCount = 1;
-    let extractedText = '';
-
-    try {
-      const { text, pageCount: pc } = await extractTextFromPdf(buffer);
-      extractedText = text;
-      pageCount = pc;
-    } catch (e) {
-      console.log('PDF text extraction failed or insufficient text. Falling back to Gemini Vision OCR.', e);
+    if (buffer && (!extractedText || extractedText.length < 50)) {
       try {
-        const data = await pdfParse(buffer);
-        pageCount = data.numpages || 1;
-      } catch (innerE) {
-        console.warn('Could not determine page count, defaulting to 1.');
+        const { text, pageCount: pc } = await extractTextFromPdf(buffer);
+        extractedText = text;
+        pageCount = pc;
+      } catch (e) {
+        console.log('PDF text extraction failed. Falling back to Gemini Vision OCR.', e);
+        try {
+          const data = await pdfParse(buffer);
+          pageCount = data.numpages || 1;
+        } catch (innerE) {
+          console.warn('Could not determine page count, defaulting to 1.');
+        }
       }
     }
 
+    let mcqs: any[] = [];
+
     if (extractedText && extractedText.length >= 50) {
       mcqs = await generateMCQs(extractedText, topic, numQuestions);
-    } else {
+    } else if (buffer) {
       console.log('Using Gemini Vision OCR for MCQ generation...');
       mcqs = await generateMCQsFromPdfBuffer(buffer, topic, numQuestions);
     }
 
     if (!mcqs || mcqs.length === 0) {
-      return NextResponse.json({ error: 'Failed to generate MCQs from this PDF. Please try a different document.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Failed to generate MCQs from this PDF. Please try a different document.' },
+        { status: 400 }
+      );
     }
 
     // Create a new Test with the PDF and MCQs
@@ -109,7 +117,7 @@ export async function POST(request: Request) {
             {
               name: fileName,
               url: fileUrl,
-              fileSize: fileSize || buffer.length,
+              fileSize: fileSize || buffer?.length || 0,
               pageCount: pageCount,
             },
           ],

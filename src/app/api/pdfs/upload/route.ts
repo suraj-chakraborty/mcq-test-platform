@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { generateMCQsUniversal } from '@/app/lib/ai';
 import { prisma } from '@/app/lib/prisma';
 import { saveFile } from '@/app/lib/fileStorage';
+import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
@@ -9,11 +10,11 @@ import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for Cloudinary-hosted PDFs
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 export const maxDuration = 60; // Extended for large scanned PDFs
 
 async function safeGenerateMCQs(
-  buffer: Buffer,
+  buffer: Buffer | null,
   text: string,
   isScanned: boolean,
   topic: string,
@@ -24,7 +25,7 @@ async function safeGenerateMCQs(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const result = await generateMCQsUniversal({
-      pdfBuffer: buffer,
+      pdfBuffer: buffer || Buffer.from(''),
       pdfText: text,
       isScanned,
       topic,
@@ -47,7 +48,15 @@ export async function POST(request: Request) {
     }
 
     const contentType = request.headers.get('content-type') || '';
-    let filesToProcess: { name: string; url?: string; buffer?: Buffer; fileSize: number }[] = [];
+    let filesToProcess: {
+      name: string;
+      url?: string;
+      publicId?: string;
+      buffer?: Buffer;
+      fileSize: number;
+      text?: string;
+      pageCount?: number;
+    }[] = [];
     let topic = 'General';
     let numQuestions = 10;
 
@@ -57,7 +66,14 @@ export async function POST(request: Request) {
       topic = body.domainTopic || 'General';
       numQuestions = parseInt(body.numQuestions || '10', 10);
 
-      const directUploads = body.directUploads as { name: string; url: string; fileSize?: number }[];
+      const directUploads = body.directUploads as {
+        name: string;
+        url: string;
+        publicId?: string;
+        fileSize?: number;
+        text?: string;
+        pageCount?: number;
+      }[];
       if (!directUploads || directUploads.length === 0) {
         return NextResponse.json({ error: 'No uploaded PDF URLs provided' }, { status: 400 });
       }
@@ -65,7 +81,10 @@ export async function POST(request: Request) {
       filesToProcess = directUploads.map((u) => ({
         name: u.name,
         url: u.url,
+        publicId: u.publicId,
         fileSize: u.fileSize || 0,
+        text: u.text,
+        pageCount: u.pageCount,
       }));
     } else {
       // 2. Standard FormData Flow (Localhost / Fallback)
@@ -102,24 +121,33 @@ export async function POST(request: Request) {
     const results = await Promise.allSettled(
       filesToProcess.map(async (fileItem) => {
         let buffer = fileItem.buffer;
-        let fileUrl = fileItem.url || '';
+        const fileUrl = fileItem.url || '';
+        let extractedText = fileItem.text || '';
+        let pageCount = fileItem.pageCount || 1;
+        let isScanned = false;
 
-        // If buffer was not passed directly, fetch it from Cloudinary CDN
-        if (!buffer && fileUrl) {
-          const res = await fetch(fileUrl);
-          if (!res.ok) {
-            throw new Error(`Failed to download PDF from Cloudinary (${res.status})`);
+        // If client already extracted high-quality text layer (>= 50 chars), use it directly!
+        if (extractedText && extractedText.length >= 50) {
+          isScanned = false;
+        } else {
+          // If no client text (e.g. scanned image PDF or fallback), fetch buffer with signed authentication
+          if (!buffer && fileUrl) {
+            buffer = await downloadCloudinaryPdf(fileUrl, fileItem.publicId);
           }
-          const arrayBuffer = await res.arrayBuffer();
-          buffer = Buffer.from(arrayBuffer);
+
+          if (buffer) {
+            const result = await extractTextFromPdf(buffer);
+            extractedText = result.text;
+            pageCount = result.pageCount;
+            isScanned = result.isScanned;
+          }
         }
 
-        if (!buffer) {
-          throw new Error(`No document content available for ${fileItem.name}`);
-        }
+        const mcqs = await safeGenerateMCQs(buffer || null, extractedText, isScanned, topic, numQuestions);
 
-        const { text, pageCount, isScanned } = await extractTextFromPdf(buffer);
-        const mcqs = await safeGenerateMCQs(buffer, text, isScanned, topic, numQuestions);
+        if (!mcqs || mcqs.length === 0) {
+          throw new Error(`Failed to generate questions from ${fileItem.name}`);
+        }
 
         // Create Test + Questions with Proof Citations + PdfDocument in database
         const test = await prisma.test.create({
@@ -145,7 +173,7 @@ export async function POST(request: Request) {
                 {
                   name: fileItem.name,
                   url: fileUrl,
-                  fileSize: fileItem.fileSize || buffer.length,
+                  fileSize: fileItem.fileSize || buffer?.length || 0,
                   pageCount: pageCount,
                 },
               ],
