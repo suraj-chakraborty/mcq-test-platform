@@ -47,6 +47,19 @@ export default function TestResults() {
     }
   }, [status, router]);
 
+  // If user in result section tries to go back, send them to dashboard instead of the test
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      router.replace('/dashboard');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [router]);
+
   useEffect(() => {
     const fetchResults = async () => {
       try {

@@ -16,7 +16,10 @@ import {
   Bookmark,
   AlertTriangle,
   Award,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -67,6 +70,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
   });
 
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -77,6 +81,50 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
   useEffect(() => {
     setVisited((prev) => ({ ...prev, [currentQuestion]: true }));
   }, [currentQuestion]);
+
+  // Warn user before closing tab or reloading while test is active
+  useEffect(() => {
+    if (showResults || isSubmitting) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [showResults, isSubmitting]);
+
+  // Intercept browser back button during test
+  useEffect(() => {
+    if (showResults || isSubmitting) return;
+
+    window.history.pushState({ testActive: true }, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      window.history.pushState({ testActive: true }, '', window.location.href);
+      setShowExitModal(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showResults, isSubmitting]);
+
+  // If user is in the result section and presses browser back, send them to dashboard
+  useEffect(() => {
+    if (!showResults) return;
+
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      router.replace('/dashboard');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showResults, router]);
 
   const handleAnswerChange = useCallback((questionIndex: number, optionIndex: number) => {
     setAnswers((prev) => {
@@ -238,10 +286,11 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
     const timeSecs = timeSpent % 60;
 
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 py-10 px-4 flex justify-center w-full">
+      <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 py-8 px-3 sm:px-6 flex justify-center w-full">
         <div className="w-full max-w-4xl space-y-6">
+          {/* Top Scorecard Summary */}
           <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-neutral-800 shadow-sm text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-black uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-black uppercase tracking-wider">
               <Award className="w-3.5 h-3.5" /> Assessment Scorecard
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">
@@ -249,30 +298,193 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
             </h1>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100">
-                <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{resultData.score}</span>
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest block">Score</span>
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-900/40">
+                <span className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400">{resultData.score}</span>
+                <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest block">Score</span>
               </div>
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-100">
-                <span className="text-2xl font-black text-indigo-700 dark:text-indigo-400">{resultData.percentage}%</span>
-                <span className="text-[10px] font-bold text-indigo-800 uppercase tracking-widest block">Accuracy</span>
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                <span className="text-2xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-400">{resultData.percentage}%</span>
+                <span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-widest block">Accuracy</span>
               </div>
-              <div className="p-4 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-100">
-                <span className="text-2xl font-black text-purple-700 dark:text-purple-400">{totalQuestions}</span>
-                <span className="text-[10px] font-bold text-purple-800 uppercase tracking-widest block">Questions</span>
+              <div className="p-4 bg-purple-50 dark:bg-purple-950/40 rounded-xl border border-purple-100 dark:border-purple-900/40">
+                <span className="text-2xl sm:text-3xl font-black text-purple-700 dark:text-purple-400">{totalQuestions}</span>
+                <span className="text-[10px] font-bold text-purple-800 dark:text-purple-400 uppercase tracking-widest block">Questions</span>
               </div>
-              <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100">
-                <span className="text-2xl font-black text-amber-700 dark:text-amber-400">{timeMins}m {timeSecs}s</span>
-                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-widest block">Time Taken</span>
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-900/40">
+                <span className="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-400">{timeMins}m {timeSecs}s</span>
+                <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest block">Time Taken</span>
               </div>
             </div>
 
             <Button
               onClick={() => router.push('/dashboard')}
-              className="h-10 px-8 bg-slate-900 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-lg font-bold text-xs uppercase tracking-wider"
+              className="h-10 px-8 bg-slate-900 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-sm"
             >
               Return to Dashboard
             </Button>
+          </div>
+
+          {/* Detailed Question Review & Answers Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <span>Detailed Question Review</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400">
+                  {totalQuestions} Questions
+                </span>
+              </h2>
+            </div>
+
+            {test.questions.map((q, idx) => {
+              const userAns = answers[idx];
+              const correctAns = typeof q.correctAnswer === 'number' ? q.correctAnswer : parseInt(String(q.correctAnswer), 10);
+              const isCorrect = userAns !== undefined && userAns !== -1 && userAns === correctAns;
+              const isUnanswered = userAns === undefined || userAns === -1;
+
+              return (
+                <div
+                  key={q.id || idx}
+                  className={`p-4 sm:p-6 rounded-2xl border transition-all space-y-4 ${
+                    isCorrect
+                      ? 'bg-emerald-50/30 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40'
+                      : isUnanswered
+                      ? 'bg-amber-50/20 dark:bg-amber-950/15 border-amber-200/80 dark:border-amber-900/30'
+                      : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40'
+                  }`}
+                >
+                  {/* Question Header & Status */}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Question {idx + 1}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {q.difficulty && (
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                          q.difficulty === 'hard'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800'
+                            : q.difficulty === 'medium'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                        }`}>
+                          {q.difficulty}
+                        </span>
+                      )}
+
+                      {isCorrect ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Correct
+                        </span>
+                      ) : isUnanswered ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+                          <HelpCircle className="w-3.5 h-3.5" /> Unanswered
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200">
+                          <XCircle className="w-3.5 h-3.5" /> Incorrect
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Question Text */}
+                  <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-relaxed">
+                    <FormattedHeader text={q.question} />
+                  </div>
+
+                  {/* 4 Options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                    {q.options.map((opt, optIdx) => {
+                      const isOptionCorrect = optIdx === correctAns;
+                      const isUserChoice = optIdx === userAns;
+
+                      let optClasses = 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300';
+                      let badge = null;
+
+                      if (isOptionCorrect) {
+                        optClasses = 'bg-emerald-100/70 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 font-bold shadow-sm';
+                        badge = (
+                          <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded bg-emerald-600 text-white shrink-0">
+                            {isUserChoice ? '✓ Your Answer (Correct)' : '✓ Correct Answer'}
+                          </span>
+                        );
+                      } else if (isUserChoice) {
+                        optClasses = 'bg-rose-100/70 dark:bg-rose-950/60 border-rose-400 dark:border-rose-700 text-rose-950 dark:text-rose-100 font-bold shadow-sm';
+                        badge = (
+                          <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+                            ✕ Your Choice
+                          </span>
+                        );
+                      }
+
+                      const optionLetter = String.fromCharCode(65 + optIdx);
+
+                      return (
+                        <div
+                          key={optIdx}
+                          className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs sm:text-sm transition-all ${optClasses}`}
+                        >
+                          <span className={`w-5 h-5 rounded-md flex items-center justify-center font-black text-xs shrink-0 ${
+                            isOptionCorrect
+                              ? 'bg-emerald-600 text-white'
+                              : isUserChoice
+                              ? 'bg-rose-600 text-white'
+                              : 'bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400'
+                          }`}>
+                            {optionLetter}
+                          </span>
+                          <span className="flex-1 leading-snug break-words">{opt}</span>
+                          {badge}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Explanation Box */}
+                  {q.explanation && (
+                    <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-xs sm:text-sm space-y-1">
+                      <span className="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[10px] block">
+                        💡 Explanation
+                      </span>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                        {q.explanation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Verifiable Proof Quote / Citation */}
+                  {(q.proofQuote || q.pageReference) && (
+                    <div className="p-3 sm:p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5" /> Verifiable Citation & Source Proof
+                        </span>
+                        {q.pageReference && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                            {q.pageReference}
+                          </span>
+                        )}
+                      </div>
+                      {q.proofQuote && (
+                        <p className="text-emerald-900 dark:text-emerald-200 italic font-medium">
+                          &ldquo;{q.proofQuote}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Bottom Return to Dashboard Button */}
+            <div className="text-center pt-4 pb-8">
+              <Button
+                onClick={() => router.push('/dashboard')}
+                className="h-11 px-10 bg-slate-900 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md"
+              >
+                Return to Dashboard
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -287,7 +499,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
         <div className="max-w-[1700px] mx-auto px-3 sm:px-6 h-13 sm:h-14 flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => setShowExitModal(true)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 shrink-0 transition-colors"
               title="Exit Test"
             >
@@ -465,42 +677,38 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
           </div>
 
           {/* Bottom Navigation */}
-          <div className="p-3 sm:p-4 bg-gray-50/90 dark:bg-neutral-900/90 border-t border-gray-200 dark:border-neutral-800 flex items-center justify-between gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="p-3.5 sm:p-4 bg-gray-50/90 dark:bg-neutral-900/90 border-t border-gray-200 dark:border-neutral-800 flex items-center justify-between gap-2.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
-                className="h-8.5 sm:h-9 px-3 sm:px-4 rounded-lg text-xs font-bold"
+                className="h-10.5 sm:h-9 px-4 sm:px-4 rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm sm:shadow-none"
               >
                 Previous
               </Button>
 
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleClearResponse}
-                className="hidden sm:inline-flex h-8.5 sm:h-9 px-3 rounded-lg text-xs font-bold text-gray-600 hover:text-rose-600"
+                className="hidden sm:inline-flex h-9 px-3 rounded-lg text-xs font-bold text-gray-600 hover:text-rose-600"
               >
                 Clear Response
               </Button>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               {currentQuestion === test.questions.length - 1 ? (
                 <Button
-                  size="sm"
                   onClick={() => setShowSubmitModal(true)}
-                  className="h-8.5 sm:h-9 px-4 sm:px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm"
+                  className="h-10.5 sm:h-9 px-5 sm:px-5 rounded-xl sm:rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-xs font-black uppercase tracking-wider shadow-sm"
                 >
                   Submit Test
                 </Button>
               ) : (
                 <Button
-                  size="sm"
                   onClick={handleNext}
-                  className="h-8.5 sm:h-9 px-4 sm:px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider shadow-sm"
+                  className="h-10.5 sm:h-9 px-5 sm:px-5 rounded-xl sm:rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm sm:text-xs font-black uppercase tracking-wider shadow-sm"
                 >
                   Next Question →
                 </Button>
@@ -795,6 +1003,46 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
               className="h-9 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
             >
               Submit Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 7. EXIT TEST CONFIRMATION WARNING MODAL */}
+      <Dialog open={showExitModal} onOpenChange={setShowExitModal}>
+        <DialogContent className="max-w-md rounded-xl p-6 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
+          <DialogHeader>
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-2 border border-rose-100 dark:border-rose-900/50">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-lg font-black text-gray-900 dark:text-white">
+              Leave Ongoing Test?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500 dark:text-gray-400">
+              Your test is currently in progress. If you leave now, your answers and test progress will not be saved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-xs font-semibold">
+            ⏳ Time remaining: <span className="font-mono font-black">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span> • {Object.keys(answers).length} answered
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowExitModal(false)}
+              className="h-10 rounded-lg text-xs font-bold"
+            >
+              Resume Test
+            </Button>
+            <Button
+              onClick={() => {
+                setShowExitModal(false);
+                router.replace('/dashboard');
+              }}
+              className="h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider"
+            >
+              Exit to Dashboard
             </Button>
           </DialogFooter>
         </DialogContent>
