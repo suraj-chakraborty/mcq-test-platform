@@ -24,6 +24,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+
 const TOPIC_PRESETS = [
   { label: 'Vocabulary & English', icon: '📖', value: 'Vocabulary & English Language' },
   { label: 'Quantitative Aptitude', icon: '📐', value: 'Quantitative Aptitude & Mathematics' },
@@ -43,10 +45,12 @@ export default function UploadPage() {
   const [topic, setTopic] = useState('');
   const [numQuestions, setNumQuestions] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [generationStep, setGenerationStep] = useState(0);
 
   const steps = [
-    'Scanning & Ingesting PDF Document...',
+    'Securely Uploading Document to Cloud...',
+    'Extracting Key Concepts & Citations...',
     'Analyzing Subject Archetype & Domain Topics...',
     'Generating High-Yield Questions & Formats...',
     'Auditing Verifiable Source Proofs & Citations...',
@@ -58,8 +62,8 @@ export default function UploadPage() {
       toast.error('Please select a valid PDF file.');
       return;
     }
-    if (pdfFiles[0].size > 25 * 1024 * 1024) {
-      toast.error('File size exceeds maximum limit of 25MB.');
+    if (pdfFiles[0].size > 50 * 1024 * 1024) {
+      toast.error('File size exceeds maximum limit of 50MB.');
       return;
     }
     setFiles(pdfFiles);
@@ -80,20 +84,31 @@ export default function UploadPage() {
 
     setIsGenerating(true);
     setGenerationStep(0);
+    setUploadProgress(10);
 
     const stepInterval = setInterval(() => {
       setGenerationStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
     }, 3500);
 
-    const formData = new FormData();
-    files.forEach((f) => formData.append('files', f));
-    formData.append('domainTopic', topic || 'General');
-    formData.append('numQuestions', numQuestions.toString());
-
     try {
+      // 1. Direct Cloudinary Upload (Bypasses Netlify 4.5MB Payload limit)
+      const uploadedPdf = await uploadPdfDirectToCloudinary(files[0], (pct) => {
+        setUploadProgress(Math.max(10, Math.min(90, pct)));
+      });
+
+      setUploadProgress(100);
+
+      // 2. Send lightweight JSON to API
       const response = await fetch('/api/pdfs/upload', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          directUploads: [uploadedPdf],
+          domainTopic: topic || 'General',
+          numQuestions: numQuestions.toString(),
+        }),
       });
 
       clearInterval(stepInterval);

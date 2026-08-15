@@ -27,6 +27,7 @@ import MathPhotoUpload from '@/app/components/MathPhotoUpload';
 import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@/app/providers/SettingsProvider';
+import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 import {
   Brain,
   Menu,
@@ -511,49 +512,55 @@ export default function Dashboard() {
     e.preventDefault();
     setIsLoading(true);
 
-    const formDataToSend = new FormData();
-    formDataToSend.append('title', formData.title);
-    formDataToSend.append('description', formData.description);
-    formDataToSend.append('domainTopic', formData.domainTopic);
-    formDataToSend.append('numQuestions', formData.numQuestions.toString());
-
-    if (formData.contextPDF) {
-      formData.contextPDF.forEach((file) => {
-        formDataToSend.append('contextPDF', file);
-      });
-    }
-    if (formData.pyqPDF) {
-      formData.pyqPDF.forEach((file) => {
-        formDataToSend.append('pyqPDF', file);
-      });
-    }
-
     try {
+      toast.info('Uploading documents to cloud storage...');
+
+      let uploadedContextPDFs: any[] = [];
+      if (formData.contextPDF && formData.contextPDF.length > 0) {
+        uploadedContextPDFs = await Promise.all(
+          formData.contextPDF.map((file) => uploadPdfDirectToCloudinary(file))
+        );
+      }
+
+      let uploadedPyqPDFs: any[] = [];
+      if (formData.pyqPDF && formData.pyqPDF.length > 0) {
+        uploadedPyqPDFs = await Promise.all(
+          formData.pyqPDF.map((file) => uploadPdfDirectToCloudinary(file))
+        );
+      }
+
+      toast.info('Synthesizing questions with source citations...');
+
       const response = await fetch('/api/pdf-tests/create', {
         method: 'POST',
-        body: formDataToSend,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          domainTopic: formData.domainTopic || 'General',
+          numQuestions: formData.numQuestions.toString(),
+          contextPDFs: uploadedContextPDFs,
+          pyqPDFs: uploadedPyqPDFs,
+        }),
       });
 
-      const textResponse = await response.text();
-      try {
-        const data = JSON.parse(textResponse);
-        if (response.ok && data.success) {
-          toast.success('PDF test created successfully!');
-          setShowCreateForm(false);
-          setFormData({
-            title: '',
-            description: '',
-            domainTopic: '',
-            numQuestions: 10,
-            contextPDF: [],
-            pyqPDF: [],
-          });
-          fetchPDFTests();
-        } else {
-          throw new Error(data.error || 'Failed to create PDF test');
-        }
-      } catch (jsonError) {
-        toast.error('Failed to parse server response');
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success('PDF test created successfully!');
+        setShowCreateForm(false);
+        setFormData({
+          title: '',
+          description: '',
+          domainTopic: '',
+          numQuestions: 10,
+          contextPDF: [],
+          pyqPDF: [],
+        });
+        fetchPDFTests();
+      } else {
+        throw new Error(data.error || 'Failed to create PDF test');
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
