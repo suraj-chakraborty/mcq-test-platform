@@ -1,18 +1,27 @@
+import { extractTextFromPdfClient } from './clientPdfUtils';
+
 export interface UploadedPdfMetadata {
   name: string;
   url: string;
+  publicId?: string;
   fileSize: number;
+  text?: string;
+  pageCount?: number;
 }
 
 /**
  * Uploads a PDF file directly from the browser to Cloudinary
- * to completely bypass Netlify's 4.5MB serverless payload limit.
+ * to completely bypass Netlify's 4.5MB serverless payload limit,
+ * while extracting text in the browser to prevent 401 download restrictions.
  */
 export async function uploadPdfDirectToCloudinary(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<UploadedPdfMetadata> {
-  // 1. Fetch authenticated signed credentials from our server API
+  // 1. In parallel, start client-side text extraction (super fast in browser)
+  const clientTextPromise = extractTextFromPdfClient(file).catch(() => ({ text: '', pageCount: 1 }));
+
+  // 2. Fetch authenticated signed credentials from our server API
   const signRes = await fetch('/api/cloudinary/sign', {
     method: 'POST',
     headers: {
@@ -27,7 +36,7 @@ export async function uploadPdfDirectToCloudinary(
 
   const { signature, timestamp, apiKey, cloudName, folder } = await signRes.json();
 
-  // 2. Prepare FormData for direct Cloudinary REST endpoint
+  // 3. Prepare FormData for direct Cloudinary REST endpoint
   const uploadFormData = new FormData();
   uploadFormData.append('file', file);
   uploadFormData.append('api_key', apiKey);
@@ -35,8 +44,8 @@ export async function uploadPdfDirectToCloudinary(
   uploadFormData.append('signature', signature);
   uploadFormData.append('folder', folder);
 
-  // 3. Upload directly using XMLHttpRequest to support live upload progress
-  return new Promise((resolve, reject) => {
+  // 4. Upload directly using XMLHttpRequest to support live upload progress
+  const uploadResult: { url: string; publicId: string } = await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
 
@@ -54,9 +63,8 @@ export async function uploadPdfDirectToCloudinary(
         try {
           const res = JSON.parse(xhr.responseText);
           resolve({
-            name: file.name,
             url: res.secure_url,
-            fileSize: file.size,
+            publicId: res.public_id,
           });
         } catch (e) {
           reject(new Error('Failed to parse Cloudinary response'));
@@ -77,4 +85,16 @@ export async function uploadPdfDirectToCloudinary(
 
     xhr.send(uploadFormData);
   });
+
+  // Await the client-extracted text
+  const { text, pageCount } = await clientTextPromise;
+
+  return {
+    name: file.name,
+    url: uploadResult.url,
+    publicId: uploadResult.publicId,
+    fileSize: file.size,
+    text,
+    pageCount,
+  };
 }
