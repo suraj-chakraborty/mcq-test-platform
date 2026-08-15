@@ -123,6 +123,9 @@ export async function processGamification(userId: string, score: number, totalQu
         data: { xpEarned }
       });
     }
+  }, {
+    maxWait: 10000,
+    timeout: 20000
   });
 
   return {
