@@ -1,6 +1,10 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Truncate from './Truncate';
+import { FileText, Trash2 } from 'lucide-react';
+import { LoadingSpinner as Loading } from './LoadingSpinner';
 
 interface Pdf {
   id: string;
@@ -9,8 +13,6 @@ interface Pdf {
   createdAt: string;
   isReference: boolean;
 }
-
-import { LoadingSpinner as Loading } from './LoadingSpinner';
 
 export default function PdfList() {
   const [pdfs, setPdfs] = useState<Pdf[]>([]);
@@ -38,7 +40,7 @@ export default function PdfList() {
 
       if (!response.ok) throw new Error('Failed to delete PDF');
 
-      setPdfs(pdfs.filter(pdf => pdf.id !== id));
+      setPdfs(pdfs.filter((pdf) => pdf.id !== id));
       toast.success('PDF deleted successfully');
     } catch (error) {
       console.error('Error deleting PDF:', error);
@@ -56,7 +58,7 @@ export default function PdfList() {
 
   if (pdfs.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-8">
+      <div className="text-center text-gray-500 py-8 text-xs font-semibold">
         No PDFs uploaded yet. Upload a PDF to get started.
       </div>
     );
@@ -64,31 +66,36 @@ export default function PdfList() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold mb-4">Your PDFs</h2>
-      <div className="grid gap-4">
+      <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Your Uploaded Documents</h2>
+      <div className="grid gap-3">
         {pdfs.map((pdf) => (
           <div
             key={pdf.id}
-            className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-200"
+            className="flex items-center justify-between p-3.5 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800"
           >
-            <div className="flex items-center space-x-4">
-              <div className="text-2xl text-gray-400">📄</div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-neutral-800 flex items-center justify-center text-gray-700 dark:text-gray-300 shrink-0">
+                <FileText className="w-4 h-4" />
+              </div>
               <div>
-                <h3 className="font-medium text-gray-900">{Truncate(pdf.name || (pdf as any).title, 30)}</h3>
-                <p className="text-sm text-gray-500">
-                  Uploaded on {pdf.createdAt ? new Date(pdf.createdAt).toLocaleDateString() : 'Unknown date'}
+                <h3 className="font-semibold text-xs text-gray-900 dark:text-white">
+                  {Truncate(pdf.name || (pdf as any).title, 35)}
+                </h3>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  Uploaded on {pdf.createdAt ? new Date(pdf.createdAt).toLocaleDateString() : 'Recent'}
                 </p>
               </div>
             </div>
             <button
               onClick={() => deletePdf(pdf.id)}
-              className="text-red-500 hover:text-red-700 transition-colors"
+              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              title="Delete PDF"
             >
-              Delete
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ))}
       </div>
     </div>
   );
-} 
+}

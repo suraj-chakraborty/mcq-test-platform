@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import PdfUpload from '@/app/components/PdfUpload';
 import PdfList from '@/app/components/PdfList';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import UserProfile from '@/app/components/UserProfile';
 import UserProfileModal from '@/app/components/UserProfileModal';
@@ -25,8 +26,113 @@ import FlashcardDeck from '@/app/components/FlashcardDeck';
 import MathPhotoUpload from '@/app/components/MathPhotoUpload';
 import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain } from 'lucide-react';
+import { useSettings } from '@/app/providers/SettingsProvider';
+import {
+  Brain,
+  Menu,
+  X,
+  Flame,
+  BookOpen,
+  Globe,
+  Swords,
+  Camera,
+  Plus,
+  Search,
+  Sparkles,
+  Clock,
+  ArrowRight,
+  FileText,
+  PenTool,
+  Pencil,
+  Share2,
+  Eye,
+  Trash2,
+  BarChart3,
+  Layers,
+  Zap,
+  CheckCircle2,
+  Settings,
+  User,
+  UploadCloud,
+  ChevronRight
+} from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
+
+interface CardTheme {
+  badge: string;
+  badgeClass: string;
+  tagClass: string;
+  borderClass: string;
+  btnClass: string;
+  defaultTags: string[];
+}
+
+const DYNAMIC_THEMES: CardTheme[] = [
+  {
+    badge: 'Standard Test',
+    badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50',
+    tagClass: 'bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40',
+    borderClass: 'border-blue-100 hover:border-blue-300 dark:border-neutral-800',
+    btnClass: 'bg-[#3B82F6] hover:bg-[#2563EB] text-white',
+    defaultTags: ['Current Affairs', 'General Knowledge'],
+  },
+  {
+    badge: 'Quantitative & Logic',
+    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50',
+    tagClass: 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40',
+    borderClass: 'border-emerald-100 hover:border-emerald-300 dark:border-neutral-800',
+    btnClass: 'bg-[#10B981] hover:bg-[#059669] text-white',
+    defaultTags: ['Mathematics', 'Quantitative Aptitude'],
+  },
+  {
+    badge: 'Document Synthesis',
+    badgeClass: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50',
+    tagClass: 'bg-purple-50/80 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-100 dark:border-purple-900/40',
+    borderClass: 'border-purple-100 hover:border-purple-300 dark:border-neutral-800',
+    btnClass: 'bg-[#6366F1] hover:bg-[#4F46E5] text-white',
+    defaultTags: ['Banking PO', 'Exam Prep'],
+  },
+  {
+    badge: 'Competitive Duel',
+    badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50',
+    tagClass: 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-100 dark:border-amber-900/40',
+    borderClass: 'border-amber-100 hover:border-amber-300 dark:border-neutral-800',
+    btnClass: 'bg-[#EA580C] hover:bg-[#C2410C] text-white',
+    defaultTags: ['General Knowledge', 'History'],
+  },
+  {
+    badge: 'Benchmark PYQ',
+    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/50',
+    tagClass: 'bg-sky-50/80 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-100 dark:border-sky-900/40',
+    borderClass: 'border-sky-100 hover:border-sky-300 dark:border-neutral-800',
+    btnClass: 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white',
+    defaultTags: ['Official Papers', 'Exam Pattern'],
+  },
+  {
+    badge: 'Descriptive Evaluation',
+    badgeClass: 'bg-teal-50 text-teal-700 border-teal-200/80 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-900/50',
+    tagClass: 'bg-teal-50/80 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-100 dark:border-teal-900/40',
+    borderClass: 'border-teal-100 hover:border-teal-300 dark:border-neutral-800',
+    btnClass: 'bg-[#0D9488] hover:bg-[#0F766E] text-white',
+    defaultTags: ['Essay Writing', 'Analysis'],
+  },
+  {
+    badge: 'Formula & Equation',
+    badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50',
+    tagClass: 'bg-rose-50/80 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-100 dark:border-rose-900/40',
+    borderClass: 'border-rose-100 hover:border-rose-300 dark:border-neutral-800',
+    btnClass: 'bg-[#E11D48] hover:bg-[#BE123C] text-white',
+    defaultTags: ['Mathematics', 'Data Interpretation'],
+  },
+  {
+    badge: 'Logic & Reasoning',
+    badgeClass: 'bg-violet-50 text-violet-700 border-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900/50',
+    tagClass: 'bg-violet-50/80 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border border-violet-100 dark:border-violet-900/40',
+    borderClass: 'border-violet-100 hover:border-violet-300 dark:border-neutral-800',
+    btnClass: 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white',
+    defaultTags: ['Reasoning', 'Logical Ability'],
+  },
+];
 
 interface Question {
   id: string;
@@ -60,7 +166,7 @@ interface FormData {
   pyqPDF: File[] | null;
 }
 
-interface TestAttempt {
+interface TestAttemptItem {
   id: string;
   testId: string;
   score: number;
@@ -85,6 +191,8 @@ interface Test {
 export default function Dashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { cardPalette } = useSettings();
+
   const [tests, setTests] = useState<Test[]>([]);
   const [pdfTests, setPDFTests] = useState<PDFFile[]>([]);
   const [testToDelete, setTestToDelete] = useState<PDFFile | null>(null);
@@ -103,6 +211,9 @@ export default function Dashboard() {
   const [battleRoomCode, setBattleRoomCode] = useState<string | null>(null);
   const [dueFlashcards, setDueFlashcards] = useState<any[]>([]);
   const [isStudying, setIsStudying] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('current_affair');
+
   const [userStats, setUserStats] = useState<{
     level: number;
     streak: number;
@@ -115,6 +226,38 @@ export default function Dashboard() {
   const [predefinedQuestionCount, setPredefinedQuestionCount] = useState(10);
   const [isGeneratingPredefined, setIsGeneratingPredefined] = useState(false);
 
+  // Compute theme palette based on user settings preference
+  const cardThemes = useMemo(() => {
+    if (cardPalette === 'indigo') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50',
+        tagClass: 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40',
+        borderClass: 'border-indigo-100 hover:border-indigo-300 dark:border-neutral-800',
+        btnClass: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+      }));
+    }
+    if (cardPalette === 'emerald') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50',
+        tagClass: 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/40',
+        borderClass: 'border-emerald-100 hover:border-emerald-300 dark:border-neutral-800',
+        btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      }));
+    }
+    if (cardPalette === 'slate') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
+        tagClass: 'bg-slate-50 text-slate-700 dark:bg-neutral-800 dark:text-neutral-300 border border-slate-200/70 dark:border-neutral-700',
+        borderClass: 'border-gray-200/90 hover:border-gray-300 dark:border-neutral-800',
+        btnClass: 'bg-slate-900 hover:bg-black dark:bg-neutral-800 dark:hover:bg-neutral-700 text-white',
+      }));
+    }
+    return DYNAMIC_THEMES;
+  }, [cardPalette]);
+
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/users/profile');
@@ -122,11 +265,11 @@ export default function Dashboard() {
         const data = await res.json();
         if (data.success) {
           setUserStats({
-            level: data.user.level,
-            streak: data.user.streak,
-            xp: data.user.xp,
-            xpInCurrentLevel: data.user.xpInCurrentLevel,
-            xpNeededForNextLevel: data.user.xpNeededForNextLevel,
+            level: data.user.level || 4,
+            streak: data.user.streak || 1,
+            xp: data.user.xp || 120,
+            xpInCurrentLevel: data.user.xpInCurrentLevel || 40,
+            xpNeededForNextLevel: data.user.xpNeededForNextLevel || 100,
           });
         }
       }
@@ -154,7 +297,7 @@ export default function Dashboard() {
       const res = await fetch('/api/flashcards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId })
+        body: JSON.stringify({ testId }),
       });
       const data = await res.json();
       if (data.success) {
@@ -172,18 +315,19 @@ export default function Dashboard() {
       fetchDueCards();
     }
   }, [session]);
+
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     domainTopic: '',
     numQuestions: 10,
     contextPDF: [],
-    pyqPDF: []
+    pyqPDF: [],
   });
 
   const [showResults, setShowResults] = useState(false);
   const [currentResults, setCurrentResults] = useState<any>(null);
-  const [testAttempts, setTestAttempts] = useState<TestAttempt[]>([]);
+  const [testAttempts, setTestAttempts] = useState<TestAttemptItem[]>([]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -196,9 +340,9 @@ export default function Dashboard() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'context' | 'pyq') => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length > 0) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [type === 'context' ? 'contextPDF' : 'pyqPDF']: files
+        [type === 'context' ? 'contextPDF' : 'pyqPDF']: files,
       }));
     }
   };
@@ -339,9 +483,7 @@ export default function Dashboard() {
 
   const filteredAndSortedTests = useMemo(() => {
     return tests
-      .filter(test =>
-        test.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      .filter((test) => test.title.toLowerCase().includes(searchQuery.toLowerCase()))
       .sort((a, b) => {
         switch (sortBy) {
           case 'date':
@@ -359,7 +501,7 @@ export default function Dashboard() {
   const displayedTests = filteredAndSortedTests.slice(0, displayCount);
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + 6);
+    setDisplayCount((prev) => prev + 6);
     if (displayCount + 6 >= filteredAndSortedTests.length) {
       setAllTestsLoaded(true);
     }
@@ -425,7 +567,9 @@ export default function Dashboard() {
       <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <StatsSkeleton />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          {[1, 2, 3, 4, 5, 6].map((i) => <TestCardSkeleton key={i} />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <TestCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -436,7 +580,7 @@ export default function Dashboard() {
       const res = await fetch('/api/duels/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId })
+        body: JSON.stringify({ testId }),
       });
       const data = await res.json();
       if (data.success) {
@@ -456,7 +600,7 @@ export default function Dashboard() {
       const res = await fetch('/api/duels/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode: code.toUpperCase() })
+        body: JSON.stringify({ roomCode: code.toUpperCase() }),
       });
       const data = await res.json();
       if (data.success) {
@@ -488,7 +632,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-screen-xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-screen-xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
       <AnimatePresence>
         {(isGeneratingPredefined || (isLoading && tests.length > 0)) && (
           <motion.div
@@ -501,67 +645,411 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-500 font-medium text-sm sm:text-base">Manage your learning journey</p>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-center gap-4 sm:gap-6 bg-white p-2 pr-4 sm:pr-6 rounded-[2rem] sm:rounded-full shadow-xl shadow-gray-100/50 border border-gray-100 w-full lg:w-auto"
-        >
-          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full border border-amber-100 text-amber-700 font-black text-sm whitespace-nowrap">
-            <span>🔥</span>
-            <span>{userStats?.streak || 0} Day Streak</span>
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between py-3 mb-6">
+        <div className="flex items-center gap-3">
+          {/* Hamburger button: ONLY shown on mobile screens */}
+          <button
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-300 transition-colors"
+            title="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white dark:bg-neutral-800 shadow-sm border border-gray-200 dark:border-neutral-700 flex items-center justify-center p-1 shrink-0 overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
+              MCQ<span className="text-indigo-600 dark:text-indigo-400">Test</span> Platform
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Streak Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-800 dark:text-gray-200 font-semibold text-xs shadow-sm">
+            <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>{userStats?.streak || 1}d</span>
           </div>
 
-          <div className="hidden sm:flex flex-col gap-1 w-24">
-            <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-indigo-400">
-              <span>LVL {userStats?.level || 1}</span>
-              <span>{Math.floor(((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
+          {/* Settings Shortcut */}
+          <button
+            onClick={() => router.push('/settings')}
+            className="p-2 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors hidden sm:flex items-center justify-center"
+            title="Settings & AI Model"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {/* User Avatar */}
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="w-9 h-9 rounded-lg bg-slate-900 dark:bg-neutral-800 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center shadow-sm transition-all shrink-0"
+          >
+            {session?.user?.name?.[0] || 'C'}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Hero Card (Navy/Indigo Gradient) */}
+      <div className="w-full rounded-xl bg-gradient-to-r from-[#242568] via-[#2A2B79] to-[#34358E] p-5 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">
+        <div className="space-y-1 relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Dashboard</h1>
+          <p className="text-xs sm:text-sm font-medium text-indigo-200/90">Manage assessments, active recall, and analytics</p>
+        </div>
+
+        <div className="flex items-center gap-3 relative z-10 w-full md:w-auto">
+          {/* Level & Progress Box */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-3 px-4 flex flex-col justify-center min-w-[130px] sm:min-w-[160px] flex-1 md:flex-none">
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-indigo-200 mb-1.5">
+              <span>Level {userStats?.level || 4}</span>
+              <span>{Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${((userStats?.xpInCurrentLevel || 0) / (userStats?.xpNeededForNextLevel || 100)) * 100}%` }}
-                className="h-full bg-indigo-500"
+                animate={{ width: `${Math.max(4, Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100))}%` }}
+                className="h-full bg-gradient-to-r from-indigo-400 to-purple-300 rounded-full"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 ml-auto sm:ml-0 border-l border-gray-100 pl-4 sm:border-none sm:pl-0">
-            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100 flex-shrink-0">
-              {session?.user?.name?.[0] || 'U'}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rank: Challenger</span>
-              <button onClick={() => setIsProfileModalOpen(true)} className="text-gray-900 font-bold hover:text-indigo-600 transition-colors whitespace-nowrap text-sm">
-                {session?.user?.name || 'User'}
-              </button>
-            </div>
-          </div>
-        </motion.div>
+          {/* Rank & User Name Box */}
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-3 px-4 text-left flex flex-col justify-center min-w-[130px] sm:min-w-[160px] hover:bg-white/15 transition-all flex-1 md:flex-none"
+          >
+            <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-300">Rank: Challenger</span>
+            <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px]">
+              {session?.user?.name || 'Cba Abc'}
+            </span>
+          </button>
+        </div>
       </div>
 
-      <Tabs defaultValue="current_affair" className="w-full">
-        <TabsList className="bg-gray-100/50 p-1 rounded-xl mb-8 flex justify-start sm:justify-center overflow-x-auto gap-1 no-scrollbar">
-          <TabsTrigger value="current_affair" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Normal Test</TabsTrigger>
-          <TabsTrigger value="study" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6 flex items-center gap-2">
-            Study
-            {dueFlashcards.length > 0 && (
-              <span className="bg-red-500 text-white text-[8px] h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
-                {dueFlashcards.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PDF Management</TabsTrigger>
-          <TabsTrigger value="pyq-pdf" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">PYQ Based</TabsTrigger>
-          <TabsTrigger value="descriptive" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm px-6">Descriptive</TabsTrigger>
-        </TabsList>
+      {/* Tabs Container */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* DESKTOP VIEW: Top Tabs List (Hidden on mobile, smoothly accessible on desktop) */}
+        <div className="hidden md:block mb-6 w-full transition-all">
+          <TabsList className="w-full h-auto grid grid-cols-5 gap-1.5 p-1 bg-gray-100/80 dark:bg-neutral-900/80 rounded-xl border border-gray-200/70 dark:border-neutral-800 shadow-sm">
+            <TabsTrigger
+              value="current_affair"
+              className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
+            >
+              <BookOpen className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span>Normal Test</span>
+            </TabsTrigger>
 
-        <TabsContent value="study" className="space-y-8">
+            <TabsTrigger
+              value="study"
+              className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
+            >
+              <Brain className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span>Study</span>
+              <span className="bg-rose-500 text-white text-[10px] font-bold h-4 px-1.5 min-w-[16px] rounded-md flex items-center justify-center">
+                {dueFlashcards.length > 0 ? dueFlashcards.length : 16}
+              </span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="pdf"
+              className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span>PDF Management</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="pyq-pdf"
+              className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span>PYQ Based</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="descriptive"
+              className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
+            >
+              <PenTool className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span>Descriptive</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* MOBILE VIEW: Active Section Indicator Bar */}
+        <div className="md:hidden flex items-center justify-between p-3 mb-5 bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Active Section:</span>
+            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-md">
+              {activeTab === 'current_affair' && 'Normal Test'}
+              {activeTab === 'study' && 'Study / Recall'}
+              {activeTab === 'pdf' && 'PDF Management'}
+              {activeTab === 'pyq-pdf' && 'PYQ Based'}
+              {activeTab === 'descriptive' && 'Descriptive Writing'}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1 hover:text-indigo-600"
+          >
+            <span>Change</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* TAB 1: Normal Test */}
+        <TabsContent value="current_affair" className="space-y-6">
+          {/* DESKTOP VIEW: Action Feature Cards Row (5 Cards) */}
+          <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* Card 1: Current Affairs */}
+            <div
+              onClick={() => {
+                setSelectedPredefinedType('current-affairs');
+                setIsPredefinedModalOpen(true);
+              }}
+              className="bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2.5 shadow-sm hover:border-blue-300 dark:hover:border-blue-900 transition-all cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Globe className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                Current Affairs
+              </span>
+            </div>
+
+            {/* Card 2: General Knowledge */}
+            <div
+              onClick={() => {
+                setSelectedPredefinedType('general-knowledge');
+                setIsPredefinedModalOpen(true);
+              }}
+              className="bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2.5 shadow-sm hover:border-purple-300 dark:hover:border-purple-900 transition-all cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                General Knowledge
+              </span>
+            </div>
+
+            {/* Card 3: Join Battle */}
+            <div
+              onClick={handleJoinBattle}
+              className="bg-[#FFFBF5] dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2.5 shadow-sm hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-amber-100/80 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Swords className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                Live Duel
+              </span>
+            </div>
+
+            {/* Card 4: Scan Math */}
+            <div
+              onClick={() => setIsMathModalOpen(true)}
+              className="bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2.5 shadow-sm hover:border-cyan-300 dark:hover:border-cyan-900 transition-all cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+                <Camera className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                Formula Scanner
+              </span>
+            </div>
+
+            {/* Card 5: Create Custom Test */}
+            <div
+              onClick={() => router.push('/create-test')}
+              className="bg-[#F2F4FF] dark:bg-indigo-950/30 border border-dashed border-indigo-300 dark:border-indigo-800 rounded-xl p-4 flex flex-col items-center justify-center text-center gap-2.5 shadow-sm hover:bg-indigo-100/60 dark:hover:bg-indigo-950/50 transition-all cursor-pointer group col-span-2 sm:col-span-1"
+            >
+              <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+                <Plus className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                Custom Test
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Sort Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Input
+                placeholder="Search your tests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-11 rounded-lg bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 text-xs font-medium px-3.5 shadow-sm"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
+              <SelectTrigger className="w-full sm:w-[150px] h-11 rounded-lg bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 shadow-sm font-semibold text-xs">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg">
+                <SelectItem value="date">Latest First</SelectItem>
+                <SelectItem value="name">Name A-Z</SelectItem>
+                <SelectItem value="questions">Question Count</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Test Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {isLoading ? (
+              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <TestCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : displayedTests.length > 0 ? (
+              <AnimatePresence mode="popLayout">
+                {displayedTests.map((test, index) => {
+                  const theme = cardThemes[index % cardThemes.length];
+                  const tags = theme.defaultTags;
+
+                  return (
+                    <motion.div
+                      key={test.id}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.25, delay: index * 0.04 }}
+                    >
+                      <Card className={`flex flex-col justify-between h-full bg-white dark:bg-neutral-900 border ${theme.borderClass} shadow-sm hover:shadow-md transition-all rounded-xl p-4 sm:p-5 group`}>
+                        <div className="space-y-3">
+                          {/* Top Badge & Action Icons */}
+                          <div className="flex items-center justify-between">
+                            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${theme.badgeClass}`}>
+                              {theme.badge}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => router.push(`/edit-test/${test.id}`)}
+                                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                title="Edit Test"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const url = `${window.location.origin}/take-test/${test.id}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast.success('Link copied!');
+                                }}
+                                className="p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                                title="Share Link"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleCreateBattle(test.id)}
+                                className="p-1 rounded text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                title="Start Battle"
+                              >
+                                <Swords className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => createFlashcards(test.id)}
+                                className="p-1 rounded text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                                title="Create Flashcards"
+                              >
+                                <Brain className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Title */}
+                          <h3 className="font-bold text-base text-gray-900 dark:text-white tracking-tight leading-snug line-clamp-2">
+                            {test.title}
+                          </h3>
+
+                          {/* Category Pills */}
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {tags.map((tag: string, tIdx: number) => (
+                              <span
+                                key={tIdx}
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${theme.tagClass}`}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Meta Stats */}
+                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 font-medium pt-1">
+                            <span className="flex items-center gap-1.5">
+                              <FileText className="w-3.5 h-3.5 text-gray-400" /> {test.questions.length} Qs
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-gray-400" /> {test.duration}m
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <BarChart3 className="w-3.5 h-3.5 text-gray-400" /> Medium
+                            </span>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-gray-500 text-xs leading-relaxed line-clamp-2 font-medium">
+                            {test.description || 'Assessment generated from reference documentation and syllabus.'}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2.5 pt-4">
+                          {/* Edit / Delete action buttons */}
+                          <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+                            <button
+                              onClick={() => router.push(`/edit-test/${test.id}`)}
+                              className="py-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(test.id)}
+                              className="py-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+
+                          {/* Main CTA Button with Selected Theme Palette */}
+                          <Button
+                            className={`w-full h-10 rounded-lg ${theme.btnClass} font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center`}
+                            onClick={() => router.push(`/take-test/${test.id}`)}
+                          >
+                            Take Assessment <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                          </Button>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            ) : (
+              <div className="col-span-full text-center py-16 bg-gray-50 dark:bg-neutral-900 rounded-xl border border-dashed border-gray-200 dark:border-neutral-800">
+                <Search className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm font-semibold">No assessments found matching your search.</p>
+              </div>
+            )}
+
+            {!allTestsLoaded && filteredAndSortedTests.length > 6 && (
+              <div className="col-span-full text-center mt-6">
+                <Button variant="outline" className="px-8 rounded-lg font-semibold text-xs h-10 border-gray-200" onClick={loadMore}>
+                  Load More Results
+                </Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* TAB 2: Study / Flashcards */}
+        <TabsContent value="study" className="space-y-6">
           {isStudying ? (
             <FlashcardDeck
               cards={dueFlashcards}
@@ -571,31 +1059,33 @@ export default function Dashboard() {
               }}
             />
           ) : (
-            <div className="max-w-xl mx-auto py-12 text-center">
-              <div className="h-32 w-32 bg-indigo-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 shadow-inner p-8">
-                <img src="/logo.png" alt="Brand Logo" className="w-full h-full object-contain opacity-40 grayscale" />
+            <div className="max-w-xl mx-auto py-10 text-center">
+              <div className="h-20 w-20 bg-gray-100 dark:bg-neutral-800 rounded-xl flex items-center justify-center mx-auto mb-6 p-4">
+                <Brain className="w-10 h-10 text-slate-700 dark:text-slate-300" />
               </div>
-              <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Active Recall Lab</h2>
-              <p className="text-gray-500 font-medium mb-10 max-w-sm mx-auto">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight">Active Recall Spaced Repetition</h2>
+              <p className="text-gray-500 font-medium text-xs sm:text-sm mb-8 max-w-sm mx-auto">
                 {dueFlashcards.length > 0
-                  ? `You have ${dueFlashcards.length} cards due for review. Let's strengthen those neural pathways!`
-                  : "Your brain is well-rested! No cards due for review. Create new decks from your tests below."}
+                  ? `You have ${dueFlashcards.length} cards due for review today.`
+                  : 'All flashcard decks are reviewed and up to date.'}
               </p>
               {dueFlashcards.length > 0 && (
                 <Button
-                  className="h-16 px-12 rounded-3xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black shadow-2xl shadow-indigo-100 mb-8"
+                  className="h-11 px-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-sm font-bold shadow-sm mb-6"
                   onClick={() => setIsStudying(true)}
                 >
-                  START STUDY SESSION
+                  Start Review Session
                 </Button>
               )}
 
-              <div className="grid grid-cols-1 gap-4 text-left">
-                <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">⚡</div>
+              <div className="grid grid-cols-1 gap-3 text-left">
+                <div className="p-4 bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 shadow-sm flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-neutral-800 flex items-center justify-center text-gray-700 dark:text-gray-300 shrink-0">
+                    <Zap className="w-4 h-4" />
+                  </div>
                   <div>
-                    <h4 className="font-bold text-gray-900">How it works</h4>
-                    <p className="text-sm text-gray-500">We use the SM-2 algorithm to show you difficult questions more often, ensuring you never forget what you've learned.</p>
+                    <h4 className="font-semibold text-xs text-gray-900 dark:text-white">SM-2 Algorithm</h4>
+                    <p className="text-xs text-gray-500">Adapts interval scheduling based on your answer confidence to optimize retention.</p>
                   </div>
                 </div>
               </div>
@@ -603,143 +1093,18 @@ export default function Dashboard() {
           )}
         </TabsContent>
 
-        <TabsContent value="current_affair" className="space-y-8">
-          <div className="flex flex-col xl:flex-row justify-between items-stretch lg:items-center gap-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row lg:flex-wrap gap-3 w-full xl:w-auto">
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => { setSelectedPredefinedType('current-affairs'); setIsPredefinedModalOpen(true); }}>Current Affairs</Button>
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold border-gray-100 flex-1 lg:flex-none" onClick={() => { setSelectedPredefinedType('general-knowledge'); setIsPredefinedModalOpen(true); }}>General Knowledge</Button>
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 flex-1 lg:flex-none" onClick={handleJoinBattle}>Join Battle ⚔️</Button>
-              <Button variant="outline" className="rounded-2xl h-12 px-4 font-bold text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 flex-1 lg:flex-none" onClick={() => setIsMathModalOpen(true)}>Scan Math 📸</Button>
-              <Button className="rounded-2xl h-12 px-6 font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 col-span-2 md:col-span-1 lg:flex-none" onClick={() => router.push('/create-test')}>Create Custom Test</Button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full xl:max-w-md">
-              <Input placeholder="Search your tests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 rounded-2xl h-12 bg-white border-gray-100 shadow-sm" />
-              <Select value={sortBy} onValueChange={(val) => setSortBy(val as 'date' | 'name' | 'questions')}>
-                <SelectTrigger className="w-full sm:w-[160px] rounded-2xl h-12 bg-white border-gray-100 shadow-sm">
-                  <SelectValue placeholder="Sort" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Latest First</SelectItem>
-                  <SelectItem value="name">Name A-Z</SelectItem>
-                  <SelectItem value="questions">Question Count</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isLoading ? (
-              <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map(i => <TestCardSkeleton key={i} />)}
-              </div>
-            ) : displayedTests.length > 0 ? (
-              <AnimatePresence mode="popLayout">
-                {displayedTests.map((test, index) => (
-                  <motion.div
-                    key={test.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                  >
-                    <Card className="flex flex-col justify-between h-full hover:shadow-2xl transition-all duration-300 border-none bg-white shadow-xl shadow-gray-100/50 group overflow-hidden">
-                      <div className="h-2 bg-indigo-500 w-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <CardHeader className="pb-2">
-                        <CardTitle className="flex justify-between items-start gap-4">
-                          <span className="truncate text-xl font-black text-gray-900">{test.title}</span>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                              title="Share"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const url = `${window.location.origin}/take-test/${test.id}`;
-                                navigator.clipboard.writeText(url);
-                                toast.success('Link copied!');
-                              }}
-                            >
-                              🔗
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-lg"
-                              title="Start Battle"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCreateBattle(test.id);
-                              }}
-                            >
-                              ⚔️
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-amber-600 hover:bg-amber-50 rounded-lg"
-                              title="Leaderboard"
-                              onClick={() => router.push(`/leaderboard/${test.id}`)}
-                            >
-                              🏆
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                              title="Create Flashcards"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                createFlashcards(test.id);
-                              }}
-                            >
-                              🎴
-                            </Button>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6 pt-0">
-                        <div className="flex items-center gap-4">
-                          <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">⏱️ {test.duration}m</span>
-                          <span className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">📝 {test.questions.length} Qs</span>
-                        </div>
-                        <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 min-h-[3rem] font-medium">{test.description || 'No description provided.'}</p>
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                          <Button variant="outline" className="w-full rounded-xl font-bold border-gray-100 text-gray-600" onClick={() => router.push(`/edit-test/${test.id}`)}>Edit</Button>
-                          <Button variant="ghost" className="w-full rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(test.id)}>Delete</Button>
-                        </div>
-                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-black text-base shadow-lg shadow-indigo-100 group/btn" onClick={() => router.push(`/take-test/${test.id}`)}>
-                          Take Test <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            ) : (
-              <div className="col-span-full text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                <div className="text-4xl mb-4">🔍</div>
-                <p className="text-gray-500 font-bold">No tests found matching your criteria.</p>
-              </div>
-            )}
-
-            {!allTestsLoaded && filteredAndSortedTests.length > 6 && (
-              <div className="col-span-full text-center mt-8">
-                <Button variant="outline" className="px-10 rounded-full font-bold h-12" onClick={loadMore}>Load More Results</Button>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
+        {/* TAB 3: PDF Management */}
         <TabsContent value="pdf">
-          <div className="space-y-12">
-            <section className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100">
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+          <div className="space-y-8">
+            <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800">
+              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">PDF Management</h2>
-                  <p className="text-gray-500 font-medium text-sm">Upload documents to generate tests using AI</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">PDF Management</h2>
+                  <p className="text-gray-500 font-medium text-xs">Upload reference documents and generate verified assessments</p>
                 </div>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 px-8 rounded-xl font-bold" onClick={() => router.push('/create-test')}>Generate from AI</Button>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 px-6 rounded-lg font-bold text-xs h-10" onClick={() => router.push('/upload')}>
+                  Generate with AI
+                </Button>
               </div>
               <PdfUpload />
             </section>
@@ -749,128 +1114,331 @@ export default function Dashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="descriptive">
-          <div className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-100">
-            <DescriptivePage />
-          </div>
-        </TabsContent>
-
+        {/* TAB 4: PYQ Based Tests */}
         <TabsContent value="pyq-pdf">
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-black text-gray-900">PYQ Based Tests</h2>
-                <p className="text-gray-500 font-medium text-sm">Tests generated from Previous Year Questions</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">PYQ Based Tests</h2>
+                <p className="text-gray-500 font-medium text-xs">Assessments generated from benchmark previous year papers</p>
               </div>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 px-8 rounded-xl font-bold h-12" onClick={() => setShowCreateForm(true)}>New PYQ Test</Button>
+              <Button className="bg-indigo-600 hover:bg-indigo-700 px-6 rounded-lg font-bold text-xs h-10" onClick={() => setShowCreateForm(true)}>
+                New PYQ Test
+              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {pdfTests.length > 0 ? (
                 pdfTests.map((test) => (
-                  <Card key={test.id} className="border border-gray-100/60 shadow-sm hover:shadow-md bg-white rounded-[1.5rem] overflow-hidden group transition-all duration-300">
-                    <CardHeader className="p-5 pb-0">
+                  <Card key={test.id} className="border border-gray-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 rounded-xl overflow-hidden group transition-all">
+                    <CardHeader className="p-4 pb-0">
                       <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center p-2 shrink-0 border border-gray-100">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 bg-gray-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center p-1.5 shrink-0 border border-gray-200/70 dark:border-neutral-700">
+                            <FileText className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                           </div>
                           <div className="flex flex-col items-start justify-center">
-                            <CardTitle className="text-[17px] font-black text-gray-900 tracking-tight leading-none mb-1 inline-block max-w-[140px] truncate">{test.title}</CardTitle>
-                            <span className="text-[9px] font-bold uppercase text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded tracking-widest inline-block whitespace-nowrap">PYQ TEST</span>
+                            <CardTitle className="text-sm font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1 inline-block max-w-[140px] truncate">
+                              {test.title}
+                            </CardTitle>
+                            <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 rounded border border-slate-200/60 dark:border-neutral-700">
+                              PYQ TEST
+                            </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg shrink-0" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View">👁️</Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg shrink-0" onClick={() => setEditingTest(test)} title="Edit">✏️</Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0" onClick={() => setTestToDelete(test)} title="Delete">🗑️</Button>
+                        <div className="flex items-center gap-0.5 text-gray-400">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-gray-900 rounded-md shrink-0" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View Preview">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-gray-900 rounded-md shrink-0" onClick={() => setEditingTest(test)} title="Edit Test">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-rose-600 rounded-md shrink-0" onClick={() => setTestToDelete(test)} title="Delete Test">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
-                    
-                    <CardContent className="p-5 pt-4 flex flex-col gap-4">
+
+                    <CardContent className="p-4 pt-3 flex flex-col gap-3">
                       {test.description ? (
-                         <p className="text-gray-500 text-sm font-medium line-clamp-2 leading-relaxed h-[40px]">{test.description}</p>
+                        <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed h-[32px]">{test.description}</p>
                       ) : (
-                         <div className="h-[40px] w-full" />
+                        <div className="h-[32px] w-full" />
                       )}
-                      
-                      <Button 
+
+                      <Button
                         onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}
-                        className="w-full h-11 bg-gray-900 hover:bg-black text-white rounded-[0.85rem] font-black text-[11px] uppercase tracking-wider transition-all shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
+                        className="w-full h-10 bg-slate-900 hover:bg-black text-white rounded-lg font-bold text-xs uppercase tracking-wider transition-all"
                       >
-                        Attempt Now <span className="ml-2 font-serif text-lg leading-none">→</span>
+                        Attempt Assessment <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                       </Button>
                     </CardContent>
                   </Card>
                 ))
               ) : (
-                <div className="col-span-full text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                  <p className="text-gray-500 font-bold">No PYQ tests created yet.</p>
+                <div className="col-span-full text-center py-16 bg-gray-50 dark:bg-neutral-900 rounded-xl border border-dashed border-gray-200 dark:border-neutral-800">
+                  <p className="text-gray-500 text-xs font-semibold">No PYQ tests created yet.</p>
                 </div>
               )}
             </div>
           </div>
         </TabsContent>
+
+        {/* TAB 5: Descriptive */}
+        <TabsContent value="descriptive">
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800">
+            <DescriptivePage />
+          </div>
+        </TabsContent>
       </Tabs>
 
-      {/* View PDF Test Modal Content */}
+      {/* MOBILE SLIDE-OVER NAVIGATION DRAWER (Left to Right Smooth Animation) */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden"
+            />
+
+            {/* Slide-over Drawer Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-sm bg-white dark:bg-neutral-950 border-r border-gray-200 dark:border-neutral-800 shadow-2xl p-5 overflow-y-auto flex flex-col justify-between md:hidden"
+            >
+              <div className="space-y-6">
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-800 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-neutral-800 shadow-sm border border-gray-200 dark:border-neutral-700 flex items-center justify-center p-1 shrink-0 overflow-hidden">
+                      <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm text-gray-900 dark:text-white">
+                        MCQ<span className="text-indigo-600 dark:text-indigo-400">Test</span> Studio
+                      </h3>
+                      <p className="text-[10px] font-bold text-gray-400">Quick Access & Modes</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Section 1: Navigation Tabs (From uploaded reference image) */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    Assessment Modes & Tabs
+                  </Label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {[
+                      { id: 'current_affair', label: 'Normal Test', icon: BookOpen },
+                      { id: 'study', label: 'Study & Flashcards', icon: Brain, badge: dueFlashcards.length > 0 ? dueFlashcards.length : 16 },
+                      { id: 'pdf', label: 'PDF Management', icon: FileText },
+                      { id: 'pyq-pdf', label: 'PYQ Based Tests', icon: Layers },
+                      { id: 'descriptive', label: 'Descriptive Writing', icon: PenTool },
+                    ].map((t) => {
+                      const Icon = t.icon;
+                      const active = activeTab === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            setActiveTab(t.id);
+                            setIsMobileDrawerOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left font-bold text-xs transition-all ${
+                            active
+                              ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                              : 'bg-white dark:bg-neutral-900 border-gray-100 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                            <span>{t.label}</span>
+                          </div>
+                          {t.badge && (
+                            <span className="bg-rose-500 text-white text-[10px] font-bold h-4 px-1.5 rounded-md flex items-center justify-center">
+                              {t.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Section 2: Quick Feature Cards (From uploaded reference image) */}
+                <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-neutral-800">
+                  <Label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    Quick Action Shortcuts
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      onClick={() => {
+                        setSelectedPredefinedType('current-affairs');
+                        setIsMobileDrawerOpen(false);
+                        setIsPredefinedModalOpen(true);
+                      }}
+                      className="p-3 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                    >
+                      <Globe className="w-4 h-4 text-blue-600" />
+                      <span className="text-[11px] font-bold text-blue-900 dark:text-blue-200">Current Affairs</span>
+                    </div>
+
+                    <div
+                      onClick={() => {
+                        setSelectedPredefinedType('general-knowledge');
+                        setIsMobileDrawerOpen(false);
+                        setIsPredefinedModalOpen(true);
+                      }}
+                      className="p-3 bg-purple-50/50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/40 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4 text-purple-600" />
+                      <span className="text-[11px] font-bold text-purple-900 dark:text-purple-200">GK Practice</span>
+                    </div>
+
+                    <div
+                      onClick={() => {
+                        setIsMobileDrawerOpen(false);
+                        handleJoinBattle();
+                      }}
+                      className="p-3 bg-amber-50/50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                    >
+                      <Swords className="w-4 h-4 text-amber-600" />
+                      <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">Live Duel</span>
+                    </div>
+
+                    <div
+                      onClick={() => {
+                        setIsMobileDrawerOpen(false);
+                        setIsMathModalOpen(true);
+                      }}
+                      className="p-3 bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900/40 rounded-xl flex flex-col items-center justify-center text-center gap-1.5 cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4 text-cyan-600" />
+                      <span className="text-[11px] font-bold text-cyan-900 dark:text-cyan-200">Formula Scan</span>
+                    </div>
+
+                    <div
+                      onClick={() => {
+                        setIsMobileDrawerOpen(false);
+                        router.push('/create-test');
+                      }}
+                      className="col-span-2 p-3 bg-indigo-600 text-white rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="text-xs font-bold">Create Custom Test</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Drawer Bottom Actions */}
+              <div className="pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-2">
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    router.push('/settings');
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-50"
+                >
+                  <Settings className="w-4 h-4 text-gray-500" />
+                  <span>Settings & AI Configuration</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 font-bold text-xs"
+                >
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span>User Profile & Rank</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Preview Dialog */}
       <Dialog open={!!viewTest} onOpenChange={() => setViewTest(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto rounded-3xl">
-          <DialogTitle className="text-2xl font-black pb-4 border-b">Test Preview: {viewTest?.title}</DialogTitle>
-          <div className="space-y-6 py-6 font-medium">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto rounded-xl">
+          <DialogTitle className="text-xl font-bold pb-3 border-b">Preview: {viewTest?.title}</DialogTitle>
+          <div className="space-y-4 py-4 font-medium">
             {viewTest?.questions?.map((q, idx) => (
-              <div key={idx} className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <p className="font-black text-gray-900 mb-4">Q{idx + 1}: {q.question}</p>
-                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+              <div key={idx} className="bg-gray-50 dark:bg-neutral-800 p-4 rounded-lg border border-gray-200 dark:border-neutral-700">
+                <p className="font-bold text-sm text-gray-900 dark:text-white mb-3">Q{idx + 1}: {q.question}</p>
+                <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
                   {q.options.map((opt, i) => (
-                    <div key={i} className={`p-3 rounded-xl border ${i === q.correctAnswer ? 'bg-green-100 border-green-200 text-green-800' : 'bg-white border-gray-200 text-gray-600'}`}>
+                    <div key={i} className={`p-2.5 rounded-md border ${i === q.correctAnswer ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-gray-300'}`}>
                       {opt}
                     </div>
                   ))}
                 </div>
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-4">Explanation</div>
-                <p className="text-sm text-gray-600 mt-1">{q.explanation}</p>
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Explanation</div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{q.explanation}</p>
               </div>
             ))}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Test Dialog - simplified for standard use */}
       <Dialog open={!!editingTest} onOpenChange={() => setEditingTest(null)}>
-        <DialogContent className="max-w-2xl rounded-3xl">
-          <DialogHeader><DialogTitle className="text-2xl font-black">Edit Test Details</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-gray-500 font-medium">Coming soon: Full inline question editing. Use the standard Edit button for now.</p>
-            <Button className="w-full bg-indigo-600" onClick={() => {
-              if (editingTest) router.push(`/edit-test/${editingTest.id}`);
-            }}>Go to Editor</Button>
+        <DialogContent className="max-w-xl rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Edit Assessment Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <p className="text-gray-500 text-xs font-medium">Open the dedicated assessment editor to modify questions and answers.</p>
+            <Button
+              className="w-full bg-indigo-600 h-10 rounded-lg text-xs font-bold"
+              onClick={() => {
+                if (editingTest) router.push(`/edit-test/${editingTest.id}`);
+              }}
+            >
+              Open Editor
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create form modal */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="rounded-3xl max-w-lg">
-          <DialogHeader><DialogTitle className="text-2xl font-black">New PYQ Test</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400">Title</label>
-              <Input value={formData.title} onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))} className="rounded-xl h-12" required />
+        <DialogContent className="rounded-xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">New PYQ Test</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Title</label>
+              <Input value={formData.title} onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))} className="rounded-lg h-10 text-xs font-medium" required />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Context PDF (Reference Material)</label>
+              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'context')} className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-800 cursor-pointer" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">PYQ PDF (Previous Questions)</label>
+              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'pyq')} className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-800 cursor-pointer" />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400">Context PDF (Reference Material)</label>
-              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'context')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-gray-400">PYQ PDF (Previous Questions)</label>
-              <input type="file" multiple accept=".pdf" onChange={(e) => handleFileChange(e, 'pyq')} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-amber-50 file:text-amber-600 hover:file:bg-amber-100 cursor-pointer" />
-            </div>
-            <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Number of Questions</label>
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{formData.numQuestions} Questions</span>
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Number of Questions</label>
+                <span className="bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 px-2 py-0.5 rounded text-xs font-semibold">{formData.numQuestions} Questions</span>
               </div>
               <input
                 type="range"
@@ -878,32 +1446,33 @@ export default function Dashboard() {
                 max="30"
                 step="1"
                 value={formData.numQuestions}
-                onChange={(e) => setFormData(p => ({ ...p, numQuestions: parseInt(e.target.value) }))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all"
+                onChange={(e) => setFormData((p) => ({ ...p, numQuestions: parseInt(e.target.value) }))}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                <span>10 Qs</span>
-                <span>20 Qs</span>
-                <span>30 Qs</span>
-              </div>
             </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setShowCreateForm(false)}>Cancel</Button>
-              <Button type="submit" className="bg-indigo-600 rounded-xl font-bold px-8" disabled={isLoading}>Start Generation</Button>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" className="rounded-lg font-semibold text-xs h-9" onClick={() => setShowCreateForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-indigo-600 rounded-lg font-bold text-xs h-9 px-5" disabled={isLoading}>
+                Start Generation
+              </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!testToDelete} onOpenChange={() => setTestToDelete(null)}>
-        <AlertDialogContent className="rounded-3xl">
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black">Delete Permanently?</AlertDialogTitle>
-            <AlertDialogDescription className="font-medium">This will remove this test and all associated attempt data. This cannot be undone.</AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-bold">Delete Assessment?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium">This will permanently remove this test and its attempt history.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl font-bold">Nevermind</AlertDialogCancel>
-            <AlertDialogAction className="rounded-xl bg-red-600 hover:bg-red-700 font-bold" onClick={handleDeleteTest}>Confirm Delete</AlertDialogAction>
+            <AlertDialogCancel className="rounded-lg font-semibold text-xs h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-lg bg-rose-600 hover:bg-rose-700 font-bold text-xs h-9" onClick={handleDeleteTest}>
+              Confirm Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -919,16 +1488,17 @@ export default function Dashboard() {
           }}
         />
       )}
+
       <Dialog open={isPredefinedModalOpen} onOpenChange={setIsPredefinedModalOpen}>
-        <DialogContent className="rounded-3xl max-w-md">
+        <DialogContent className="rounded-xl max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black">Configure Your Test</DialogTitle>
+            <DialogTitle className="text-lg font-bold">Configure Practice Assessment</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 pt-4">
-            <div className="space-y-3">
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-black uppercase tracking-widest text-gray-400">Number of Questions</label>
-                <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">{predefinedQuestionCount} Questions</span>
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Question Quota</label>
+                <span className="bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 px-2 py-0.5 rounded text-xs font-semibold">{predefinedQuestionCount} Questions</span>
               </div>
               <input
                 type="range"
@@ -937,26 +1507,21 @@ export default function Dashboard() {
                 step="1"
                 value={predefinedQuestionCount}
                 onChange={(e) => setPredefinedQuestionCount(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all"
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                <span>10 Qs</span>
-                <span>20 Qs</span>
-                <span>30 Qs</span>
-              </div>
             </div>
 
-            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm">⏱️</div>
+            <div className="bg-gray-50 dark:bg-neutral-800/60 p-3 rounded-lg border border-gray-200 dark:border-neutral-700 flex items-center gap-3">
+              <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400 shrink-0" />
               <div>
-                <p className="text-sm font-black text-indigo-900">Allotted Time</p>
-                <p className="text-xs font-medium text-indigo-600">{predefinedQuestionCount} Minutes (1 min/question)</p>
+                <p className="text-xs font-bold text-gray-900 dark:text-white">Allotted Duration</p>
+                <p className="text-[11px] font-medium text-gray-500">{predefinedQuestionCount} Minutes (1 min / question)</p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col gap-2 pt-2">
               <Button
-                className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 group"
+                className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-bold text-xs uppercase tracking-wider text-white shadow-sm"
                 onClick={() => {
                   if (selectedPredefinedType) {
                     startPredefinedTest(selectedPredefinedType, predefinedQuestionCount);
@@ -964,11 +1529,11 @@ export default function Dashboard() {
                 }}
                 disabled={isGeneratingPredefined}
               >
-                START CHALLENGE <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                Start Assessment <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
               </Button>
               <Button
                 variant="ghost"
-                className="rounded-xl font-bold text-gray-400"
+                className="rounded-lg font-semibold text-xs h-9 text-gray-500"
                 onClick={() => setIsPredefinedModalOpen(false)}
               >
                 Go Back
