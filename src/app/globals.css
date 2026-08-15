@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
  
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 238.7 83.5% 66.7%;
     --primary-foreground: 210 40% 98%;
  
     --secondary: 210 40% 96.1%;
@@ -32,18 +32,14 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 238.7 83.5% 66.7%;
  
-    --radius: 0.5rem;
+    --radius: 1rem;
  
     --chart-1: 12 76% 61%;
- 
     --chart-2: 173 58% 39%;
- 
     --chart-3: 197 37% 24%;
- 
     --chart-4: 43 74% 66%;
- 
     --chart-5: 27 87% 67%;
   }
  
@@ -57,7 +53,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 210 40% 98%;
+    --primary: 238.7 83.5% 66.7%;
     --primary-foreground: 222.2 47.4% 11.2%;
  
     --secondary: 217.2 32.6% 17.5%;
@@ -88,24 +84,66 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#fafafc] dark:bg-neutral-950 text-foreground antialiased selection:bg-indigo-500/20 selection:text-indigo-600;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-} 
+}
+
+/* Glassmorphism & UI utilities */
+.glass-panel {
+  @apply bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/60 dark:border-neutral-800/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+}
+
+.glass-card {
+  @apply bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-gray-100 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300;
+}
+
+.glow-indigo {
+  box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 dark:bg-neutral-800 rounded-full hover:bg-gray-300 dark:hover:bg-neutral-700 transition-colors;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Custom Sonner Toast Styling */
 [data-sonner-toast] {
-  @apply !rounded-[1.25rem] !border-2 !shadow-2xl !p-4 !font-black !tracking-tight !backdrop-blur-md;
+  @apply !rounded-[1.25rem] !border !shadow-2xl !p-4 !font-bold !tracking-tight !backdrop-blur-md !bg-white/95 dark:!bg-neutral-900/95;
 }
 
 [data-sonner-toast][data-type='success'] {
-  @apply !bg-emerald-50/90 !border-emerald-500/20 !text-emerald-900;
+  @apply !bg-emerald-50/95 !border-emerald-500/30 !text-emerald-900;
 }
 
 [data-sonner-toast][data-type='error'] {
-  @apply !bg-rose-50/90 !border-rose-500/20 !text-rose-900;
+  @apply !bg-rose-50/95 !border-rose-500/30 !text-rose-900;
 }
 
 [data-sonner-toast][data-type='info'] {
-  @apply !bg-indigo-50/90 !border-indigo-500/20 !text-indigo-900;
+  @apply !bg-indigo-50/95 !border-indigo-500/30 !text-indigo-900;
 }
 
 [data-sonner-toast] [data-close-button] {
