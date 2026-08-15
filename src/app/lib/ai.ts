@@ -84,35 +84,66 @@ Analyze the document's content type and adapt the question style accordingly:
    - Test conceptual significance, constitutional articles, chronology, policy impacts, and historical facts.
 
 ----------------------
-STEP 2: STRICT QUESTION STRUCTURAL INTEGRITY
+STEP 2: STRICT QUESTION STRUCTURAL INTEGRITY & DIVERSITY
 ----------------------
-- **Standard Single Correct**: Direct question prompt followed by 4 distinct plausible options.
-- **Passage-Based**: Provide a concise passage in the 'question' field, followed by double newlines (\\n\\n) and the actual question.
-- **Matching Questions (ONLY when source content explicitly contains natural 4x4 pairs)**:
-  If used, you MUST format it cleanly with exact labels:
-  "Match the items in List I with List II:
+- **Multi-Statement Evaluation**:
+  "Consider the following statements regarding [Concept]:
+  1. [Statement 1]
+  2. [Statement 2]
+  3. [Statement 3]
 
-  **List I:**
+  Which of the statements given above is/are correct?
+  A. 1 only
+  B. 1 and 2 only
+  C. 2 and 3 only
+  D. 1, 2 and 3"
+
+- **Assertion-Reasoning (A/R)**:
+  "**Assertion (A):** [Statement A]
+  **Reason (R):** [Statement R]"
+  Options: Standard Assertion-Reasoning options.
+
+- **Match List-I with List-II (4x4 pairs)**:
+  "Match List-I ([Category A]) with List-II ([Category B]):
+
+  **List-I:**
   A. [Item 1]
   B. [Item 2]
   C. [Item 3]
   D. [Item 4]
 
-  **List II:**
+  **List-II:**
   1. [Pair 1]
   2. [Pair 2]
   3. [Pair 3]
   4. [Pair 4]"
-  The options must be: "(A)-1, (B)-2, (C)-3, (D)-4", etc.
-  **NEVER** generate incomplete lists, single-letter placeholders (like "1. t"), or malformed headers.
+  Options: "(A)-1, (B)-2, (C)-3, (D)-4", etc.
 
-- **Assertion-Reasoning (ONLY for analytical subjects)**:
-  "**Assertion (A):** [Statement A]
-  **Reason (R):** [Statement R]"
-  Options must be standard assertion-reasoning options.
+- **Negative Logic / Fact-Check**:
+  "Which one of the following statements regarding [Topic] is INCORRECT / NOT correct?"
+
+- **Passage/Scenario-Based**: Provide a concise passage or scenario in the 'question' field, followed by double newlines (\\n\\n) and the target question.
+
+- **Standard Single Correct**: Direct question prompt followed by 4 distinct plausible options.
 
 ----------------------
-STEP 3: CITATION & VERIFIABILITY PROOF MANDATE
+----------------------
+STEP 3: STRICT PEDAGOGICAL CONTENT MANDATE & ANTI-PATTERNS
+----------------------
+1. 🚫 ZERO META / ADMINISTRATIVE QUESTIONS:
+   - DO NOT create questions testing meta-information about the document, syllabus outline, or exam structure, such as:
+     * Exam duration or total marks (e.g., "What is the total marks allocation or duration of the preliminary exam?").
+     * Number of sections, negative marking rules, passing cutoffs, or eligibility age limits.
+     * Application dates, notification numbers, document titles, or author/institution names.
+     * "According to the summary/index/pattern of this PDF..."
+   - ALWAYS test the actual SUBSTANTIVE ACADEMIC / DOMAIN KNOWLEDGE (e.g., Economic concepts, Monetary policy tools, Banking regulations, Financial ratios, Grammar/Vocabulary, Quantitative calculations, Scientific principles, Case studies, or Historical events) discussed inside the text!
+
+2. 🚫 RELEVANCE & DISTRACTOR QUALITY:
+   - Ensure all 4 options are plausible, relevant choices testing subject comprehension.
+   - Avoid generic, trivial, or obviously ridiculous dummy options.
+
+----------------------
+STEP 4: CITATION & VERIFIABILITY PROOF MANDATE
 ----------------------
 For every question:
 1. "proofQuote": The exact sentence or passage from the document that proves why the correct answer is true.
@@ -182,7 +213,7 @@ async function executeAIWithFallback(
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) return JSON.stringify(parsed);
       if (parsed.questions && Array.isArray(parsed.questions)) return JSON.stringify(parsed.questions);
-    } catch (e) {}
+    } catch (e) { }
     return content;
   }
 
@@ -214,7 +245,7 @@ async function executeAIWithFallback(
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) return JSON.stringify(parsed);
       if (parsed.questions && Array.isArray(parsed.questions)) return JSON.stringify(parsed.questions);
-    } catch (e) {}
+    } catch (e) { }
     return content;
   }
 
@@ -246,7 +277,9 @@ async function executeAIWithFallback(
 
   // Google Gemini (Either Custom Key or Default Multi-Key Fallback)
   const genAI = getGenAIInstance(provider === 'gemini' ? apiKey : undefined);
-  const models = customModel ? [customModel, 'gemini-2.5-flash', 'gemini-1.5-flash'] : ['gemini-2.5-flash', 'gemini-1.5-flash'];
+  const models = customModel
+    ? [customModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']
+    : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'];
   const contents = bufferContents || [promptText];
 
   for (const model of models) {
@@ -773,9 +806,9 @@ export async function generateKnowledgeMCQs(
       const validQuestions = validated.data.filter((q) => {
         const lowerQ = q.question.toLowerCase();
         return !lowerQ.includes('provided document') &&
-               !lowerQ.includes('in the document') &&
-               !lowerQ.includes('the text mentions') &&
-               !lowerQ.includes('according to the document');
+          !lowerQ.includes('in the document') &&
+          !lowerQ.includes('the text mentions') &&
+          !lowerQ.includes('according to the document');
       });
 
       if (validQuestions.length >= Math.min(5, numQuestions)) {
@@ -821,9 +854,51 @@ export async function generateMCQsFromPdfBuffer(
   return generateMCQsUniversal({ pdfBuffer, isScanned: true, topic, numQuestions, customConfig });
 }
 
+export function isMetaOrAdministrativeQuestion(qText: string): boolean {
+  if (!qText) return true;
+  const lower = qText.toLowerCase();
+  const metaIndicators = [
+    'exam pattern',
+    'total mark allocation',
+    'mark allocation',
+    'total marks',
+    'duration of the preliminary exam',
+    'duration of the main exam',
+    'duration of the exam',
+    'duration of the test',
+    'time duration of',
+    'how many minutes is the exam',
+    'how many hours is the exam',
+    'marking scheme',
+    'negative marking',
+    'eligibility criteria',
+    'minimum age',
+    'maximum age',
+    'table of contents',
+    'published on',
+    'author of this document',
+    'title of this pdf',
+    'according to the index',
+    'how many sections are in this exam',
+    'how many total questions in this exam',
+    'which section carries',
+    'official notification',
+    'application fee',
+    'admit card',
+  ];
+
+  return metaIndicators.some((indicator) => lower.includes(indicator));
+}
+
 function sanitizeCitations(questions: any[], sourceText: string): MCQQuestion[] {
   return questions
-    .filter((q) => q.question && q.options && q.options.length === 4 && q.correctAnswer >= 0 && q.correctAnswer <= 3)
+    .filter((q) => {
+      if (!q.question || !q.options || q.options.length !== 4 || q.correctAnswer < 0 || q.correctAnswer > 3) {
+        return false;
+      }
+      // Filter out meta/administrative questions about exam duration, total marks, or document structure
+      return !isMetaOrAdministrativeQuestion(q.question);
+    })
     .map((q) => {
       let citationType: 'VERBATIM_PROOF' | 'LOGICAL_DEDUCTION' = 'VERBATIM_PROOF';
 

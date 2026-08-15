@@ -55,25 +55,39 @@ Format the response EXACTLY as a JSON object with this structure:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: prompt },
+    let responseText = '';
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: [
             {
-              inlineData: {
-                mimeType: 'image/jpeg',
-                data: base64Data,
-              },
+              role: 'user',
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Data,
+                  },
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+        });
+        if (response.text) {
+          responseText = response.text;
+          break;
+        }
+      } catch (err) {
+        console.warn(`[ocr-math] Model ${modelName} failed, trying next:`, err);
+      }
+    }
 
-    const responseText = response.text || '';
+    if (!responseText) {
+      throw new Error('Failed to generate math MCQs from image');
+    }
     const cleanJson = responseText.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, safeParseJSONArray, isMetaOrAdministrativeQuestion } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { saveFile } from '@/app/lib/fileStorage';
@@ -215,33 +215,93 @@ export async function POST(req: Request) {
 
     const pdfsData = [...processedContextPDFs, ...processedPyqPDFs];
 
+    const hasPYQs = pyqText.trim().length > 0 || processedPyqPDFs.length > 0;
+
     const prompt = `
-You are an expert question generator, exam author, and fact-verification auditor.
+You are a premier senior examination author, pedagogical architect, and fact-verification auditor.
 
 The primary topic for these questions is: **${topic}**.
 Your task is to generate **${numQuestions}** high-yield multiple-choice questions (MCQs).
 
 ----------------------
+CRITICAL ROLE SEPARATION BETWEEN CONTEXT AND PYQ PDFs
+----------------------
+1. 📖 **CONTEXT PDFs = EXCLUSIVE KNOWLEDGE SOURCE**:
+   - 100% of the facts, statistics, definitions, theories, rules, formulas, and academic knowledge tested in every question MUST BE SOURCED EXCLUSIVELY from the **Context PDFs**.
+   - **NEVER** invent facts or test questions on concepts that only appear in the PYQ PDF if they are absent from the Context PDF.
+
+2. 📐 **PYQ (PREVIOUS YEAR QUESTIONS) PDFs = STRUCTURAL & ARCHETYPAL BLUEPRINT**:
+   - The PYQ documents serve as your structural style guide.
+   - You MUST analyze the diverse question formats present in the PYQ reference and **REPLICATE THOSE EXACT QUESTION TYPES** for the concepts found in the Context PDF:
+     * **Multi-Statement Evaluation**:
+       "Consider the following statements regarding [Concept from Context PDF]:
+       1. [Statement 1]
+       2. [Statement 2]
+       3. [Statement 3]
+       
+       Which of the statements given above is/are correct?
+       A. 1 only
+       B. 1 and 2 only
+       C. 2 and 3 only
+       D. 1, 2 and 3"
+     * **Assertion-Reasoning (A/R)**:
+       "Assertion (A): [Factual assertion from Context PDF]
+       Reason (R): [Explanation/cause from Context PDF]"
+       (Options: Standard Assertion-Reasoning choices)
+     * **Match List-I with List-II (4x4 Matrix Matching)**:
+       "Match List-I ([Category A]) with List-II ([Category B]):
+       
+       **List-I:**
+       A. [Item 1]
+       B. [Item 2]
+       C. [Item 3]
+       D. [Item 4]
+       
+       **List-II:**
+       1. [Match 1]
+       2. [Match 2]
+       3. [Match 3]
+       4. [Match 4]"
+       (Options: A. (A)-1, (B)-2, (C)-3, (D)-4, etc.)
+     * **Negative Logic / Fact Check**:
+       "With reference to [Topic from Context PDF], which one of the following statements is INCORRECT / NOT correct?"
+     * **Analytical Scenario / Case Application**:
+       "Suppose [Scenario involving principles from Context PDF]... Which of the following outcomes will occur?"
+     * **Direct Conceptual / Formula-based Single Correct**.
+
+3. 🔀 **MANDATORY DIVERSITY DISTRIBUTION**:
+   - When generating the ${numQuestions} questions, you MUST generate a balanced variety across the distinct question types identified above (e.g. mix Statement-based, Assertion-Reason, List Matching, Negative logic, and Scenario questions) so the test is engaging and accurately reflects the full breadth of the PYQ pattern!
+
+----------------------
 CRITICAL VERIFIABLE PROOF & CITATION RULES
 ----------------------
 For every question, you MUST include:
-1. "proofQuote": The EXACT verbatim sentence or excerpt from the documents that proves why the correct answer is correct.
-2. "pageReference": The specific page number or section (e.g., "Page 12, Section 3.1").
+1. "proofQuote": The EXACT verbatim sentence or excerpt from the Context PDF that proves why the correct answer is correct.
+2. "pageReference": The specific page number or section header (e.g., "Page 12, Section 3.1").
 3. "citationType": "VERBATIM_PROOF" if directly quoted, or "LOGICAL_DEDUCTION" if conceptually derived.
 
 ----------------------
-SOURCE & QUESTION GUIDELINES
+STRICT PEDAGOGICAL CONTENT MANDATE & ANTI-PATTERNS
 ----------------------
-1. All questions must be strictly based on the provided Context PDFs (attached as text or via vision).
-2. Question difficulty must match the style of the Previous Year PDFs (PYQ).
-3. Generate a rich mixture of question types: Standard Single Correct, Passage-Based, Assertion-Reasoning, List Matching, Multiple Statements.
-4. Format: Exactly 4 distinct options per question, exactly 1 correct answer index (0-3).
+1. 🚫 ZERO META / ADMINISTRATIVE QUESTIONS:
+   - DO NOT create questions testing administrative metadata about the document, syllabus outline, or exam structure, such as:
+     * Exam duration or total marks (e.g., "What is the total marks allocation or duration of the preliminary exam?").
+     * Number of sections, negative marking rules, passing cutoffs, or eligibility age limits.
+     * Application dates, notification numbers, document titles, or author/institution names.
+     * "According to the summary/index/pattern of this PDF..."
+   - ALWAYS test the actual SUBSTANTIVE ACADEMIC / DOMAIN KNOWLEDGE discussed inside the text!
 
-**Context PDFs Extracted Text:**
+2. 🚫 RELEVANCE & DISTRACTOR QUALITY:
+   - Ensure all 4 options are plausible, relevant choices testing subject comprehension.
+   - Avoid generic, trivial, or obviously ridiculous dummy options.
+
+----------------------
+SOURCE MATERIAL
+----------------------
+**Context PDFs Extracted Text (100% Knowledge Source):**
 ${contextText.slice(0, 50000)}
 
-**PYQ PDFs Extracted Text:**
-${pyqText.slice(0, 50000)}
+${hasPYQs ? `**PYQ Reference PDFs Extracted Text (Structural Question Blueprint):**\n${pyqText.slice(0, 50000)}` : ''}
 
 Format the response EXACTLY as a JSON array of question objects (do not wrap in an outer object):
 [
@@ -261,7 +321,9 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     const customApiKey = req.headers.get('x-ai-key') || undefined;
     const customModel = req.headers.get('x-ai-model') || undefined;
     const genAI = getGenAIInstance(customApiKey);
-    const modelsToTry = customModel ? [customModel, 'gemini-2.5-flash', 'gemini-1.5-flash'] : ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    const modelsToTry = customModel
+      ? [customModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']
+      : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'];
     let aiText = '';
 
     for (const modelName of modelsToTry) {
@@ -286,11 +348,8 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
       throw new Error('Failed to get response from AI model');
     }
 
-    let parsedQuestions;
-    try {
-      parsedQuestions = JSON.parse(aiText.replace(/```json|```/g, '').trim());
-    } catch (err) {
-      console.error('Failed to parse JSON:', err);
+    const parsedQuestions = safeParseJSONArray(aiText);
+    if (!parsedQuestions || parsedQuestions.length === 0) {
       return NextResponse.json({ error: 'Invalid JSON format received from AI' }, { status: 400 });
     }
 
@@ -301,7 +360,11 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
       return NextResponse.json({ error: 'AI produced invalid question structure' }, { status: 500 });
     }
 
-    const validQuestions = validationResult.data;
+    // Filter out any meta/administrative questions that leaked through
+    let validQuestions = validationResult.data.filter((q) => !isMetaOrAdministrativeQuestion(q.question));
+    if (validQuestions.length === 0) {
+      validQuestions = validationResult.data;
+    }
 
     // Create Test in Prisma with nested Questions and PDFs
     const test = await prisma.test.create({

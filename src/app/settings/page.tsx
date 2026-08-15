@@ -211,11 +211,10 @@ export default function SettingsPage() {
                     key={item.id}
                     type="button"
                     onClick={() => setThemeMode(item.id)}
-                    className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border transition-all text-center ${
-                      active
+                    className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border transition-all text-center ${active
                         ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm'
                         : 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:border-gray-300 font-medium'
-                    }`}
+                      }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="text-xs">{item.label}</span>
@@ -236,11 +235,10 @@ export default function SettingsPage() {
                     <div
                       key={p.id}
                       onClick={() => setCardPalette(p.id)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-3 ${
-                        active
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-3 ${active
                           ? 'border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/30 shadow-sm'
                           : 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-gray-300'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-gray-900 dark:text-white">{p.name}</span>
@@ -291,11 +289,10 @@ export default function SettingsPage() {
                       }
                       setTestResult(null);
                     }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2.5 ${
-                      active
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2.5 ${active
                         ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/40 shadow-sm'
                         : 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
