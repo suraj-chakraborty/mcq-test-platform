@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { GoogleGenAI } from '@google/genai';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { generateMCQs } from '@/app/lib/ai';
+import { generateMCQs, generateKnowledgeMCQs } from '@/app/lib/ai';
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
@@ -11,49 +11,47 @@ const predefinedTests = {
   'current-affairs': {
     title: 'Current Affairs Test',
     description: 'Test your knowledge of recent events and current affairs',
-    duration: 30,
+    duration: 15,
     questions: [
       {
-        question: 'Who is the current Prime Minister of India?',
-        options: ['Narendra Modi', 'Rahul Gandhi', 'Arvind Kejriwal', 'Mamata Banerjee'],
+        question: 'Which country hosted the 28th UN Climate Change Conference (COP28) in 2023?',
+        options: ['United Arab Emirates', 'Egypt', 'United Kingdom', 'Azerbaijan'],
         correctAnswer: 0,
-        explanation: 'Narendra Modi is the PM of India since 2014.'
+        explanation: 'COP28 was hosted by the UAE in Dubai.'
       },
-      // ... kept original for brevity in replacement but usually I'd expand. 
-      // Actually let's just keep the logic.
     ],
   },
   'general-knowledge': {
     title: 'General Knowledge Test',
     description: 'Test your general knowledge across various subjects',
-    duration: 30,
+    duration: 15,
     questions: [
       {
-        question: 'What is the capital of France?',
-        options: ['London', 'Berlin', 'Paris', 'Madrid'],
-        correctAnswer: 2,
-        explanation: 'Paris is the capital of France.'
+        question: 'What is the powerhouse of the eukaryotic cell where ATP synthesis occurs?',
+        options: ['Ribosome', 'Mitochondria', 'Endoplasmic Reticulum', 'Golgi Apparatus'],
+        correctAnswer: 1,
+        explanation: 'Mitochondria are responsible for cellular respiration and ATP generation.'
       },
     ],
   },
 };
 
-async function generateGeneralKnowledgeQuestions(count: number = 10) {
-  const mcqs = await generateMCQs("General knowledge topics: history, science, geography, culture.", "General Knowledge", count);
+async function generateGeneralKnowledgeQuestions(count: number = 10, customConfig?: any) {
+  const mcqs = await generateKnowledgeMCQs('General Knowledge', count, customConfig);
   return {
     title: 'General Knowledge Test',
-    description: 'Auto-generated GK quiz using Gemini',
-    duration: count,
+    description: 'Comprehensive GK assessment covering History, Science, Geography, and Polity',
+    duration: Math.max(10, count),
     questions: mcqs,
   };
 }
 
-async function generateCurrentAffairsQuestions(count: number = 10) {
-  const mcqs = await generateMCQs("Recent news events politics, tech, sports, entertainment from last month.", "Current Affairs", count);
+async function generateCurrentAffairsQuestions(count: number = 10, customConfig?: any) {
+  const mcqs = await generateKnowledgeMCQs('Current Affairs', count, customConfig);
   return {
     title: 'Current Affairs Test',
-    description: 'Auto-generated Current Affairs quiz using Gemini',
-    duration: count,
+    description: 'Latest National & International Current Affairs assessment',
+    duration: Math.max(10, count),
     questions: mcqs,
   };
 }
@@ -66,15 +64,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { type, pdfIds, count } = await request.json();
+    const { type, pdfIds, count, customConfig } = await request.json();
     const finalCount = count ? parseInt(count) : 10;
 
     let testData: any;
 
     if (type === 'current-affairs') {
-      testData = await generateCurrentAffairsQuestions(finalCount);
+      testData = await generateCurrentAffairsQuestions(finalCount, customConfig);
     } else if (type === 'general-knowledge') {
-      testData = await generateGeneralKnowledgeQuestions(finalCount);
+      testData = await generateGeneralKnowledgeQuestions(finalCount, customConfig);
     } else if (type in predefinedTests) {
       testData = predefinedTests[type as keyof typeof predefinedTests];
     } else if (pdfIds && Array.isArray(pdfIds) && pdfIds.length > 0) {
