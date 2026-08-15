@@ -33,7 +33,7 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<ExtractedPdfDa
   }
 }
 
-export function splitTextIntoSections(text: string, maxChunkLength = 12000): string[] {
+export function splitTextIntoSections(text: string, maxChunkLength = 35000): string[] {
   if (text.length <= maxChunkLength) {
     return [text];
   }
