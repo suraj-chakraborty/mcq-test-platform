@@ -13,5 +13,6 @@ export const generatedMCQSchema = z.array(z.object({
 
 export const testAttemptSchema = z.object({
   testId: z.string().optional(),
+  id: z.string().optional(),
   answers: z.array(z.number().int())
 });

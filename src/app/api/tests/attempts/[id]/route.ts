@@ -74,8 +74,8 @@ export async function GET(
     // Flatten for frontend
     const formattedAttempt = {
       ...attempt,
-      questions: attempt.test.questions,
-      totalQuestions: attempt.test.questions.length,
+      questions: attempt.test?.questions || [],
+      totalQuestions: attempt.test?.questions?.length || 0,
     };
 
     return NextResponse.json(formattedAttempt);
