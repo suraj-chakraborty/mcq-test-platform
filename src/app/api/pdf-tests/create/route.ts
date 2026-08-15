@@ -167,22 +167,37 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
 ]
 `;
 
-    const genAI = getGenAIInstance();
-    const aiResult = await genAI.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: [...inlineDataParts, prompt],
-      config: {
-        responseMimeType: 'application/json',
-      },
-    });
+    const customApiKey = req.headers.get('x-ai-key') || undefined;
+    const customModel = req.headers.get('x-ai-model') || undefined;
+    const genAI = getGenAIInstance(customApiKey);
+    const modelsToTry = customModel ? [customModel, 'gemini-2.5-flash', 'gemini-1.5-flash'] : ['gemini-2.5-flash', 'gemini-1.5-flash'];
+    let aiText = '';
 
-    if (!aiResult.text) {
-      throw new Error('Failed to get response from Gemini');
+    for (const modelName of modelsToTry) {
+      try {
+        const aiResult = await genAI.models.generateContent({
+          model: modelName,
+          contents: [...inlineDataParts, prompt],
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
+        if (aiResult.text) {
+          aiText = aiResult.text;
+          break;
+        }
+      } catch (err) {
+        console.warn(`Model ${modelName} failed in pdf-tests/create, trying fallback:`, err);
+      }
+    }
+
+    if (!aiText) {
+      throw new Error('Failed to get response from AI model');
     }
 
     let parsedQuestions;
     try {
-      parsedQuestions = JSON.parse(aiResult.text.replace(/```json|```/g, '').trim());
+      parsedQuestions = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     } catch (err) {
       console.error('Failed to parse JSON:', err);
       return NextResponse.json({ error: 'Invalid JSON format received from AI' }, { status: 400 });

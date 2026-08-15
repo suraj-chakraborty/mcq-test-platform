@@ -1,7 +1,7 @@
 import { POST } from '../api/tests/start/route';
 import { prisma } from '@/app/lib/prisma';
 import { getServerSession } from 'next-auth';
-import { generateMCQs } from '@/app/lib/ai';
+import { generateMCQs, generateKnowledgeMCQs } from '@/app/lib/ai';
 
 jest.mock('@/app/lib/prisma', () => ({
   prisma: {
@@ -18,6 +18,7 @@ jest.mock('next-auth', () => ({
 
 jest.mock('@/app/lib/ai', () => ({
   generateMCQs: jest.fn(),
+  generateKnowledgeMCQs: jest.fn(),
 }));
 
 jest.mock('@google/genai', () => ({
@@ -49,7 +50,7 @@ describe('Test Start API', () => {
 
   it('should generate current-affairs test successfully', async () => {
     (getServerSession as jest.Mock).mockResolvedValue(mockSession);
-    (generateMCQs as jest.Mock).mockResolvedValue([{ question: 'Q1', options: ['A','B','C','D'], correctAnswer: 0, explanation: 'Exp' }]);
+    (generateKnowledgeMCQs as jest.Mock).mockResolvedValue([{ question: 'Q1', options: ['A','B','C','D'], correctAnswer: 0, explanation: 'Exp' }]);
     (prisma.test.create as jest.Mock).mockResolvedValue({ id: 'test_1' });
 
     const req = new Request('http://localhost:3000/api/tests/start', {
@@ -62,7 +63,7 @@ describe('Test Start API', () => {
 
     expect(response.status).toBe(200);
     expect(data.testId).toBe('test_1');
-    expect(generateMCQs).toHaveBeenCalled();
+    expect(generateKnowledgeMCQs).toHaveBeenCalled();
   });
 
   it('should return 404 if no PDFs found for given IDs', async () => {
