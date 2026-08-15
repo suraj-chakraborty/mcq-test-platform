@@ -63,15 +63,25 @@ Assess the answer across these dimensions:
 }
 `;
     const genAI = getGenAIInstance();
-    const aiResult = await genAI.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
+    let text = '';
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    for (const modelName of modelsToTry) {
+      try {
+        const aiResult = await genAI.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
+        if (aiResult.text) {
+          text = aiResult.text;
+          break;
+        }
+      } catch (err) {
+        console.warn(`[evaluate] Model ${modelName} failed, trying next: `, err);
       }
-    });
-
-    const text = aiResult.text;
+    }
 
     if (!text) {
       throw new Error('No text response from Gemini API');

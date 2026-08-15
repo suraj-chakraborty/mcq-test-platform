@@ -43,12 +43,22 @@ export async function POST(request: Request) {
     `;
 
     const genAI = getGenAIInstance();
-    const aiResult = await genAI.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: prompt,
-    });
-
-    const improvedAnswer = aiResult.text;
+    let improvedAnswer = '';
+    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    for (const modelName of modelsToTry) {
+      try {
+        const aiResult = await genAI.models.generateContent({
+          model: modelName,
+          contents: prompt,
+        });
+        if (aiResult.text) {
+          improvedAnswer = aiResult.text;
+          break;
+        }
+      } catch (err) {
+        console.warn(`[improve] Model ${modelName} failed, trying next:`, err);
+      }
+    }
 
     if (!improvedAnswer) {
       throw new Error("Failed to extract improved answer from Gemini response.");
