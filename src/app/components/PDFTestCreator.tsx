@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LoadingSpinner as Loading } from './LoadingSpinner';
 import { FormattedHeader } from './FormattedHeader';
+import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 
 interface PDFFile {
   name: string;
@@ -91,46 +92,41 @@ export default function PDFTestCreator() {
     setIsCreating(true);
 
     try {
-      // Upload files and get URLs
+      // 1. Upload files directly to Cloudinary
+      toast.info('Uploading documents to cloud storage...');
       const contextPDFs = await Promise.all(
         formData.contextPDFs.map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-          });
-          const data = await response.json();
+          const res = await uploadPdfDirectToCloudinary(file);
           return {
             name: file.name,
-            url: data.url
+            url: res.url,
+            fileSize: res.fileSize,
           };
         })
       );
 
-      const pyqFormData = new FormData();
-      pyqFormData.append('file', formData.pyqPDF!);
-      const pyqResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: pyqFormData
-      });
-      const pyqData = await pyqResponse.json();
+      let pyqPDFs: any[] = [];
+      if (formData.pyqPDF) {
+        const pyqRes = await uploadPdfDirectToCloudinary(formData.pyqPDF);
+        pyqPDFs = [{ name: formData.pyqPDF.name, url: pyqRes.url, fileSize: pyqRes.fileSize }];
+      }
 
-      // Create test
+      toast.info('Synthesizing questions with source citations...');
+
+      // 2. Create test with direct JSON payload
       const response = await fetch('/api/pdf-tests/create', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
+          domainTopic: 'General',
+          numQuestions: 10,
           contextPDFs,
-          pyqPDF: {
-            name: formData.pyqPDF!.name,
-            url: pyqData.url
-          }
-        })
+          pyqPDFs,
+        }),
       });
 
       const data = await response.json();

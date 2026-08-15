@@ -22,6 +22,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 
 interface Question {
   question: string;
@@ -70,18 +71,33 @@ export default function CreateTestPage() {
     }
 
     setIsGeneratingAi(true);
-    const formData = new FormData();
-    formData.append('title', aiTitle);
-    formData.append('domainTopic', aiTopic || 'General');
-    formData.append('numQuestions', aiNumQuestions.toString());
-
-    contextFiles.forEach((f) => formData.append('contextPDF', f));
-    pyqFiles.forEach((f) => formData.append('pyqPDF', f));
 
     try {
+      // 1. Upload all context and PYQ PDFs directly to Cloudinary
+      toast.info('Uploading documents to cloud storage...');
+      const uploadedContextPDFs = await Promise.all(
+        contextFiles.map((f) => uploadPdfDirectToCloudinary(f))
+      );
+      const uploadedPyqPDFs = await Promise.all(
+        pyqFiles.map((f) => uploadPdfDirectToCloudinary(f))
+      );
+
+      toast.info('Analyzing document citations & synthesizing test...');
+
+      // 2. Post lightweight JSON payload to Next.js API
       const response = await fetch('/api/pdf-tests/create', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: aiTitle,
+          description: `Test synthesized from ${uploadedContextPDFs.map((p) => p.name).join(', ')}`,
+          domainTopic: aiTopic || 'General',
+          numQuestions: aiNumQuestions.toString(),
+          contextPDFs: uploadedContextPDFs,
+          pyqPDFs: uploadedPyqPDFs,
+        }),
       });
 
       const data = await response.json();
