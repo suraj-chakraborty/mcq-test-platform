@@ -271,6 +271,60 @@ async function executeAIWithFallback(
   throw new Error('All AI generation attempts failed');
 }
 
+export function safeParseJSONArray(rawText: string): any[] {
+  if (!rawText) return [];
+
+  const cleaned = rawText.replace(/```json|```/g, '').trim();
+
+  // Attempt 1: Direct JSON.parse
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed.questions && Array.isArray(parsed.questions)) return parsed.questions;
+    if (parsed.mcqs && Array.isArray(parsed.mcqs)) return parsed.mcqs;
+    if (parsed.data && Array.isArray(parsed.data)) return parsed.data;
+  } catch (e) {
+    // Continue to repair
+  }
+
+  // Attempt 2: Clean trailing commas & extract array block
+  try {
+    const arrayMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if (arrayMatch) {
+      const sanitized = arrayMatch[0]
+        .replace(/,\s*([\]\}])/g, '$1')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ');
+      const parsed = JSON.parse(sanitized);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    // Continue to salvage individual question objects
+  }
+
+  // Attempt 3: Salvage individual question objects using regex matcher
+  try {
+    const objectRegex = /\{\s*"question"\s*:\s*"[\s\S]*?"(?:,|\s*\}).*?\}/g;
+    const matches = cleaned.match(objectRegex) || [];
+    const salvaged: any[] = [];
+    for (const objStr of matches) {
+      try {
+        const fixed = objStr.replace(/,\s*([\]\}])/g, '$1');
+        const obj = JSON.parse(fixed);
+        if (obj && obj.question && Array.isArray(obj.options)) {
+          salvaged.push(obj);
+        }
+      } catch {
+        // Skip malformed snippet
+      }
+    }
+    if (salvaged.length > 0) return salvaged;
+  } catch (e) {
+    // Return empty
+  }
+
+  return [];
+}
+
 export async function generateMCQsUniversal(params: {
   pdfBuffer?: Buffer;
   pdfText?: string;
@@ -308,10 +362,9 @@ export async function generateMCQsUniversal(params: {
         customConfig
       );
 
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-      const rawArray = Array.isArray(parsed) ? parsed : parsed.questions || [];
+      const rawArray = safeParseJSONArray(text);
       const validated = mcqSchema.safeParse(rawArray);
-      if (validated.success) {
+      if (validated.success && validated.data.length > 0) {
         return sanitizeCitations(validated.data, '');
       }
     } catch (err) {
@@ -319,28 +372,32 @@ export async function generateMCQsUniversal(params: {
     }
   }
 
-  // Mode 2: Large Document Sectional Splitting (> 12,000 chars) -> Balanced Chapter Coverage
-  if (pdfText && pdfText.length > 12000) {
-    console.log(`[generateMCQsUniversal] Large document detected (${pdfText.length} chars). Applying balanced sectional splitting.`);
-    const sections = splitTextIntoSections(pdfText, 12000);
+  // Mode 2: Massive Document (> 35,000 chars) -> Balanced Parallel Sectional Coverage
+  if (pdfText && pdfText.length > 35000) {
+    console.log(`[generateMCQsUniversal] Massive document detected (${pdfText.length} chars). Applying parallel sectional generation.`);
+    const sections = splitTextIntoSections(pdfText, 35000);
     const questionsPerSection = Math.max(1, Math.ceil(numQuestions / sections.length));
-    const allQuestions: MCQQuestion[] = [];
 
-    for (let i = 0; i < sections.length; i++) {
-      if (allQuestions.length >= numQuestions) break;
-      const targetCount = Math.min(questionsPerSection, numQuestions - allQuestions.length);
-      const sectionPrompt = PROMPT_TEMPLATE(sections[i], `${topic} (Section ${i + 1}/${sections.length})`, targetCount, false);
-
+    const sectionPromises = sections.map(async (section, i) => {
+      const sectionPrompt = PROMPT_TEMPLATE(section, `${topic} (Section ${i + 1}/${sections.length})`, questionsPerSection, false);
       try {
         const text = await executeAIWithFallback(sectionPrompt, undefined, customConfig);
-        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-        const rawArray = Array.isArray(parsed) ? parsed : parsed.questions || [];
+        const rawArray = safeParseJSONArray(text);
         const validated = mcqSchema.safeParse(rawArray);
-        if (validated.success) {
-          allQuestions.push(...sanitizeCitations(validated.data, sections[i]));
+        if (validated.success && validated.data.length > 0) {
+          return sanitizeCitations(validated.data, section);
         }
       } catch (err) {
         console.warn(`[generateMCQsUniversal] Section ${i + 1} processing error:`, err);
+      }
+      return [];
+    });
+
+    const sectionResults = await Promise.allSettled(sectionPromises);
+    const allQuestions: MCQQuestion[] = [];
+    for (const res of sectionResults) {
+      if (res.status === 'fulfilled' && res.value.length > 0) {
+        allQuestions.push(...res.value);
       }
     }
 
@@ -349,7 +406,7 @@ export async function generateMCQsUniversal(params: {
     }
   }
 
-  // Mode 3: Standard Text PDF or Fallback to Buffer
+  // Mode 3: Standard Text PDF (under 35,000 chars) or Fallback to Buffer
   console.log('[generateMCQsUniversal] Standard text generation mode');
   const context = pdfText || (pdfBuffer ? 'Use attached PDF document' : '');
   const prompt = PROMPT_TEMPLATE(context, topic, numQuestions, false);
@@ -369,10 +426,9 @@ export async function generateMCQsUniversal(params: {
     }
 
     const text = await executeAIWithFallback(prompt, bufferContents, customConfig);
-    const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    const rawArray = Array.isArray(parsed) ? parsed : parsed.questions || [];
+    const rawArray = safeParseJSONArray(text);
     const validated = mcqSchema.safeParse(rawArray);
-    if (validated.success) {
+    if (validated.success && validated.data.length > 0) {
       return sanitizeCitations(validated.data, pdfText);
     }
   } catch (err) {
@@ -709,8 +765,7 @@ export async function generateKnowledgeMCQs(
 
   try {
     const text = await executeAIWithFallback(prompt, undefined, customConfig);
-    const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    const rawArray = Array.isArray(parsed) ? parsed : parsed.questions || [];
+    const rawArray = safeParseJSONArray(text);
     const validated = mcqSchema.safeParse(rawArray);
 
     if (validated.success && validated.data.length > 0) {
