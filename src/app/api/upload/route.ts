@@ -7,70 +7,89 @@ import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import pdfParse from 'pdf-parse';
 import { saveFile } from '@/app/lib/fileStorage';
-import { mkdir } from 'fs/promises';
-import path from 'path';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const topic = formData.get('domainTopic')?.toString() || 'General';
-    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || "10");
+    const contentType = request.headers.get('content-type') || '';
+    let fileName = 'document.pdf';
+    let fileUrl = '';
+    let buffer: Buffer | null = null;
+    let fileSize = 0;
+    let topic = 'General';
+    let numQuestions = 10;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    if (contentType.includes('application/json')) {
+      const body = await request.json();
+      fileUrl = body.pdfUrl || body.url || '';
+      fileName = body.fileName || body.name || 'document.pdf';
+      fileSize = body.fileSize || 0;
+      topic = body.domainTopic || body.topic || 'General';
+      numQuestions = parseInt(body.numQuestions || '10', 10);
+
+      if (!fileUrl) {
+        return NextResponse.json({ error: 'No PDF URL provided' }, { status: 400 });
+      }
+
+      // Download buffer from Cloudinary URL
+      const res = await fetch(fileUrl);
+      if (!res.ok) {
+        return NextResponse.json({ error: 'Failed to download PDF from storage' }, { status: 400 });
+      }
+      buffer = Buffer.from(await res.arrayBuffer());
+    } else {
+      const formData = await request.formData();
+      const file = formData.get('file') as File;
+      topic = formData.get('domainTopic')?.toString() || 'General';
+      numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
+
+      if (!file) {
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      }
+
+      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+        return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      fileName = file.name;
+      fileSize = file.size;
+      fileUrl = await saveFile(file);
     }
 
-    if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
+    if (!buffer) {
+      return NextResponse.json({ error: 'Failed to process document buffer' }, { status: 400 });
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File size must be under ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
-        { status: 400 }
-      );
-    }
-
-    const uploadDir = path.join('/tmp', 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const fileUrl = await saveFile(file);
-    
     let mcqs: any[] = [];
     let pageCount = 1;
-    let extractedText = "";
+    let extractedText = '';
 
     try {
       const { text, pageCount: pc } = await extractTextFromPdf(buffer);
       extractedText = text;
       pageCount = pc;
     } catch (e) {
-      console.log("PDF text extraction failed or insufficient text. Falling back to Gemini Vision OCR.", e);
+      console.log('PDF text extraction failed or insufficient text. Falling back to Gemini Vision OCR.', e);
       try {
-         const data = await pdfParse(buffer);
-         pageCount = data.numpages || 1;
+        const data = await pdfParse(buffer);
+        pageCount = data.numpages || 1;
       } catch (innerE) {
-         console.warn("Could not determine page count, defaulting to 1.");
+        console.warn('Could not determine page count, defaulting to 1.');
       }
     }
 
     if (extractedText && extractedText.length >= 50) {
       mcqs = await generateMCQs(extractedText, topic, numQuestions);
     } else {
-      console.log("Using Gemini Vision OCR for MCQ generation...");
+      console.log('Using Gemini Vision OCR for MCQ generation...');
       mcqs = await generateMCQsFromPdfBuffer(buffer, topic, numQuestions);
     }
 
@@ -82,15 +101,15 @@ export async function POST(request: Request) {
     const test = await (prisma.test as any).create({
       data: {
         userId: session.user.id,
-        title: file.name,
-        description: `Generated from ${file.name} for topic: ${topic}`,
-        duration: 30, // Default duration
+        title: fileName.replace(/\.pdf$/i, ''),
+        description: `Generated from ${fileName} for topic: ${topic}`,
+        duration: 30,
         pdfs: {
           create: [
             {
-              name: file.name,
+              name: fileName,
               url: fileUrl,
-              fileSize: file.size,
+              fileSize: fileSize || buffer.length,
               pageCount: pageCount,
             },
           ],
@@ -100,26 +119,28 @@ export async function POST(request: Request) {
             question: q.question,
             options: q.options,
             correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
+            explanation: q.explanation || '',
+            difficulty: q.difficulty || 'medium',
+            proofQuote: q.proofQuote || '',
+            pageReference: q.pageReference || 'Document Reference',
+            citationType: q.citationType || 'VERBATIM_PROOF',
           })),
         },
       },
       include: {
-        pdfs: true,
         questions: true,
+        pdfs: true,
       },
     });
 
     return NextResponse.json({
       success: true,
-      filename: file.name,
-      size: file.size,
       url: fileUrl,
-      testId: test.id,
-      mcqs: test.questions,
+      test,
+      questions: test.questions,
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Upload route error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }

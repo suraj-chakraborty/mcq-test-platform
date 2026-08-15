@@ -7,6 +7,16 @@ import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { saveFile } from '@/app/lib/fileStorage';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+interface PdfInputItem {
+  name: string;
+  url?: string;
+  buffer?: Buffer;
+  fileSize?: number;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,17 +24,60 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const title = formData.get('title')?.toString() || '';
-    const description = formData.get('description')?.toString() || '';
-    const topic = formData.get('domainTopic')?.toString() || 'General';
-    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
+    const contentType = req.headers.get('content-type') || '';
+    let title = '';
+    let description = '';
+    let topic = 'General';
+    let numQuestions = 10;
+    let rawContextPDFs: PdfInputItem[] = [];
+    let rawPyqPDFs: PdfInputItem[] = [];
 
-    // Extract files from form data
-    const contextPDFs = formData.getAll('contextPDF').filter((f) => f instanceof File) as File[];
-    const pyqPDFs = formData.getAll('pyqPDF').filter((f) => f instanceof File) as File[];
+    if (contentType.includes('application/json')) {
+      // 1. JSON Payload from Direct Cloudinary Client Upload
+      const body = await req.json();
+      title = body.title || '';
+      description = body.description || '';
+      topic = body.domainTopic || 'General';
+      numQuestions = parseInt(body.numQuestions || '10', 10);
 
-    if (!title || contextPDFs.length === 0) {
+      rawContextPDFs = (body.contextPDFs || []).map((f: any) => ({
+        name: f.name || 'context.pdf',
+        url: f.url,
+        fileSize: f.fileSize || 0,
+      }));
+
+      rawPyqPDFs = (body.pyqPDFs || []).map((f: any) => ({
+        name: f.name || 'pyq.pdf',
+        url: f.url,
+        fileSize: f.fileSize || 0,
+      }));
+    } else {
+      // 2. FormData Fallback
+      const formData = await req.formData();
+      title = formData.get('title')?.toString() || '';
+      description = formData.get('description')?.toString() || '';
+      topic = formData.get('domainTopic')?.toString() || 'General';
+      numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
+
+      const contextFiles = formData.getAll('contextPDF').filter((f) => f instanceof File) as File[];
+      const pyqFiles = formData.getAll('pyqPDF').filter((f) => f instanceof File) as File[];
+
+      for (const f of contextFiles) {
+        const ab = await f.arrayBuffer();
+        const buf = Buffer.from(ab);
+        const url = await saveFile(f);
+        rawContextPDFs.push({ name: f.name, url, buffer: buf, fileSize: f.size });
+      }
+
+      for (const f of pyqFiles) {
+        const ab = await f.arrayBuffer();
+        const buf = Buffer.from(ab);
+        const url = await saveFile(f);
+        rawPyqPDFs.push({ name: f.name, url, buffer: buf, fileSize: f.size });
+      }
+    }
+
+    if (!title || rawContextPDFs.length === 0) {
       return NextResponse.json({ error: 'Missing required fields (title or context PDFs)' }, { status: 400 });
     }
 
@@ -32,91 +85,111 @@ export async function POST(req: Request) {
     let pyqText = '';
     const inlineDataParts: any[] = [];
 
-    // Extract metadata and text/buffer for each Context PDF
+    // Process each Context PDF
     const processedContextPDFs = await Promise.all(
-      contextPDFs.map(async (f: File) => {
-        const arrayBuffer = (await f.arrayBuffer?.()) || Buffer.from('');
-        const buffer = Buffer.from(arrayBuffer);
+      rawContextPDFs.map(async (f) => {
+        let buffer = f.buffer;
+        const fileUrl = f.url || '';
+
+        if (!buffer && fileUrl) {
+          const res = await fetch(fileUrl);
+          if (res.ok) {
+            buffer = Buffer.from(await res.arrayBuffer());
+          }
+        }
+
         let pageCount = 1;
         let text = '';
 
-        try {
-          const result = await extractTextFromPdf(buffer);
-          text = result.text;
-          pageCount = result.pageCount;
-          if (result.isScanned) {
-            inlineDataParts.push({
-              inlineData: {
-                data: buffer.toString('base64'),
-                mimeType: 'application/pdf',
-              },
-            });
+        if (buffer) {
+          try {
+            const result = await extractTextFromPdf(buffer);
+            text = result.text;
+            pageCount = result.pageCount;
+            if (result.isScanned && buffer.length <= 15 * 1024 * 1024) {
+              inlineDataParts.push({
+                inlineData: {
+                  data: buffer.toString('base64'),
+                  mimeType: 'application/pdf',
+                },
+              });
+            }
+          } catch (e) {
+            console.log(`Context PDF ${f.name} failed text extraction, using native vision.`);
+            if (buffer.length <= 15 * 1024 * 1024) {
+              inlineDataParts.push({
+                inlineData: {
+                  data: buffer.toString('base64'),
+                  mimeType: 'application/pdf',
+                },
+              });
+            }
           }
-        } catch (e) {
-          console.log(`Context PDF ${f.name} failed text extraction, using native vision.`);
-          inlineDataParts.push({
-            inlineData: {
-              data: buffer.toString('base64'),
-              mimeType: 'application/pdf',
-            },
-          });
         }
 
         if (text && text.length >= 50) {
           contextText += `\n--- Context Document: ${f.name} ---\n${text}\n`;
         }
 
-        const fileUrl = await saveFile(f);
-
         return {
           name: f.name || 'document.pdf',
           url: fileUrl,
-          fileSize: f.size,
+          fileSize: f.fileSize || buffer?.length || 0,
           pageCount,
         };
       })
     );
 
-    // Extract metadata and text/buffer for each PYQ PDF
+    // Process each PYQ PDF
     const processedPyqPDFs = await Promise.all(
-      pyqPDFs.map(async (f: File) => {
-        const arrayBuffer = (await f.arrayBuffer?.()) || Buffer.from('');
-        const buffer = Buffer.from(arrayBuffer);
+      rawPyqPDFs.map(async (f) => {
+        let buffer = f.buffer;
+        const fileUrl = f.url || '';
+
+        if (!buffer && fileUrl) {
+          const res = await fetch(fileUrl);
+          if (res.ok) {
+            buffer = Buffer.from(await res.arrayBuffer());
+          }
+        }
+
         let pageCount = 1;
         let text = '';
 
-        try {
-          const result = await extractTextFromPdf(buffer);
-          text = result.text;
-          pageCount = result.pageCount;
-          if (result.isScanned) {
-            inlineDataParts.push({
-              inlineData: {
-                data: buffer.toString('base64'),
-                mimeType: 'application/pdf',
-              },
-            });
+        if (buffer) {
+          try {
+            const result = await extractTextFromPdf(buffer);
+            text = result.text;
+            pageCount = result.pageCount;
+            if (result.isScanned && buffer.length <= 15 * 1024 * 1024) {
+              inlineDataParts.push({
+                inlineData: {
+                  data: buffer.toString('base64'),
+                  mimeType: 'application/pdf',
+                },
+              });
+            }
+          } catch (e) {
+            console.log(`PYQ PDF ${f.name} failed text extraction, using native vision.`);
+            if (buffer.length <= 15 * 1024 * 1024) {
+              inlineDataParts.push({
+                inlineData: {
+                  data: buffer.toString('base64'),
+                  mimeType: 'application/pdf',
+                },
+              });
+            }
           }
-        } catch (e) {
-          console.log(`PYQ PDF ${f.name} failed text extraction, using native vision.`);
-          inlineDataParts.push({
-            inlineData: {
-              data: buffer.toString('base64'),
-              mimeType: 'application/pdf',
-            },
-          });
         }
 
         if (text && text.length >= 50) {
           pyqText += `\n--- PYQ Document: ${f.name} ---\n${text}\n`;
         }
 
-        const fileUrl = await saveFile(f);
-
         return {
           name: f.name || 'document.pdf',
           url: fileUrl,
-          fileSize: f.size,
+          fileSize: f.fileSize || buffer?.length || 0,
           pageCount,
         };
       })

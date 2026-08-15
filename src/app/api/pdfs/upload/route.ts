@@ -5,13 +5,11 @@ import { saveFile } from '@/app/lib/fileStorage';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
-import { mkdir } from 'fs/promises';
-import path from 'path';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for Cloudinary-hosted PDFs
 export const maxDuration = 60; // Extended for large scanned PDFs
 
 async function safeGenerateMCQs(
@@ -48,44 +46,87 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const files = formData.getAll('files') as File[];
+    const contentType = request.headers.get('content-type') || '';
+    let filesToProcess: { name: string; url?: string; buffer?: Buffer; fileSize: number }[] = [];
+    let topic = 'General';
+    let numQuestions = 10;
 
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
-    }
+    if (contentType.includes('application/json')) {
+      // 1. Direct Cloudinary Upload Flow (Zero Netlify payload size limitation)
+      const body = await request.json();
+      topic = body.domainTopic || 'General';
+      numQuestions = parseInt(body.numQuestions || '10', 10);
 
-    const topic = formData.get('domainTopic')?.toString() || 'General';
-    const numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
+      const directUploads = body.directUploads as { name: string; url: string; fileSize?: number }[];
+      if (!directUploads || directUploads.length === 0) {
+        return NextResponse.json({ error: 'No uploaded PDF URLs provided' }, { status: 400 });
+      }
 
-    const uploadDir = path.join('/tmp', 'uploads');
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch {
-      // Ignored for environments where /tmp isn't writeable directly
-    }
+      filesToProcess = directUploads.map((u) => ({
+        name: u.name,
+        url: u.url,
+        fileSize: u.fileSize || 0,
+      }));
+    } else {
+      // 2. Standard FormData Flow (Localhost / Fallback)
+      const formData = await request.formData();
+      const files = formData.getAll('files') as File[];
 
-    const results = await Promise.allSettled(
-      files.map(async (file) => {
+      if (!files || files.length === 0) {
+        return NextResponse.json({ error: 'No files provided' }, { status: 400 });
+      }
+
+      topic = formData.get('domainTopic')?.toString() || 'General';
+      numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
+
+      for (const file of files) {
         if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-          throw new Error(`File ${file.name} is not a PDF`);
+          return NextResponse.json({ error: `File ${file.name} is not a PDF` }, { status: 400 });
         }
         if (file.size > MAX_FILE_SIZE) {
-          throw new Error(`File ${file.name} exceeds maximum size of 25MB`);
+          return NextResponse.json({ error: `File ${file.name} exceeds maximum allowed size` }, { status: 400 });
         }
-
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const fileUrl = await saveFile(file);
+        filesToProcess.push({
+          name: file.name,
+          url: fileUrl,
+          buffer,
+          fileSize: file.size,
+        });
+      }
+    }
+
+    // Process each PDF file
+    const results = await Promise.allSettled(
+      filesToProcess.map(async (fileItem) => {
+        let buffer = fileItem.buffer;
+        let fileUrl = fileItem.url || '';
+
+        // If buffer was not passed directly, fetch it from Cloudinary CDN
+        if (!buffer && fileUrl) {
+          const res = await fetch(fileUrl);
+          if (!res.ok) {
+            throw new Error(`Failed to download PDF from Cloudinary (${res.status})`);
+          }
+          const arrayBuffer = await res.arrayBuffer();
+          buffer = Buffer.from(arrayBuffer);
+        }
+
+        if (!buffer) {
+          throw new Error(`No document content available for ${fileItem.name}`);
+        }
+
         const { text, pageCount, isScanned } = await extractTextFromPdf(buffer);
         const mcqs = await safeGenerateMCQs(buffer, text, isScanned, topic, numQuestions);
 
-        // Create Test + Questions with Proof Citations + PdfDocument
+        // Create Test + Questions with Proof Citations + PdfDocument in database
         const test = await prisma.test.create({
           data: {
             userId: session.user.id,
-            title: file.name.replace(/\.pdf$/i, ''),
-            description: `Test generated from ${file.name} (Topic: ${topic})`,
+            title: fileItem.name.replace(/\.pdf$/i, ''),
+            description: `Test generated from ${fileItem.name} (Topic: ${topic})`,
             duration: 30,
             questions: {
               create: mcqs.map((q: any) => ({
@@ -102,9 +143,9 @@ export async function POST(request: Request) {
             pdfs: {
               create: [
                 {
-                  name: file.name,
+                  name: fileItem.name,
                   url: fileUrl,
-                  fileSize: file.size,
+                  fileSize: fileItem.fileSize || buffer.length,
                   pageCount: pageCount,
                 },
               ],
@@ -129,6 +170,11 @@ export async function POST(request: Request) {
 
     const failed = results.filter((r) => r.status === 'rejected');
 
+    if (processedTests.length === 0 && failed.length > 0) {
+      const firstError = (failed[0] as PromiseRejectedResult).reason?.message || 'Failed to process document';
+      return NextResponse.json({ error: firstError }, { status: 400 });
+    }
+
     return NextResponse.json({
       success: true,
       tests: processedTests.map((t) => ({
@@ -143,7 +189,7 @@ export async function POST(request: Request) {
       })),
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Upload processing error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
