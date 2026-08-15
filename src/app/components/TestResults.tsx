@@ -20,14 +20,35 @@ interface TestResultsProps {
     score: number;
     totalQuestions: number;
     percentage: number;
-    results: QuestionResult[];
-    attemptId: string;
+    results?: QuestionResult[];
+    questions?: any[];
+    test?: {
+      questions?: any[];
+    };
+    attemptId?: string;
   };
   onClose: () => void;
 }
 
 export default function TestResults({ results, onClose }: TestResultsProps) {
   const router = useRouter();
+
+  // If user in result section tries to go back, close results and stay on dashboard
+  React.useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      onClose();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [onClose]);
+
+  const rawQuestions = results.results || results.questions || results.test?.questions || [];
+  const total = results.totalQuestions || rawQuestions.length || 1;
+  const pct = typeof results.percentage === 'number' ? results.percentage : Math.round((results.score / total) * 100);
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2.5 sm:px-4">
@@ -48,45 +69,58 @@ export default function TestResults({ results, onClose }: TestResultsProps) {
             {/* Score Summary */}
             <div className="text-center">
               <div className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white mb-1">
-                <span className="text-indigo-600 dark:text-indigo-400">{results.score}</span> / {results.totalQuestions}
+                <span className="text-indigo-600 dark:text-indigo-400">{results.score}</span> / {total}
               </div>
               <div className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 mb-3">
-                {results.percentage.toFixed(1)}%
+                {pct.toFixed(1)}%
               </div>
-              <Progress value={results.percentage} className="h-2.5 max-w-md mx-auto" />
+              <Progress value={pct} className="h-2.5 max-w-md mx-auto" />
             </div>
 
             {/* Detailed Results */}
             <div className="space-y-3 sm:space-y-4">
-              {results.results.map((result, index) => (
-                <div key={index} className="p-3.5 sm:p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/50">
-                  <div className="space-y-3">
-                    <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-snug">
-                      <FormattedHeader text={result.question} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                      <div className="p-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Your Answer</div>
-                        <div className={`font-semibold mt-0.5 ${result.isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                          {result.yourAnswer}
+              {rawQuestions.map((result: any, index: number) => {
+                const questionText = result.question || `Question ${index + 1}`;
+                const yourAns = result.yourAnswer !== undefined
+                  ? result.yourAnswer
+                  : (result.userAnswer !== undefined && result.options ? (result.userAnswer === -1 ? 'Not Attempted' : result.options[result.userAnswer]) : 'Not Attempted');
+                const correctAns = result.correctAnswer !== undefined
+                  ? (typeof result.correctAnswer === 'number' && result.options ? result.options[result.correctAnswer] : String(result.correctAnswer))
+                  : 'N/A';
+                const isCorr = result.isCorrect !== undefined
+                  ? result.isCorrect
+                  : (result.userAnswer === result.correctAnswer);
+
+                return (
+                  <div key={index} className="p-3.5 sm:p-5 rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-900/50">
+                    <div className="space-y-3">
+                      <div className="font-bold text-sm sm:text-base text-gray-900 dark:text-white leading-snug">
+                        <FormattedHeader text={questionText} />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="p-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Your Answer</div>
+                          <div className={`font-semibold mt-0.5 ${isCorr ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {yourAns}
+                          </div>
+                        </div>
+                        <div className="p-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Correct Answer</div>
+                          <div className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            {correctAns}
+                          </div>
                         </div>
                       </div>
-                      <div className="p-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Correct Answer</div>
-                        <div className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                          {result.correctAnswer}
+                      {result.explanation && (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-neutral-900 p-2.5 sm:p-3 rounded-lg border border-gray-200 dark:border-neutral-800">
+                          <div className="font-bold uppercase text-[10px] text-gray-400 mb-0.5">Explanation:</div>
+                          {result.explanation}
                         </div>
-                      </div>
+                      )}
                     </div>
-                    {result.explanation && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-neutral-900 p-2.5 sm:p-3 rounded-lg border border-gray-200 dark:border-neutral-800">
-                        <div className="font-bold uppercase text-[10px] text-gray-400 mb-0.5">Explanation:</div>
-                        {result.explanation}
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Actions */}
