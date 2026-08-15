@@ -70,7 +70,9 @@ export default function TakeTestPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -85,6 +87,36 @@ export default function TakeTestPage() {
     }
   }, [status, router]);
 
+  // Warn user before closing tab or reloading while test is active
+  useEffect(() => {
+    if (!test || isSubmitting || isSubmitted) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [test, isSubmitting, isSubmitted]);
+
+  // Intercept browser back navigation while test is active
+  useEffect(() => {
+    if (!test || isSubmitting || isSubmitted) return;
+
+    window.history.pushState({ testActive: true }, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (isSubmitted) return;
+      window.history.pushState({ testActive: true }, '', window.location.href);
+      setShowExitModal(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [test, isSubmitting, isSubmitted]);
+
   const handleSubmit = useCallback(async () => {
     const currentTest = testRef.current;
     if (!currentTest || isSubmitting) return;
@@ -96,7 +128,7 @@ export default function TakeTestPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: currentTest.id, answers: answersRef.current }),
+        body: JSON.stringify({ testId: currentTest.id, id: currentTest.id, answers: answersRef.current }),
       });
 
       const data = await response.json();
@@ -105,19 +137,22 @@ export default function TakeTestPage() {
         throw new Error(data.error || 'Failed to submit test');
       }
 
+      setIsSubmitted(true);
+      setShowSubmitModal(false);
+      toast.success('Test submitted successfully!');
+
       if (data.attemptId) {
-        router.push(`/test-results/${data.attemptId}`);
+        window.location.href = `/test-results/${data.attemptId}`;
       } else {
-        toast.success('Test submitted successfully');
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error('Error submitting test:', error);
       toast.error('Failed to submit test. Please try again.');
-    } finally {
+      setShowSubmitModal(false);
       setIsSubmitting(false);
     }
-  }, [isSubmitting, router]);
+  }, [isSubmitting]);
 
   useEffect(() => {
     const fetchTest = async () => {
@@ -279,7 +314,7 @@ export default function TakeTestPage() {
           {/* Left: Exit & Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => setShowExitModal(true)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors shrink-0"
               title="Exit Test"
             >
@@ -466,42 +501,39 @@ export default function TakeTestPage() {
           </div>
 
           {/* Bottom Action Ribbon */}
-          <div className="p-3 sm:p-4 bg-gray-50/90 dark:bg-neutral-900/90 border-t border-gray-200 dark:border-neutral-800 flex items-center justify-between gap-2 shrink-0">
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Bottom Navigation */}
+          <div className="p-3.5 sm:p-4 bg-gray-50/90 dark:bg-neutral-900/90 border-t border-gray-200 dark:border-neutral-800 flex items-center justify-between gap-2.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handlePrevious}
                 disabled={currentQuestion === 0}
-                className="h-8.5 sm:h-9 px-3 sm:px-4 rounded-lg text-xs font-bold"
+                className="h-10.5 sm:h-9 px-4 sm:px-4 rounded-xl sm:rounded-lg text-sm sm:text-xs font-bold shadow-sm sm:shadow-none"
               >
                 Previous
               </Button>
 
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleClearResponse}
-                className="hidden sm:inline-flex h-8.5 sm:h-9 px-3 rounded-lg text-xs font-bold text-gray-600 hover:text-rose-600"
+                className="hidden sm:inline-flex h-9 px-3 rounded-lg text-xs font-bold text-gray-600 hover:text-rose-600"
               >
                 Clear Response
               </Button>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2">
               {currentQuestion === test.questions.length - 1 ? (
                 <Button
-                  size="sm"
                   onClick={() => setShowSubmitModal(true)}
-                  className="h-8.5 sm:h-9 px-4 sm:px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-sm"
+                  className="h-10.5 sm:h-9 px-5 sm:px-5 rounded-xl sm:rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-xs font-black uppercase tracking-wider shadow-sm"
                 >
                   Submit Test
                 </Button>
               ) : (
                 <Button
-                  size="sm"
                   onClick={handleNext}
-                  className="h-8.5 sm:h-9 px-4 sm:px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider shadow-sm"
+                  className="h-10.5 sm:h-9 px-5 sm:px-5 rounded-xl sm:rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm sm:text-xs font-black uppercase tracking-wider shadow-sm"
                 >
                   Next Question →
                 </Button>
@@ -796,6 +828,46 @@ export default function TakeTestPage() {
               className="h-9 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
             >
               Submit Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 7. EXIT TEST CONFIRMATION WARNING MODAL */}
+      <Dialog open={showExitModal} onOpenChange={setShowExitModal}>
+        <DialogContent className="max-w-md rounded-xl p-6 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
+          <DialogHeader>
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center mb-2 border border-rose-100 dark:border-rose-900/50">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-lg font-black text-gray-900 dark:text-white">
+              Leave Ongoing Test?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500 dark:text-gray-400">
+              Your test is currently in progress. If you leave now, your answers and test progress will not be saved.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-xs font-semibold">
+            ⏳ Time remaining: <span className="font-mono font-black">{minutes}:{seconds.toString().padStart(2, '0')}</span> • {stats.answered} of {test.questions.length} answered
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowExitModal(false)}
+              className="h-10 rounded-lg text-xs font-bold"
+            >
+              Resume Test
+            </Button>
+            <Button
+              onClick={() => {
+                setShowExitModal(false);
+                router.replace('/dashboard');
+              }}
+              className="h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider"
+            >
+              Exit to Dashboard
             </Button>
           </DialogFooter>
         </DialogContent>
