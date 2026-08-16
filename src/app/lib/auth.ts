@@ -71,6 +71,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
+          image: user.image,
         };
       }
     }),
@@ -86,17 +87,27 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        // The Prisma Adapter automatically handles inserting users when they sign in through Google.
-        // We do not need the manual find/create code that was here before.
+        token.picture = (user as any).image;
+      }
+      if (trigger === 'update' && session?.user) {
+        if (session.user.image !== undefined) {
+          token.picture = session.user.image;
+        }
+        if (session.user.name !== undefined) {
+          token.name = session.user.name;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        if (token.picture) {
+          session.user.image = token.picture as string;
+        }
       }
       return session;
     },

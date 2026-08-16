@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { UserAvatar } from '@/app/components/UserAvatar';
 import {
   Sun,
   Moon,
@@ -407,9 +408,12 @@ export default function SettingsPage() {
           <CardContent className="p-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700/60">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                  {session?.user?.name?.[0]?.toUpperCase() || 'U'}
-                </div>
+                <UserAvatar
+                  image={session?.user?.image}
+                  name={session?.user?.name}
+                  size="lg"
+                  roundedClassName="rounded-xl"
+                />
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 dark:text-white">{session?.user?.name || 'Logged in User'}</h4>
                   <p className="text-[11px] text-gray-500">{session?.user?.email || 'Active Session'}</p>

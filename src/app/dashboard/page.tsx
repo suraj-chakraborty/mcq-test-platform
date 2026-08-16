@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import UserProfile from '@/app/components/UserProfile';
 import UserProfileModal from '@/app/components/UserProfileModal';
+import { UserAvatar } from '@/app/components/UserAvatar';
 import DescriptiveWriting from '../components/DescriptiveWriting';
 import DescriptivePage from '../descriptive/page';
 import DescriptiveHistory from '../components/DescriptiveHistory';
@@ -264,6 +265,15 @@ export default function Dashboard() {
   const [predefinedQuestionCount, setPredefinedQuestionCount] = useState(10);
   const [isGeneratingPredefined, setIsGeneratingPredefined] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    name?: string;
+    email?: string;
+    image?: string;
+    phone?: string;
+    targetExam?: string;
+    level?: number;
+    streak?: number;
+  } | null>(null);
 
   // Compute theme palette based on user settings preference
   const cardThemes = useMemo(() => {
@@ -300,12 +310,13 @@ export default function Dashboard() {
     return DYNAMIC_THEMES;
   }, [cardPalette]);
 
-  const fetchStats = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch('/api/users/profile');
       if (res.ok) {
         const data = await res.json();
-        if (data.success) {
+        if (data.success && data.user) {
+          setUserProfile(data.user);
           setUserStats({
             level: data.user.level || 4,
             streak: data.user.streak || 1,
@@ -313,11 +324,21 @@ export default function Dashboard() {
             xpInCurrentLevel: data.user.xpInCurrentLevel || 40,
             xpNeededForNextLevel: data.user.xpNeededForNextLevel || 100,
           });
+
+          if (!data.user.phone || !data.user.targetExam) {
+            setShowProfilePrompt(true);
+          } else {
+            setShowProfilePrompt(false);
+          }
         }
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      console.error('Failed to fetch user profile:', err);
     }
+  }, []);
+
+  const fetchStats = async () => {
+    fetchUserProfile();
   };
 
   const fetchDueCards = async () => {
@@ -353,10 +374,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (session?.user) {
-      fetchStats();
+      fetchUserProfile();
       fetchDueCards();
     }
-  }, [session]);
+  }, [session, fetchUserProfile]);
 
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -376,19 +397,9 @@ export default function Dashboard() {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       setIsLoading(false);
-      // Check if user has completed profile (phone + targetExam)
-      fetch('/api/users/profile')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.user) {
-            if (!data.user.phone || !data.user.targetExam) {
-              setShowProfilePrompt(true);
-            }
-          }
-        })
-        .catch(() => {});
+      fetchUserProfile();
     }
-  }, [status, router]);
+  }, [status, router, fetchUserProfile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'context' | 'pyq') => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -746,9 +757,14 @@ export default function Dashboard() {
           {/* User Avatar */}
           <button
             onClick={() => setIsProfileModalOpen(true)}
-            className="w-9 h-9 rounded-lg bg-slate-900 dark:bg-neutral-800 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center shadow-sm transition-all shrink-0"
+            className="rounded-xl p-0.5 hover:ring-2 hover:ring-indigo-500/50 transition-all shrink-0 cursor-pointer overflow-hidden flex items-center justify-center"
+            title="View & Edit Profile"
           >
-            {session?.user?.name?.[0] || 'C'}
+            <UserAvatar
+              image={userProfile?.image || session?.user?.image}
+              name={userProfile?.name || session?.user?.name}
+              size="lg"
+            />
           </button>
         </div>
       </div>
@@ -817,12 +833,19 @@ export default function Dashboard() {
           {/* Rank & User Name Box */}
           <button
             onClick={() => setIsProfileModalOpen(true)}
-            className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-3 px-4 text-left flex flex-col justify-center min-w-[130px] sm:min-w-[160px] hover:bg-white/15 transition-all flex-1 md:flex-none"
+            className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-2 px-3 text-left flex items-center gap-2.5 min-w-[130px] sm:min-w-[160px] hover:bg-white/15 transition-all flex-1 md:flex-none cursor-pointer"
           >
-            <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-300">Rank: Challenger</span>
-            <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px]">
-              {session?.user?.name || 'Cba Abc'}
-            </span>
+            <UserAvatar
+              image={userProfile?.image || session?.user?.image}
+              name={userProfile?.name || session?.user?.name}
+              size="sm"
+            />
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-300">Rank: Challenger</span>
+              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[110px]">
+                {userProfile?.name || session?.user?.name || 'User'}
+              </span>
+            </div>
           </button>
         </div>
       </div>
@@ -1439,7 +1462,11 @@ export default function Dashboard() {
                   }}
                   className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 font-bold text-xs hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                 >
-                  <User className="w-4 h-4 text-gray-500" />
+                  <UserAvatar
+                    image={userProfile?.image || session?.user?.image}
+                    name={userProfile?.name || session?.user?.name}
+                    size="sm"
+                  />
                   <span>User Profile & Rank</span>
                 </button>
 
@@ -1561,7 +1588,7 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+      <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} onUpdate={fetchUserProfile} />
 
       {isMathModalOpen && (
         <MathPhotoUpload
