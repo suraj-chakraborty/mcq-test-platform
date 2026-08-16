@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { UserAvatar } from './UserAvatar';
 import { 
   Brain, 
   Sparkles, 
@@ -105,11 +106,13 @@ export default function Navbar() {
                 <div className="relative">
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 border border-transparent transition-all"
+                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 border border-transparent transition-all cursor-pointer"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-neutral-800 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                      {session.user?.name?.[0] || 'U'}
-                    </div>
+                    <UserAvatar
+                      image={session.user?.image}
+                      name={session.user?.name}
+                      size="md"
+                    />
                     <div className="hidden lg:flex flex-col text-left">
                       <span className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-tight">
                         {session.user?.name || 'User'}
@@ -230,13 +233,20 @@ export default function Navbar() {
               className="md:hidden border-t border-gray-100 dark:border-neutral-800 py-3 space-y-1"
             >
               {/* User Profile Summary */}
-              <div className="px-3 py-2 border-b border-gray-100 dark:border-neutral-800 mb-2">
-                <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
-                  {session.user?.name || 'User'}
-                </p>
-                <p className="text-[11px] font-medium text-gray-400 truncate">
-                  {session.user?.email}
-                </p>
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-neutral-800 mb-2 flex items-center gap-2.5">
+                <UserAvatar
+                  image={session.user?.image}
+                  name={session.user?.name}
+                  size="md"
+                />
+                <div className="overflow-hidden">
+                  <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                    {session.user?.name || 'User'}
+                  </p>
+                  <p className="text-[11px] font-medium text-gray-400 truncate">
+                    {session.user?.email}
+                  </p>
+                </div>
               </div>
 
               {navLinks.map((link) => {
