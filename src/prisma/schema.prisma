@@ -57,6 +57,10 @@ model User {
   streak        Int       @default(0)
   lastActivityAt DateTime?
 
+  // Account Deletion & 30-Day Recovery Lifecycle
+  isMarkedForDeletion Boolean   @default(false)
+  deletionRequestedAt DateTime?
+
   accounts      Account[]
   sessions      Session[]
   
