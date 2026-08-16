@@ -9,12 +9,14 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import OTPVerificationForm from '@/app/components/OTPVerificationForm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, Chrome, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { User, Mail, Lock, Chrome, ArrowRight, Loader2, Sparkles, Phone, GraduationCap } from 'lucide-react';
 import { LoadingSpinner as Loading } from '@/app/components/LoadingSpinner';
 
 export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [targetExam, setTargetExam] = useState('College / University Semesters');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
@@ -22,12 +24,18 @@ export default function SignUp() {
 
   const handleManualSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (phone && phone.trim().length < 7) {
+      toast.error('Please enter a valid phone number (at least 7 digits)');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, phone, targetExam }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -169,7 +177,55 @@ export default function SignUp() {
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.35 }}
+                      className="space-y-1.5"
+                    >
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        Phone Number
+                      </label>
+                      <div className="relative group">
+                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                        <input
+                          type="tel"
+                          placeholder="+1 (555) 000-0000"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
+                        />
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.4 }}
+                      className="space-y-1.5"
+                    >
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Target Exam / Study Goal</label>
+                      <div className="relative group">
+                        <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                        <select
+                          value={targetExam}
+                          onChange={(e) => setTargetExam(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm appearance-none cursor-pointer"
+                        >
+                          <option value="College / University Semesters">College / University Semesters</option>
+                          <option value="JEE (Mains & Advanced)">JEE (Mains & Advanced)</option>
+                          <option value="NEET (Medical)">NEET (Medical)</option>
+                          <option value="GATE (Engineering & Tech)">GATE (Engineering & Tech)</option>
+                          <option value="UPSC / Civil Services">UPSC / Civil Services</option>
+                          <option value="School / Board Exams">School / Board Exams</option>
+                          <option value="GRE / GMAT / SAT">GRE / GMAT / SAT</option>
+                          <option value="Professional Certification">Professional Certification</option>
+                          <option value="General Learning">General Learning</option>
+                        </select>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.45 }}
                       className="space-y-1.5"
                     >
                       <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Password</label>
