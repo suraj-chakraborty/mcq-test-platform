@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import Truncate from './Truncate';
 
 import { LoadingSpinner as Loading } from './LoadingSpinner';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, X } from 'lucide-react';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 
@@ -435,16 +435,16 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-2xl shadow-2xl p-6 w-full max-w-md relative">
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg transition-colors"
               onClick={() => ShowModal(false)}
               aria-label="Close"
             >
-              &times;
+              <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-semibold mb-4">Generate MCQs</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Generate MCQs</h2>
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -454,7 +454,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
               className="space-y-4"
             >
               <div>
-                <label className="block mb-1 font-medium" htmlFor="num-questions">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5" htmlFor="num-questions">
                   Number of Questions (max 50)
                 </label>
                 <Input
@@ -464,11 +464,12 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
                   onChange={(e) => setNumQuestions(Number(e.target.value))}
                   min={1}
                   max={50}
+                  className="bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block mb-1 font-medium" htmlFor="domain-topic">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5" htmlFor="domain-topic">
                   Domain / Topic
                 </label>
                 <Input
@@ -478,15 +479,17 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
                   placeholder="Enter or select a topic"
                   onChange={(e) => setDomainTopic(e.target.value)}
                   list="ai-suggested-domains"
+                  className="bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-700 text-gray-900 dark:text-white placeholder:text-gray-400"
                   required
                 />
-
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => ShowModal(false)}>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" className="rounded-xl text-xs font-bold" onClick={() => ShowModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Generate</Button>
+                <Button type="submit" className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs">
+                  Generate
+                </Button>
               </div>
             </form>
           </div>

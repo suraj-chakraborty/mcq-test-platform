@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type CardPalette = 'dynamic' | 'indigo' | 'emerald' | 'slate';
+export type CardPalette = 'dynamic' | 'indigo' | 'emerald' | 'purple' | 'blue' | 'rose' | 'amber' | 'slate';
 export type AIProvider = 'default' | 'gemini' | 'openai' | 'anthropic' | 'groq';
 
 interface SettingsContextType {
@@ -39,8 +39,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       const savedPalette = localStorage.getItem('qp_card_palette') as CardPalette | null;
-      if (savedPalette && ['dynamic', 'indigo', 'emerald', 'slate'].includes(savedPalette)) {
+      if (savedPalette && ['dynamic', 'indigo', 'emerald', 'purple', 'blue', 'rose', 'amber', 'slate'].includes(savedPalette)) {
         setCardPaletteState(savedPalette);
+        document.documentElement.setAttribute('data-accent', savedPalette);
+      } else {
+        document.documentElement.setAttribute('data-accent', 'dynamic');
       }
 
       const savedProvider = localStorage.getItem('qp_ai_provider') as AIProvider | null;
@@ -59,6 +62,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setIsInitialized(true);
     }
   }, []);
+
+  // Sync accent palette to DOM
+  useEffect(() => {
+    if (!isInitialized) return;
+    document.documentElement.setAttribute('data-accent', cardPalette);
+  }, [cardPalette, isInitialized]);
 
   // Sync theme mode to DOM
   useEffect(() => {
@@ -93,6 +102,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const setCardPalette = (palette: CardPalette) => {
     setCardPaletteState(palette);
+    document.documentElement.setAttribute('data-accent', palette);
     try {
       localStorage.setItem('qp_card_palette', palette);
     } catch (e) {}
