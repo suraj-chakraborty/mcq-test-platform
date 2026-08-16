@@ -263,6 +263,7 @@ export default function Dashboard() {
   const [selectedPredefinedType, setSelectedPredefinedType] = useState<'current-affairs' | 'general-knowledge' | null>(null);
   const [predefinedQuestionCount, setPredefinedQuestionCount] = useState(10);
   const [isGeneratingPredefined, setIsGeneratingPredefined] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
 
   // Compute theme palette based on user settings preference
   const cardThemes = useMemo(() => {
@@ -375,6 +376,17 @@ export default function Dashboard() {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       setIsLoading(false);
+      // Check if user has completed profile (phone + targetExam)
+      fetch('/api/users/profile')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            if (!data.user.phone || !data.user.targetExam) {
+              setShowProfilePrompt(true);
+            }
+          }
+        })
+        .catch(() => {});
     }
   }, [status, router]);
 
@@ -740,6 +752,44 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Profile Completion Alert Banner for Existing Users */}
+      {showProfilePrompt && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-300 dark:border-amber-900/60 text-amber-950 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5">
+              <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+                Complete Your Learner Profile
+              </h4>
+              <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400">
+                Add your contact phone number and target exam to personalize your AI question generator, test difficulty, and duel matchmaking.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all"
+            >
+              Complete Profile
+            </button>
+            <button
+              onClick={() => setShowProfilePrompt(false)}
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition-colors"
+              title="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Main Hero Card (Navy/Indigo Gradient) */}
       <div className="w-full rounded-xl bg-gradient-to-r from-[#242568] via-[#2A2B79] to-[#34358E] p-5 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">

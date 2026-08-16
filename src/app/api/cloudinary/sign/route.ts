@@ -6,7 +6,7 @@ import { v2 as cloudinary } from 'cloudinary';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -24,8 +24,9 @@ export async function POST() {
       );
     }
 
+    const body = await req.json().catch(() => ({}));
+    const folder = body?.folder === 'avatars' ? 'avatars' : 'pdfs';
     const timestamp = Math.round(new Date().getTime() / 1000);
-    const folder = 'pdfs';
 
     // Sign the upload parameters for direct client upload
     const signature = cloudinary.utils.api_sign_request(

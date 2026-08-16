@@ -98,3 +98,73 @@ export async function uploadPdfDirectToCloudinary(
     pageCount,
   };
 }
+
+/**
+ * Uploads an image (avatar/profile picture) directly from browser to Cloudinary
+ */
+export async function uploadImageDirectToCloudinary(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<{ url: string; publicId: string }> {
+  // 1. Fetch signed upload params for 'avatars' folder
+  const signRes = await fetch('/api/cloudinary/sign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder: 'avatars' }),
+  });
+
+  if (!signRes.ok) {
+    const errorData = await signRes.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to initialize secure image upload signature');
+  }
+
+  const { signature, timestamp, apiKey, cloudName, folder } = await signRes.json();
+
+  const uploadFormData = new FormData();
+  uploadFormData.append('file', file);
+  uploadFormData.append('api_key', apiKey);
+  uploadFormData.append('timestamp', timestamp.toString());
+  uploadFormData.append('signature', signature);
+  uploadFormData.append('folder', folder);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+
+    if (onProgress && xhr.upload) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          resolve({
+            url: res.secure_url,
+            publicId: res.public_id,
+          });
+        } catch {
+          reject(new Error('Failed to parse Cloudinary response'));
+        }
+      } else {
+        try {
+          const errRes = JSON.parse(xhr.responseText);
+          reject(new Error(errRes.error?.message || `Image upload failed (HTTP ${xhr.status})`));
+        } catch {
+          reject(new Error(`Image upload failed (HTTP ${xhr.status})`));
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during avatar upload'));
+    };
+
+    xhr.send(uploadFormData);
+  });
+}

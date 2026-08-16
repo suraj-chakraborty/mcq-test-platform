@@ -19,9 +19,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, email, password } = result.data;
+    const { name, email, password, phone, targetExam } = result.data;
 
-    // Check if user already exists
+    // Check if user already exists by email
     const existingUser = await prisma.user.findUnique({ 
         where: { email } 
     });
@@ -33,16 +33,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if phone number is already in use by another user
+    if (phone && phone.trim() !== '') {
+      const existingPhoneUser = await (prisma.user as any).findFirst({
+        where: { phone: phone.trim() }
+      });
+      if (existingPhoneUser) {
+        return NextResponse.json(
+          { message: 'Phone number is already associated with another account' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
     // Create user in Prisma
-    const user = await prisma.user.create({
+    const user = await (prisma.user as any).create({
       data: {
         name,
         email,
         password: hashedPassword,
+        phone: phone && phone.trim() !== '' ? phone.trim() : null,
+        targetExam: targetExam && targetExam.trim() !== '' ? targetExam.trim() : null,
         otp: OTPgenerator.toString(),
         otpExpiresAt: otpExpiry,
         isVerified: false,
@@ -54,7 +69,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         message: 'User created. OTP sent to email.',
-        user: { id: user.id, name: user.name, email: user.email } 
+        user: { id: user.id, name: user.name, email: user.email, phone: user.phone, targetExam: user.targetExam } 
       },
       { status: 201 }
     );

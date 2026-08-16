@@ -47,6 +47,11 @@ model User {
   mongodbUrl    String?   
   
   // Custom user fields
+  phone         String?   @unique
+  targetExam    String?
+  institution   String?
+  academicLevel String?
+  bio           String?
   otp           String?
   isVerified    Boolean   @default(false)
   otpExpiresAt  DateTime?
