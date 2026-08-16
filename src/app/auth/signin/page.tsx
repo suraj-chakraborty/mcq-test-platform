@@ -67,7 +67,7 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white relative overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white relative">
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -80,17 +80,18 @@ export default function SignIn() {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Background Decorative Elements (Right Side Visuals) */}
-      <div className="hidden lg:block lg:flex-1 relative bg-slate-900 overflow-hidden">
+
+      {/* Background Decorative Elements (Right Side Visuals - Sticky on Desktop) */}
+      <div className="hidden lg:flex lg:flex-1 relative bg-slate-900 overflow-hidden sticky top-0 h-screen">
         <img src="/auth_edu_background.png" alt="Education Background" className="absolute inset-0 w-full h-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 xl:p-12 text-center z-10">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="h-28 w-28 bg-white/10 backdrop-blur-md rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl border border-white/20 p-4"
+            className="h-24 w-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/20 p-3.5"
           >
             <img src="/logo.png" alt="MCQ Test Platform Logo" className="w-full h-full object-contain" />
           </motion.div>
@@ -98,7 +99,7 @@ export default function SignIn() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-4xl font-black text-white mb-4"
+            className="text-3xl xl:text-4xl font-black text-white mb-3 tracking-tight"
           >
             Master Your Future
           </motion.h2>
@@ -106,139 +107,149 @@ export default function SignIn() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-lg text-indigo-100/80 font-medium max-w-md"
+            className="text-sm xl:text-base text-indigo-100/80 font-medium max-w-md"
           >
             Join thousands of students and professionals who are leveling up their skills through our advanced MCQ platform.
           </motion.p>
         </div>
       </div>
 
-      {/* Auth Content (Left/Center Side) */}
+      {/* Auth Content (Left Side - Responsive Scrollable Form) */}
       <motion.div
-        initial={{ opacity: 0, x: -50 }}
+        initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full lg:max-w-[50%] flex flex-col h-screen overflow-hidden"
+        transition={{ duration: 0.5 }}
+        className="w-full lg:w-[50%] xl:w-[45%] flex flex-col min-h-screen overflow-y-auto justify-center px-4 sm:px-8 md:px-12 lg:px-8 xl:px-14 py-6 sm:py-10"
       >
-        <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-4">
-          <div className="w-full max-w-md mx-auto h-full flex flex-col justify-center">
+        <div className="w-full max-w-md mx-auto my-auto space-y-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-4"
+          >
+            <div className="lg:hidden flex items-center justify-center gap-2.5 mb-5">
+              <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-md p-1.5 border border-gray-100">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-xl font-black text-gray-900 tracking-tight">
+                MCQ <span className="text-indigo-600">Platform</span>
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-1">
+              Welcome Back
+            </h1>
+            <p className="text-gray-500 font-medium text-xs sm:text-sm">
+              Sign in to continue your assessment journey
+            </p>
+          </motion.div>
+
+          <form onSubmit={handleManualSignIn} className="space-y-3">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+              className="space-y-1"
+            >
+              <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                Email Address
+              </label>
+              <div className="relative group">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                  required
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="mb-4"
+              className="space-y-1"
             >
-              <div className="lg:hidden flex flex-col items-center mb-10">
-                <div className="h-24 w-24 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-2xl p-4 border border-gray-100 transition-transform">
-                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-                </div>
-                <h1 className="text-3xl font-black text-gray-900 tracking-tighter mb-2">MCQ <span className="text-indigo-600">Test Platform</span></h1>
-                <div className="h-1.5 w-16 bg-indigo-600 rounded-full mb-8 opacity-20" />
+              <div className="flex justify-between items-center px-0.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                  Password
+                </label>
+                <button type="button" className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700">
+                  Forgot?
+                </button>
               </div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Welcome Back</h1>
-              <p className="text-gray-500 font-medium text-sm">Sign in to continue your journey</p>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                  required
+                />
+              </div>
             </motion.div>
-
-            <form onSubmit={handleManualSignIn} className="space-y-3">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-1.5"
-              >
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Email Address</label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                  <input
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                    required
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="space-y-1.5"
-              >
-                <div className="flex justify-between items-center px-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Password</label>
-                  <button type="button" className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700">Forgot?</button>
-                </div>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                    required
-                  />
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="pt-1"
-              >
-                <Button
-                  type="submit"
-                  className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.25rem] font-black text-lg shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    "Signing In..."
-                  ) : (
-                    <>
-                      Sign In
-                      <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </form>
 
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="pt-1.5"
             >
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t-2 border-gray-50"></div>
-                </div>
-                <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  <span className="px-6 bg-white">Social Login</span>
-                </div>
-              </div>
-
               <button
-                className="w-full h-14 bg-white border border-gray-100 text-gray-700 rounded-[1.25rem] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm group text-sm"
-                onClick={() => handleSocialSignIn('google')}
+                type="submit"
+                className="w-full h-11 sm:h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl font-black text-sm sm:text-base shadow-md shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-70 cursor-pointer"
+                disabled={loading}
               >
-                <Chrome className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform" />
-                Continue with Google
+                {loading ? (
+                  "Signing In..."
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
-
-              <div className="text-center mt-6">
-                <p className="text-gray-500 font-medium text-sm">
-                  New here?{' '}
-                  <a href="/auth/signup" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors inline-flex items-center gap-0.5 group">
-                    Create free account
-                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </a>
-                </p>
-              </div>
             </motion.div>
-          </div>
+          </form>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="relative my-3 sm:my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                <span className="px-3 bg-white text-gray-400">Or continue with</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="w-full h-10 sm:h-11 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2.5 shadow-sm group text-xs sm:text-sm cursor-pointer"
+              onClick={() => handleSocialSignIn('google')}
+            >
+              <Chrome className="h-4 w-4 text-red-500 group-hover:scale-110 transition-transform" />
+              <span>Continue with Google</span>
+            </button>
+
+            <div className="text-center mt-3 sm:mt-4">
+              <p className="text-gray-500 font-medium text-xs sm:text-sm">
+                New here?{' '}
+                <a href="/auth/signup" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors inline-flex items-center gap-0.5 group">
+                  Create free account
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </a>
+              </p>
+            </div>
+          </motion.div>
         </div>
       </motion.div>
     </div>

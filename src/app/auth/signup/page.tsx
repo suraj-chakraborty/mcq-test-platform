@@ -57,7 +57,7 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white relative overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white relative">
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -70,17 +70,18 @@ export default function SignUp() {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Background Decorative Elements (Right Side Visuals) */}
-      <div className="hidden lg:block lg:flex-1 relative bg-slate-900 overflow-hidden">
+
+      {/* Background Decorative Elements (Right Side Visuals - Sticky on Desktop) */}
+      <div className="hidden lg:flex lg:flex-1 relative bg-slate-900 overflow-hidden sticky top-0 h-screen">
         <img src="/auth_signup_background.png" alt="Education Background" className="absolute inset-0 w-full h-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 xl:p-12 text-center z-10">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
-            className="h-28 w-28 bg-white/10 backdrop-blur-md rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl border border-white/20 p-4"
+            className="h-24 w-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center mb-6 shadow-2xl border border-white/20 p-3.5"
           >
             <img src="/logo.png" alt="MCQ Test Platform Logo" className="w-full h-full object-contain" />
           </motion.div>
@@ -88,7 +89,7 @@ export default function SignUp() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-4xl font-black text-white mb-4"
+            className="text-3xl xl:text-4xl font-black text-white mb-3 tracking-tight"
           >
             Unleash Your Potential
           </motion.h2>
@@ -96,225 +97,247 @@ export default function SignUp() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-lg text-indigo-100/80 font-medium max-w-md"
+            className="text-sm xl:text-base text-indigo-100/80 font-medium max-w-md"
           >
             Create an account today and start your journey towards academic and professional excellence.
           </motion.p>
         </div>
       </div>
 
-      {/* Auth Content (Left Side) */}
+      {/* Auth Content (Left Side - Responsive Scrollable Form) */}
       <motion.div
-        initial={{ opacity: 0, x: -50 }}
+        initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full lg:max-w-[50%] flex flex-col h-screen overflow-hidden"
+        transition={{ duration: 0.5 }}
+        className="w-full lg:w-[50%] xl:w-[45%] flex flex-col min-h-screen overflow-y-auto justify-center px-4 sm:px-8 md:px-12 lg:px-8 xl:px-14 py-6 sm:py-10"
       >
-        <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-4">
-          <div className="w-full max-w-md mx-auto h-full flex flex-col justify-center">
-            <AnimatePresence mode="wait">
-              {!showOTP ? (
-                <motion.div
-                  key="signup-form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="flex flex-col justify-center"
-                >
-                  <div className="mb-4 text-left">
-                    <div className="lg:hidden flex flex-col items-center mb-10">
-                      <div className="h-24 w-24 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-2xl p-4 border border-gray-100 transition-transform">
-                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-                      </div>
-                      <h1 className="text-3xl font-black text-gray-900 tracking-tighter mb-2">MCQ <span className="text-indigo-600">Test Platform</span></h1>
-                      <div className="h-1.5 w-16 bg-indigo-600 rounded-full mb-8 opacity-20" />
+        <div className="w-full max-w-md mx-auto my-auto space-y-4">
+          <AnimatePresence mode="wait">
+            {!showOTP ? (
+              <motion.div
+                key="signup-form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-col justify-center"
+              >
+                {/* Header / Branding */}
+                <div className="mb-4 text-left">
+                  <div className="lg:hidden flex items-center justify-center gap-2.5 mb-5">
+                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-md p-1.5 border border-gray-100">
+                      <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
                     </div>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Create Account</h1>
-                    <p className="text-gray-500 font-medium text-sm">Join our community of learners</p>
+                    <span className="text-xl font-black text-gray-900 tracking-tight">
+                      MCQ <span className="text-indigo-600">Platform</span>
+                    </span>
                   </div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-1">
+                    Create Account
+                  </h1>
+                  <p className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Join our community of learners & test aspirants
+                  </p>
+                </div>
 
-                  <form onSubmit={handleManualSignUp} className="space-y-3">
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="space-y-1.5"
-                    >
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Full Name</label>
-                      <div className="relative group">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="text"
-                          placeholder="John Doe"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                          required
-                        />
-                      </div>
-                    </motion.div>
+                <form onSubmit={handleManualSignUp} className="space-y-2.5 sm:space-y-3">
+                  {/* Full Name */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                      Full Name
+                    </label>
+                    <div className="relative group">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <input
+                        type="text"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                        required
+                      />
+                    </div>
+                  </motion.div>
 
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="space-y-1.5"
-                    >
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Email Address</label>
-                      <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="email"
-                          placeholder="name@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                          required
-                        />
-                      </div>
-                    </motion.div>
+                  {/* Email Address */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                      Email Address
+                    </label>
+                    <div className="relative group">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <input
+                        type="email"
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                        required
+                      />
+                    </div>
+                  </motion.div>
 
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.35 }}
-                      className="space-y-1.5"
-                    >
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
-                        Phone Number
-                      </label>
-                      <div className="relative group">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="tel"
-                          placeholder="+1 (555) 000-0000"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                        />
-                      </div>
-                    </motion.div>
+                  {/* Phone Number */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                      Phone Number
+                    </label>
+                    <div className="relative group">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </motion.div>
 
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="space-y-1.5"
-                    >
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Target Exam / Study Goal</label>
-                      <div className="relative group">
-                        <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <select
-                          value={targetExam}
-                          onChange={(e) => setTargetExam(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm appearance-none cursor-pointer"
-                        >
-                          <option value="College / University Semesters">College / University Semesters</option>
-                          <option value="JEE (Mains & Advanced)">JEE (Mains & Advanced)</option>
-                          <option value="NEET (Medical)">NEET (Medical)</option>
-                          <option value="GATE (Engineering & Tech)">GATE (Engineering & Tech)</option>
-                          <option value="UPSC / Civil Services">UPSC / Civil Services</option>
-                          <option value="School / Board Exams">School / Board Exams</option>
-                          <option value="GRE / GMAT / SAT">GRE / GMAT / SAT</option>
-                          <option value="Professional Certification">Professional Certification</option>
-                          <option value="General Learning">General Learning</option>
-                        </select>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.45 }}
-                      className="space-y-1.5"
-                    >
-                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Password</label>
-                      <div className="relative group">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="password"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-[1.25rem] transition-all outline-none font-medium text-gray-900 text-sm"
-                          required
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="pt-1"
-                    >
-                      <Button
-                        type="submit"
-                        className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.25rem] font-black text-lg shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
-                        disabled={loading}
+                  {/* Target Exam */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="space-y-1"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                      Target Exam / Study Goal
+                    </label>
+                    <div className="relative group">
+                      <GraduationCap className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <select
+                        value={targetExam}
+                        onChange={(e) => setTargetExam(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm appearance-none cursor-pointer"
                       >
-                        {loading ? (
-                          "Creating Account..."
-                        ) : (
-                          <>
-                            Sign Up
-                            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </form>
-
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t-2 border-gray-50"></div>
+                        <option value="College / University Semesters">College / University Semesters</option>
+                        <option value="JEE (Mains & Advanced)">JEE (Mains & Advanced)</option>
+                        <option value="NEET (Medical)">NEET (Medical)</option>
+                        <option value="GATE (Engineering & Tech)">GATE (Engineering & Tech)</option>
+                        <option value="UPSC / Civil Services">UPSC / Civil Services</option>
+                        <option value="School / Board Exams">School / Board Exams</option>
+                        <option value="GRE / GMAT / SAT">GRE / GMAT / SAT</option>
+                        <option value="Professional Certification">Professional Certification</option>
+                        <option value="General Learning">General Learning</option>
+                      </select>
                     </div>
-                    <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                      <span className="px-4 bg-white text-gray-400">Social Registration</span>
-                    </div>
-                  </div>
+                  </motion.div>
 
-                  <button
-                    className="w-full h-14 bg-white border border-gray-100 text-gray-700 rounded-[1.25rem] font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-3 shadow-sm group text-sm"
-                    onClick={() => handleSocialSignUp('google')}
+                  {/* Password */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="space-y-1"
                   >
-                    <Chrome className="h-5 w-5 text-red-500 group-hover:scale-110 transition-transform" />
-                    Sign up with Google
-                  </button>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 ml-0.5">
+                      Password
+                    </label>
+                    <div className="relative group">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl transition-all outline-none font-medium text-gray-900 text-xs sm:text-sm"
+                        required
+                      />
+                    </div>
+                  </motion.div>
 
-                  <div className="text-center mt-6">
-                    <p className="text-gray-500 font-medium text-sm">
-                      Already have an account?{' '}
-                      <a href="/auth/signin" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors inline-flex items-center gap-0.5 group">
-                        Sign in
-                        <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </a>
-                    </p>
+                  {/* Submit Button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="pt-1.5"
+                  >
+                    <button
+                      type="submit"
+                      className="w-full h-11 sm:h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl font-black text-sm sm:text-base shadow-md shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group disabled:opacity-70 cursor-pointer"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        "Creating Account..."
+                      ) : (
+                        <>
+                          Sign Up
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                </form>
+
+                {/* Social Divider */}
+                <div className="relative my-3 sm:my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-100"></div>
                   </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="otp-form"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex flex-col justify-center"
+                  <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <span className="px-3 bg-white text-gray-400">Or continue with</span>
+                  </div>
+                </div>
+
+                {/* Google Button */}
+                <button
+                  type="button"
+                  className="w-full h-10 sm:h-11 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2.5 shadow-sm group text-xs sm:text-sm cursor-pointer"
+                  onClick={() => handleSocialSignUp('google')}
                 >
-                  <div className="text-left mb-6">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Verify Email</h1>
-                    <p className="text-gray-500 font-medium text-base">We've sent a code to <span className="text-indigo-600">{email}</span></p>
-                  </div>
-                  <OTPVerificationForm email={email} />
-                  <button
-                    onClick={() => setShowOTP(false)}
-                    className="w-full mt-8 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1.5 group"
-                  >
-                    <ArrowRight className="h-3.5 w-3.5 rotate-180 group-hover:-translate-x-0.5 transition-transform" />
-                    Back to signup
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  <Chrome className="h-4 w-4 text-red-500 group-hover:scale-110 transition-transform" />
+                  <span>Sign up with Google</span>
+                </button>
+
+                {/* Sign In Link */}
+                <div className="text-center mt-3 sm:mt-4">
+                  <p className="text-gray-500 font-medium text-xs sm:text-sm">
+                    Already have an account?{' '}
+                    <a href="/auth/signin" className="text-indigo-600 font-black hover:text-indigo-700 transition-colors inline-flex items-center gap-0.5 group">
+                      Sign in
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </a>
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="otp-form"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col justify-center"
+              >
+                <div className="text-left mb-5">
+                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-1">Verify Email</h1>
+                  <p className="text-gray-500 font-medium text-xs sm:text-sm">We've sent a 6-digit verification code to <span className="text-indigo-600 font-bold">{email}</span></p>
+                </div>
+                <OTPVerificationForm email={email} />
+                <button
+                  onClick={() => setShowOTP(false)}
+                  className="w-full mt-6 text-xs sm:text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-1.5 group cursor-pointer"
+                >
+                  <ArrowRight className="h-3.5 w-3.5 rotate-180 group-hover:-translate-x-0.5 transition-transform" />
+                  Back to signup
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </div>
