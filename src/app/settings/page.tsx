@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { useSettings, ThemeMode, CardPalette, AIProvider } from '@/app/providers/SettingsProvider';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,14 @@ import {
   Layers,
   ArrowLeft,
   Sliders,
-  Check
+  Check,
+  LogOut,
+  User
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const {
     themeMode,
     setThemeMode,
@@ -377,6 +381,49 @@ export default function SettingsPage() {
                   <span>{testResult.message}</span>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* SECTION 3: Account & Session Management */}
+        <Card className="border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="p-6 pb-4 border-b border-gray-100 dark:border-neutral-800/80">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                    Account & Session
+                  </CardTitle>
+                  <CardDescription className="text-xs text-gray-500">
+                    Manage active sign-in session and account authentication
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                  {session?.user?.name?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white">{session?.user?.name || 'Logged in User'}</h4>
+                  <p className="text-[11px] text-gray-500">{session?.user?.email || 'Active Session'}</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                className="h-10 px-5 rounded-lg border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold flex items-center gap-2 transition-colors shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Log Out of Account</span>
+              </Button>
             </div>
           </CardContent>
         </Card>

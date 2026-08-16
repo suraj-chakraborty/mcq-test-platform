@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -55,7 +55,8 @@ import {
   Settings,
   User,
   UploadCloud,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
 
@@ -1391,10 +1392,21 @@ export default function Dashboard() {
                     setIsMobileDrawerOpen(false);
                     setIsProfileModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 font-bold text-xs"
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-200 font-bold text-xs hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                 >
                   <User className="w-4 h-4 text-gray-500" />
                   <span>User Profile & Rank</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    signOut({ callbackUrl: '/auth/signin' });
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  <span>Sign Out / Log Out</span>
                 </button>
               </div>
             </motion.div>

@@ -229,6 +229,16 @@ export default function Navbar() {
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-gray-100 dark:border-neutral-800 py-3 space-y-1"
             >
+              {/* User Profile Summary */}
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-neutral-800 mb-2">
+                <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                  {session.user?.name || 'User'}
+                </p>
+                <p className="text-[11px] font-medium text-gray-400 truncate">
+                  {session.user?.email}
+                </p>
+              </div>
+
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const active = isActive(link.href);
@@ -240,7 +250,7 @@ export default function Navbar() {
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                       active
                         ? 'bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800/60'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -250,13 +260,35 @@ export default function Navbar() {
               })}
 
               <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800/60"
+              >
+                <User className="w-4 h-4" />
+                <span>My Profile & Stats</span>
+              </Link>
+
+              <Link
                 href="/settings"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800/60"
               >
                 <Settings className="w-4 h-4" />
                 <span>Settings & AI Engine</span>
               </Link>
+
+              <div className="pt-2 mt-2 border-t border-gray-100 dark:border-neutral-800">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut({ callbackUrl: '/auth/signin' });
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out / Log Out</span>
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
