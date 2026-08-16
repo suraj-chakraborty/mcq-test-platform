@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Truncate from './Truncate';
 
 import { LoadingSpinner as Loading } from './LoadingSpinner';
+import { Loader2, ChevronDown } from 'lucide-react';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 
@@ -50,6 +51,9 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
   const [error, setError] = useState<string | null>(null);
   const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'with-mcqs' | 'without-mcqs'>('all');
@@ -68,13 +72,18 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
   const [testStartError, setTestStartError] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchPdfs = async () => {
+  const fetchPdfs = async (pageNum = 1, isAppend = false) => {
     try {
+      if (isAppend) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
+
       const queryParams = new URLSearchParams({
-        page: page.toString(),
+        page: pageNum.toString(),
         limit: '10',
-        ...(searchTerm && { search: searchTerm }),
-        ...(selectedTopic && selectedTopic !== 'all' && { topic: selectedTopic }),
+        ...(searchQuery && { search: searchQuery }),
       });
 
       const res = await fetch(`/api/pdfs?${queryParams}`);
@@ -82,19 +91,36 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         throw new Error('Failed to fetch PDFs');
       }
       const data = await res.json();
-      setPdfs(data.pdfs || data.data || []);
+      const newPdfs = data.pdfs || data.data || [];
+
+      if (isAppend) {
+        setPdfs((prev) => [...prev, ...newPdfs]);
+      } else {
+        setPdfs(newPdfs);
+      }
+
+      setPage(pageNum);
       setTotalPages(data.pagination?.totalPages || 1);
+      setHasMore(Boolean(data.pagination?.hasMore));
+      setTotal(data.pagination?.total || (isAppend ? pdfs.length + newPdfs.length : newPdfs.length));
     } catch (err) {
       console.error('Error fetching PDFs:', err);
       toast.error('Failed to load PDFs');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      fetchPdfs(page + 1, true);
     }
   };
 
   useEffect(() => {
-    fetchPdfs();
-  }, [page, searchTerm, selectedTopic]);
+    fetchPdfs(1, false);
+  }, [searchQuery]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => {
@@ -304,7 +330,14 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         </div>
 
         <div>
-          <h2 className="text-xl font-semibold">Uploaded PDFs</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Uploaded PDFs</h2>
+            {total > 0 && (
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-2.5 py-1 rounded-full">
+                Showing {filteredAndSortedPdfs.length} of {total}
+              </span>
+            )}
+          </div>
           {isLoading ? (
             <Loading />
           ) : (
@@ -358,6 +391,32 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
               ))}
               {filteredAndSortedPdfs.length === 0 && (
                 <p className="text-center text-gray-500">No PDFs found matching your criteria</p>
+              )}
+
+              {hasMore && (
+                <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    {total - pdfs.length} more document{total - pdfs.length === 1 ? '' : 's'} available
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="w-full sm:w-auto text-xs font-bold gap-2 cursor-pointer"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Loading 10 more...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        <span>Load 10 More Documents</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           )}
