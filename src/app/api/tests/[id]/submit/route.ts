@@ -66,14 +66,19 @@ export async function POST(
     });
 
     // Gamification Integration
-    const { processGamification } = await import('@/app/lib/gamification');
-    const gamificationResult = await processGamification(
-      session.user.id,
-      score,
-      totalQuestions,
-      0,
-      testAttempt.id
-    );
+    let gamificationResult = null;
+    try {
+      const { processGamification } = await import('@/app/lib/gamification');
+      gamificationResult = await processGamification(
+        session.user.id,
+        score,
+        totalQuestions,
+        0,
+        testAttempt.id
+      );
+    } catch (gamificationError) {
+      console.warn('Gamification processing skipped (non-fatal):', gamificationError);
+    }
 
     return NextResponse.json({
       success: true,
