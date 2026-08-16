@@ -125,28 +125,52 @@ export default function SettingsPage() {
 
   const palettes: { id: CardPalette; name: string; desc: string; colorPreview: string[] }[] = [
     {
-      id: 'dynamic',
-      name: 'Dynamic Multi-Color',
-      desc: 'Vibrant rotation across 8 tailored color schemes for maximum visual clarity.',
-      colorPreview: ['#3B82F6', '#10B981', '#6366F1', '#EA580C', '#E11D48'],
-    },
-    {
       id: 'indigo',
-      name: 'Indigo SaaS Classic',
-      desc: 'Unified, elegant royal indigo tones across all cards and action items.',
-      colorPreview: ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC'],
+      name: 'Indigo Royal (Default)',
+      desc: 'Unified, vibrant indigo & deep violet tones across all buttons, active items, and headers.',
+      colorPreview: ['#4F46E5', '#6366F1', '#818CF8', '#312E81'],
     },
     {
       id: 'emerald',
       name: 'Emerald Mint Focus',
-      desc: 'Calm, focused green and teal tones for active recall and intensive study.',
-      colorPreview: ['#059669', '#10B981', '#34D399', '#0D9488'],
+      desc: 'Calm, focused emerald green & teal tones for active recall, speed test sessions, and precision.',
+      colorPreview: ['#059669', '#10B981', '#34D399', '#064E3B'],
+    },
+    {
+      id: 'purple',
+      name: 'Electric Violet & Purple',
+      desc: 'Lush purple & violet aesthetic with glowing neon gradients across badges and actions.',
+      colorPreview: ['#7C3AED', '#8B5CF6', '#A78BFA', '#4C1D95'],
+    },
+    {
+      id: 'blue',
+      name: 'Ocean Azure Blue',
+      desc: 'Crisp, high-contrast sapphire & azure blue for a modern, focused analytical layout.',
+      colorPreview: ['#2563EB', '#3B82F6', '#60A5FA', '#1E3A8A'],
+    },
+    {
+      id: 'rose',
+      name: 'Crimson Rose & Ruby',
+      desc: 'Bold, energetic ruby rose accents for an ultra-vibrant, motivating study atmosphere.',
+      colorPreview: ['#E11D48', '#F43F5E', '#FB7185', '#881337'],
+    },
+    {
+      id: 'amber',
+      name: 'Sunset Amber & Gold',
+      desc: 'Warm golden amber & orange glow evoking high energy, streaks, and gamification.',
+      colorPreview: ['#D97706', '#F59E0B', '#FBBF24', '#78350F'],
     },
     {
       id: 'slate',
-      name: 'Slate Enterprise',
-      desc: 'Serious, understated monochrome aesthetic with crisp neutral borders.',
-      colorPreview: ['#1E293B', '#334155', '#475569', '#64748B'],
+      name: 'Slate Monochrome Minimal',
+      desc: 'Clean, understated dark monochrome aesthetic with crisp neutral borders and high readability.',
+      colorPreview: ['#0F172A', '#1E293B', '#334155', '#475569'],
+    },
+    {
+      id: 'dynamic',
+      name: 'Dynamic Multi-Color',
+      desc: 'Vibrant rotation across 8 tailored color schemes across cards, tabs, and components.',
+      colorPreview: ['#3B82F6', '#10B981', '#6366F1', '#EA580C', '#E11D48'],
     },
   ];
 

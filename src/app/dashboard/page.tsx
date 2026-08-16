@@ -297,6 +297,46 @@ export default function Dashboard() {
         hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-emerald-50/30 hover:to-emerald-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-emerald-950/30',
       }));
     }
+    if (cardPalette === 'purple') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/50',
+        tagClass: 'bg-purple-50/80 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-100 dark:border-purple-900/40',
+        borderClass: 'border-purple-100 hover:border-purple-300 dark:border-neutral-800',
+        btnClass: 'bg-purple-600 hover:bg-purple-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-purple-50/30 hover:to-purple-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-purple-950/30',
+      }));
+    }
+    if (cardPalette === 'blue') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50',
+        tagClass: 'bg-blue-50/80 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40',
+        borderClass: 'border-blue-100 hover:border-blue-300 dark:border-neutral-800',
+        btnClass: 'bg-blue-600 hover:bg-blue-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-blue-50/30 hover:to-blue-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-blue-950/30',
+      }));
+    }
+    if (cardPalette === 'rose') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50',
+        tagClass: 'bg-rose-50/80 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-100 dark:border-rose-900/40',
+        borderClass: 'border-rose-100 hover:border-rose-300 dark:border-neutral-800',
+        btnClass: 'bg-rose-600 hover:bg-rose-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-rose-50/30 hover:to-rose-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-rose-950/30',
+      }));
+    }
+    if (cardPalette === 'amber') {
+      return DYNAMIC_THEMES.map((t) => ({
+        ...t,
+        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50',
+        tagClass: 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-100 dark:border-amber-900/40',
+        borderClass: 'border-amber-100 hover:border-amber-300 dark:border-neutral-800',
+        btnClass: 'bg-amber-600 hover:bg-amber-700 text-white',
+        hoverGradient: 'hover:bg-gradient-to-br hover:from-white hover:via-amber-50/30 hover:to-amber-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-amber-950/30',
+      }));
+    }
     if (cardPalette === 'slate') {
       return DYNAMIC_THEMES.map((t) => ({
         ...t,
@@ -807,8 +847,8 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Main Hero Card (Navy/Indigo Gradient) */}
-      <div className="w-full rounded-xl bg-gradient-to-r from-[#242568] via-[#2A2B79] to-[#34358E] p-5 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">
+      {/* Main Hero Card (Theme Adaptive Accent Gradient) */}
+      <div className="hero-gradient-card w-full rounded-xl p-5 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">
         <div className="space-y-1 relative z-10">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Dashboard</h1>
           <p className="text-xs sm:text-sm font-medium text-indigo-200/90">Manage assessments, active recall, and analytics</p>

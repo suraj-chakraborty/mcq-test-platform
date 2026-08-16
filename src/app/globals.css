@@ -77,6 +77,74 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+
+  /* ------------------- ACCENT THEME CSS VARIABLE DEFINITIONS ------------------- */
+  
+  /* Emerald Accent */
+  [data-accent="emerald"] {
+    --primary: 160 84% 39%;
+    --ring: 160 84% 39%;
+  }
+  [data-accent="emerald"].dark,
+  [data-accent="emerald"] .dark {
+    --primary: 158 64% 52%;
+    --ring: 158 64% 52%;
+  }
+
+  /* Purple / Violet Accent */
+  [data-accent="purple"] {
+    --primary: 270 91% 65%;
+    --ring: 270 91% 65%;
+  }
+  [data-accent="purple"].dark,
+  [data-accent="purple"] .dark {
+    --primary: 270 91% 65%;
+    --ring: 270 91% 65%;
+  }
+
+  /* Blue / Azure Accent */
+  [data-accent="blue"] {
+    --primary: 217.2 91.2% 59.8%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+  [data-accent="blue"].dark,
+  [data-accent="blue"] .dark {
+    --primary: 217.2 91.2% 59.8%;
+    --ring: 217.2 91.2% 59.8%;
+  }
+
+  /* Rose / Ruby Accent */
+  [data-accent="rose"] {
+    --primary: 346.8 77.2% 49.8%;
+    --ring: 346.8 77.2% 49.8%;
+  }
+  [data-accent="rose"].dark,
+  [data-accent="rose"] .dark {
+    --primary: 346.8 77.2% 49.8%;
+    --ring: 346.8 77.2% 49.8%;
+  }
+
+  /* Amber / Gold Accent */
+  [data-accent="amber"] {
+    --primary: 37.7 92.1% 50.2%;
+    --ring: 37.7 92.1% 50.2%;
+  }
+  [data-accent="amber"].dark,
+  [data-accent="amber"] .dark {
+    --primary: 37.7 92.1% 50.2%;
+    --ring: 37.7 92.1% 50.2%;
+  }
+
+  /* Slate Accent */
+  [data-accent="slate"] {
+    --primary: 222.2 47.4% 11.2%;
+    --ring: 215 20.2% 65.1%;
+  }
+  [data-accent="slate"].dark,
+  [data-accent="slate"] .dark {
+    --primary: 210 40% 98%;
+    --ring: 210 40% 98%;
+  }
 }
  
 @layer base {
@@ -95,15 +163,365 @@
 }
 
 .glass-card {
-  @apply bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-gray-100 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300;
+  @apply bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-gray-100 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300;
 }
 
-.glow-indigo {
-  box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+/* Base Hero Gradient Defaults */
+.hero-gradient-card {
+  background: linear-gradient(135deg, #242568 0%, #2A2B79 50%, #34358E 100%);
 }
 
 .gradient-text {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600;
+}
+
+/* ==========================================================================
+   COMPLETE APP-WIDE THEME ACCENT OVERRIDES (ALL SECTIONS & COMPONENTS)
+   ========================================================================== */
+
+/* ------------------- EMERALD THEME ------------------- */
+[data-accent="emerald"] ::selection {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+  color: rgb(5, 150, 105) !important;
+}
+[data-accent="emerald"] .hero-gradient-card {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #0f766e 100%) !important;
+}
+[data-accent="emerald"] .gradient-text {
+  background-image: linear-gradient(to right, #059669, #10b981, #0d9488) !important;
+}
+[data-accent="emerald"] .bg-indigo-600,
+[data-accent="emerald"] .dark .dark\:bg-indigo-600 {
+  background-color: #059669 !important;
+}
+[data-accent="emerald"] .hover\:bg-indigo-700:hover,
+[data-accent="emerald"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #047857 !important;
+}
+[data-accent="emerald"] .text-indigo-600,
+[data-accent="emerald"] .dark .dark\:text-indigo-400 {
+  color: #059669 !important;
+}
+[data-accent="emerald"] .text-indigo-700,
+[data-accent="emerald"] .text-indigo-800 {
+  color: #065f46 !important;
+}
+[data-accent="emerald"] .text-indigo-200,
+[data-accent="emerald"] .text-indigo-300 {
+  color: #a7f3d0 !important;
+}
+[data-accent="emerald"] .border-indigo-600,
+[data-accent="emerald"] .border-indigo-500 {
+  border-color: #059669 !important;
+}
+[data-accent="emerald"] .border-indigo-100,
+[data-accent="emerald"] .border-indigo-200,
+[data-accent="emerald"] .border-indigo-200\/80 {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+[data-accent="emerald"] .bg-indigo-50,
+[data-accent="emerald"] .bg-indigo-50\/80,
+[data-accent="emerald"] .bg-indigo-500\/10,
+[data-accent="emerald"] .bg-indigo-500\/20 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+[data-accent="emerald"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="emerald"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+}
+[data-accent="emerald"] .shadow-indigo-500\/20,
+[data-accent="emerald"] .shadow-indigo-500\/10,
+[data-accent="emerald"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.25) !important;
+}
+
+/* ------------------- PURPLE / VIOLET THEME ------------------- */
+[data-accent="purple"] ::selection {
+  background-color: rgba(139, 92, 246, 0.25) !important;
+  color: rgb(124, 58, 237) !important;
+}
+[data-accent="purple"] .hero-gradient-card {
+  background: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #4c1d95 100%) !important;
+}
+[data-accent="purple"] .gradient-text {
+  background-image: linear-gradient(to right, #7c3aed, #8b5cf6, #a855f7) !important;
+}
+[data-accent="purple"] .bg-indigo-600,
+[data-accent="purple"] .dark .dark\:bg-indigo-600 {
+  background-color: #7c3aed !important;
+}
+[data-accent="purple"] .hover\:bg-indigo-700:hover,
+[data-accent="purple"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #6d28d9 !important;
+}
+[data-accent="purple"] .text-indigo-600,
+[data-accent="purple"] .dark .dark\:text-indigo-400 {
+  color: #7c3aed !important;
+}
+[data-accent="purple"] .text-indigo-700,
+[data-accent="purple"] .text-indigo-800 {
+  color: #5b21b6 !important;
+}
+[data-accent="purple"] .text-indigo-200,
+[data-accent="purple"] .text-indigo-300 {
+  color: #ddd6fe !important;
+}
+[data-accent="purple"] .border-indigo-600,
+[data-accent="purple"] .border-indigo-500 {
+  border-color: #7c3aed !important;
+}
+[data-accent="purple"] .border-indigo-100,
+[data-accent="purple"] .border-indigo-200,
+[data-accent="purple"] .border-indigo-200\/80 {
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+[data-accent="purple"] .bg-indigo-50,
+[data-accent="purple"] .bg-indigo-50\/80,
+[data-accent="purple"] .bg-indigo-500\/10,
+[data-accent="purple"] .bg-indigo-500\/20 {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+}
+[data-accent="purple"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="purple"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(59, 7, 100, 0.4) !important;
+}
+[data-accent="purple"] .shadow-indigo-500\/20,
+[data-accent="purple"] .shadow-indigo-500\/10,
+[data-accent="purple"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.25) !important;
+}
+
+/* ------------------- BLUE / AZURE THEME ------------------- */
+[data-accent="blue"] ::selection {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  color: rgb(37, 99, 235) !important;
+}
+[data-accent="blue"] .hero-gradient-card {
+  background: linear-gradient(135deg, #172554 0%, #1e3a8a 50%, #1e40af 100%) !important;
+}
+[data-accent="blue"] .gradient-text {
+  background-image: linear-gradient(to right, #2563eb, #3b82f6, #0284c7) !important;
+}
+[data-accent="blue"] .bg-indigo-600,
+[data-accent="blue"] .dark .dark\:bg-indigo-600 {
+  background-color: #2563eb !important;
+}
+[data-accent="blue"] .hover\:bg-indigo-700:hover,
+[data-accent="blue"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #1d4ed8 !important;
+}
+[data-accent="blue"] .text-indigo-600,
+[data-accent="blue"] .dark .dark\:text-indigo-400 {
+  color: #2563eb !important;
+}
+[data-accent="blue"] .text-indigo-700,
+[data-accent="blue"] .text-indigo-800 {
+  color: #1e40af !important;
+}
+[data-accent="blue"] .text-indigo-200,
+[data-accent="blue"] .text-indigo-300 {
+  color: #bfdbfe !important;
+}
+[data-accent="blue"] .border-indigo-600,
+[data-accent="blue"] .border-indigo-500 {
+  border-color: #2563eb !important;
+}
+[data-accent="blue"] .border-indigo-100,
+[data-accent="blue"] .border-indigo-200,
+[data-accent="blue"] .border-indigo-200\/80 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+[data-accent="blue"] .bg-indigo-50,
+[data-accent="blue"] .bg-indigo-50\/80,
+[data-accent="blue"] .bg-indigo-500\/10,
+[data-accent="blue"] .bg-indigo-500\/20 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+[data-accent="blue"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="blue"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(23, 37, 84, 0.4) !important;
+}
+[data-accent="blue"] .shadow-indigo-500\/20,
+[data-accent="blue"] .shadow-indigo-500\/10,
+[data-accent="blue"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* ------------------- ROSE / RUBY THEME ------------------- */
+[data-accent="rose"] ::selection {
+  background-color: rgba(244, 63, 94, 0.25) !important;
+  color: rgb(225, 29, 72) !important;
+}
+[data-accent="rose"] .hero-gradient-card {
+  background: linear-gradient(135deg, #4c0519 0%, #881337 50%, #9f1239 100%) !important;
+}
+[data-accent="rose"] .gradient-text {
+  background-image: linear-gradient(to right, #e11d48, #f43f5e, #db2777) !important;
+}
+[data-accent="rose"] .bg-indigo-600,
+[data-accent="rose"] .dark .dark\:bg-indigo-600 {
+  background-color: #e11d48 !important;
+}
+[data-accent="rose"] .hover\:bg-indigo-700:hover,
+[data-accent="rose"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #be123c !important;
+}
+[data-accent="rose"] .text-indigo-600,
+[data-accent="rose"] .dark .dark\:text-indigo-400 {
+  color: #e11d48 !important;
+}
+[data-accent="rose"] .text-indigo-700,
+[data-accent="rose"] .text-indigo-800 {
+  color: #9f1239 !important;
+}
+[data-accent="rose"] .text-indigo-200,
+[data-accent="rose"] .text-indigo-300 {
+  color: #fecdd3 !important;
+}
+[data-accent="rose"] .border-indigo-600,
+[data-accent="rose"] .border-indigo-500 {
+  border-color: #e11d48 !important;
+}
+[data-accent="rose"] .border-indigo-100,
+[data-accent="rose"] .border-indigo-200,
+[data-accent="rose"] .border-indigo-200\/80 {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+[data-accent="rose"] .bg-indigo-50,
+[data-accent="rose"] .bg-indigo-50\/80,
+[data-accent="rose"] .bg-indigo-500\/10,
+[data-accent="rose"] .bg-indigo-500\/20 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+}
+[data-accent="rose"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="rose"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(76, 5, 25, 0.4) !important;
+}
+[data-accent="rose"] .shadow-indigo-500\/20,
+[data-accent="rose"] .shadow-indigo-500\/10,
+[data-accent="rose"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.25) !important;
+}
+
+/* ------------------- AMBER / GOLD THEME ------------------- */
+[data-accent="amber"] ::selection {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+  color: rgb(217, 119, 6) !important;
+}
+[data-accent="amber"] .hero-gradient-card {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 50%, #9a3412 100%) !important;
+}
+[data-accent="amber"] .gradient-text {
+  background-image: linear-gradient(to right, #d97706, #f59e0b, #ea580c) !important;
+}
+[data-accent="amber"] .bg-indigo-600,
+[data-accent="amber"] .dark .dark\:bg-indigo-600 {
+  background-color: #d97706 !important;
+}
+[data-accent="amber"] .hover\:bg-indigo-700:hover,
+[data-accent="amber"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #b45309 !important;
+}
+[data-accent="amber"] .text-indigo-600,
+[data-accent="amber"] .dark .dark\:text-indigo-400 {
+  color: #d97706 !important;
+}
+[data-accent="amber"] .text-indigo-700,
+[data-accent="amber"] .text-indigo-800 {
+  color: #92400e !important;
+}
+[data-accent="amber"] .text-indigo-200,
+[data-accent="amber"] .text-indigo-300 {
+  color: #fde68a !important;
+}
+[data-accent="amber"] .border-indigo-600,
+[data-accent="amber"] .border-indigo-500 {
+  border-color: #d97706 !important;
+}
+[data-accent="amber"] .border-indigo-100,
+[data-accent="amber"] .border-indigo-200,
+[data-accent="amber"] .border-indigo-200\/80 {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+[data-accent="amber"] .bg-indigo-50,
+[data-accent="amber"] .bg-indigo-50\/80,
+[data-accent="amber"] .bg-indigo-500\/10,
+[data-accent="amber"] .bg-indigo-500\/20 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+[data-accent="amber"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="amber"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(69, 26, 3, 0.4) !important;
+}
+[data-accent="amber"] .shadow-indigo-500\/20,
+[data-accent="amber"] .shadow-indigo-500\/10,
+[data-accent="amber"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.25) !important;
+}
+
+/* ------------------- SLATE MONOCHROME THEME ------------------- */
+[data-accent="slate"] ::selection {
+  background-color: rgba(51, 65, 85, 0.25) !important;
+  color: rgb(15, 23, 42) !important;
+}
+[data-accent="slate"] .hero-gradient-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
+}
+[data-accent="slate"] .gradient-text {
+  background-image: linear-gradient(to right, #0f172a, #334155, #475569) !important;
+}
+[data-accent="slate"] .dark .gradient-text {
+  background-image: linear-gradient(to right, #f8fafc, #cbd5e1, #94a3b8) !important;
+}
+[data-accent="slate"] .bg-indigo-600 {
+  background-color: #0f172a !important;
+}
+[data-accent="slate"] .dark .dark\:bg-indigo-600 {
+  background-color: #334155 !important;
+}
+[data-accent="slate"] .hover\:bg-indigo-700:hover {
+  background-color: #1e293b !important;
+}
+[data-accent="slate"] .dark .dark\:hover\:bg-indigo-700:hover {
+  background-color: #475569 !important;
+}
+[data-accent="slate"] .text-indigo-600 {
+  color: #0f172a !important;
+}
+[data-accent="slate"] .dark .dark\:text-indigo-400 {
+  color: #e2e8f0 !important;
+}
+[data-accent="slate"] .text-indigo-700,
+[data-accent="slate"] .text-indigo-800 {
+  color: #1e293b !important;
+}
+[data-accent="slate"] .text-indigo-200,
+[data-accent="slate"] .text-indigo-300 {
+  color: #cbd5e1 !important;
+}
+[data-accent="slate"] .border-indigo-600,
+[data-accent="slate"] .border-indigo-500 {
+  border-color: #334155 !important;
+}
+[data-accent="slate"] .border-indigo-100,
+[data-accent="slate"] .border-indigo-200,
+[data-accent="slate"] .border-indigo-200\/80 {
+  border-color: rgba(51, 65, 85, 0.3) !important;
+}
+[data-accent="slate"] .bg-indigo-50,
+[data-accent="slate"] .bg-indigo-50\/80,
+[data-accent="slate"] .bg-indigo-500\/10,
+[data-accent="slate"] .bg-indigo-500\/20 {
+  background-color: rgba(51, 65, 85, 0.1) !important;
+}
+[data-accent="slate"] .dark .dark\:bg-indigo-950\/40,
+[data-accent="slate"] .dark .dark\:bg-indigo-950\/60 {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+[data-accent="slate"] .shadow-indigo-500\/20,
+[data-accent="slate"] .shadow-indigo-500\/10,
+[data-accent="slate"] .shadow-indigo-100 {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2) !important;
 }
 
 /* Custom Scrollbar */
