@@ -1175,14 +1175,9 @@ export default function Dashboard() {
         <TabsContent value="pdf">
           <div className="space-y-8">
             <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800">
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">PDF Management</h2>
-                  <p className="text-gray-500 font-medium text-xs">Upload reference documents and generate verified assessments</p>
-                </div>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 px-6 rounded-lg font-bold text-xs h-10" onClick={() => router.push('/upload')}>
-                  Generate with AI
-                </Button>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">PDF Management</h2>
+                <p className="text-gray-500 font-medium text-xs">Upload reference documents and generate verified assessments</p>
               </div>
               <PdfUpload />
             </section>
