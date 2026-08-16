@@ -37,6 +37,36 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Please verify your email with OTP before logging in');
         }
 
+        // Account Deletion 30-day Grace Period Lifecycle
+        const userAny = user as any;
+        if (userAny.isMarkedForDeletion && userAny.deletionRequestedAt) {
+          const msSinceDeletion = Date.now() - new Date(userAny.deletionRequestedAt).getTime();
+          const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+
+          if (msSinceDeletion > thirtyDaysInMs) {
+            // Expired -> permanently delete account
+            try {
+              await prisma.user.delete({ where: { id: user.id } });
+            } catch (err) {
+              console.error('Error permanently deleting expired account:', err);
+            }
+            throw new Error('This account has been permanently deleted after the 30-day grace period.');
+          } else {
+            // User logged in within 30 days -> Automatically cancel deletion request and restore account!
+            try {
+              await (prisma.user as any).update({
+                where: { id: user.id },
+                data: {
+                  isMarkedForDeletion: false,
+                  deletionRequestedAt: null,
+                },
+              });
+            } catch (err) {
+              console.error('Error restoring account on login:', err);
+            }
+          }
+        }
+
         return {
           id: user.id,
           name: user.name,

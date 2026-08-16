@@ -46,7 +46,7 @@ export function calculateLevel(totalXP: number) {
 export async function processGamification(userId: string, score: number, totalQuestions: number, timeTakenSeconds: number, attemptId?: string) {
   const xpEarned = calculateXPEarned(score, totalQuestions, timeTakenSeconds);
   
-  const user = await prisma.user.findUnique({
+  const user = await (prisma.user as any).findUnique({
     where: { id: userId },
     select: { 
       xp: true, 
@@ -61,8 +61,8 @@ export async function processGamification(userId: string, score: number, totalQu
 
   // 1. Update Streak
   const now = new Date();
-  let newStreak = user.streak;
-  const lastActive = user.lastActivityAt;
+  let newStreak = user.streak || 0;
+  const lastActive = (user as any).lastActivityAt;
 
   if (!lastActive) {
     newStreak = 1;
@@ -78,12 +78,12 @@ export async function processGamification(userId: string, score: number, totalQu
     }
   }
 
-  const newTotalXP = user.xp + xpEarned;
+  const newTotalXP = (user.xp || 0) + xpEarned;
   const { level: newLevel } = calculateLevel(newTotalXP);
   
   // 2. Check for achievements
   const newAchievements: { name: string; description: string; icon: string }[] = [];
-  const existingAchievements = user.achievements.map((a: { name: string }) => a.name);
+  const existingAchievements = ((user as any).achievements || []).map((a: { name: string }) => a.name);
 
   if (score === totalQuestions && !existingAchievements.includes('Perfect Score')) {
     newAchievements.push({ name: 'Perfect Score', description: 'Answered all questions correctly in a test.', icon: '🎯' });
@@ -104,7 +104,7 @@ export async function processGamification(userId: string, score: number, totalQu
 
   // 3. Update User & Attempt
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({
+    await (tx.user as any).update({
       where: { id: userId },
       data: {
         xp: newTotalXP,
