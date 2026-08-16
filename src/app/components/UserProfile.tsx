@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,8 @@ import {
   Shield,
   Edit3,
   BarChart3,
-  Calendar
+  Calendar,
+  LogOut
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -400,6 +401,22 @@ export default function UserProfile({ onUpdate }: UserProfileProps) {
               {isLoading ? 'Saving...' : 'Save Profile Changes'}
             </Button>
           </form>
+
+          <div className="pt-4 mt-6 border-t border-gray-100 dark:border-neutral-800 flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-bold text-gray-900 dark:text-white">Account Session</h4>
+              <p className="text-[11px] text-gray-500">Sign out of your account on this device</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="h-9 px-4 rounded-lg border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
