@@ -103,11 +103,7 @@ export default function TestsPage() {
   }, [tests, searchQuery]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
