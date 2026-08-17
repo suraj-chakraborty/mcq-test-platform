@@ -13,8 +13,6 @@ const toRoman = (num: number) => {
 export function FormattedHeader({ text, isAttempt = false }: { text: string; isAttempt?: boolean }) {
   if (!text) return null;
 
-  const lowerText = text.toLowerCase();
-
   // 1. MATCHING PATTERN (2-Column Grid)
   // Only trigger if text contains structured List I and List II headers separated by newlines or bold markers
   const hasListI = /(?:\*\*List\s+I[:]*\*\*|\bList\s+I\s*[:\n])/i.test(text);
@@ -48,39 +46,39 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
 
         return (
           <div className="space-y-6 w-full">
-            {intro && <div className="leading-relaxed text-gray-800 font-medium">{intro}</div>}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50/70 p-4 sm:p-6 rounded-3xl border border-gray-100 shadow-inner">
+            {intro && <div className="leading-relaxed text-gray-900 dark:text-gray-100 font-medium">{intro}</div>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50/70 dark:bg-neutral-800/40 p-4 sm:p-6 rounded-3xl border border-gray-200 dark:border-neutral-700/60 shadow-inner">
               <div className="space-y-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4f46e5]/60 px-2">List I</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 px-2">List I</div>
                 {rows.map((row, i) => (
                   <div
                     key={i}
-                    className="min-h-[44px] flex items-center bg-white p-3.5 rounded-2xl border border-gray-100/80 shadow-sm gap-3 transition-all"
+                    className="min-h-[44px] flex items-center bg-white dark:bg-neutral-900 p-3.5 rounded-2xl border border-gray-200/80 dark:border-neutral-700/80 shadow-sm gap-3 transition-all"
                   >
-                    <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-indigo-50 rounded-lg text-[#4f46e5] font-black text-xs">
+                    <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 rounded-lg text-indigo-600 dark:text-indigo-400 font-black text-xs">
                       {String.fromCharCode(65 + i)}
                     </span>
-                    <span className="text-[13.5px] font-bold text-gray-700 leading-snug">{row.l1}</span>
+                    <span className="text-[13.5px] font-bold text-gray-900 dark:text-gray-100 leading-snug">{row.l1}</span>
                   </div>
                 ))}
               </div>
               <div className="space-y-3">
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4f46e5]/60 px-2">List II</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 px-2">List II</div>
                 {rows.map((row, i) => (
                   <div
                     key={i}
-                    className="min-h-[44px] flex items-center bg-white p-3.5 rounded-2xl border border-gray-100/80 shadow-sm gap-3 transition-all"
+                    className="min-h-[44px] flex items-center bg-white dark:bg-neutral-900 p-3.5 rounded-2xl border border-gray-200/80 dark:border-neutral-700/80 shadow-sm gap-3 transition-all"
                   >
-                    <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 font-black text-xs">
+                    <span className="shrink-0 w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-neutral-800 rounded-lg text-gray-700 dark:text-gray-300 font-black text-xs">
                       {i + 1}
                     </span>
-                    <span className="text-[13.5px] font-bold text-gray-700 leading-snug">{row.l2}</span>
+                    <span className="text-[13.5px] font-bold text-gray-900 dark:text-gray-100 leading-snug">{row.l2}</span>
                   </div>
                 ))}
               </div>
             </div>
             {conclusion && (
-              <div className="leading-relaxed text-gray-800 font-bold border-t border-gray-50 pt-4">{conclusion}</div>
+              <div className="leading-relaxed text-gray-900 dark:text-white font-bold border-t border-gray-200 dark:border-neutral-800 pt-4">{conclusion}</div>
             )}
           </div>
         );
@@ -113,20 +111,20 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
 
       return (
         <div className="space-y-6 w-full">
-          {intro && <div className="leading-relaxed text-gray-800 font-medium">{intro}</div>}
+          {intro && <div className="leading-relaxed text-gray-900 dark:text-gray-100 font-medium">{intro}</div>}
           <div className="space-y-3">
             {processed.map((item, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 bg-white border border-gray-100 rounded-2xl shadow-sm flex gap-4 transition-all hover:shadow-md hover:border-indigo-100 group"
+                className="p-4 sm:p-5 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700/80 rounded-2xl shadow-sm flex gap-4 transition-all hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 group"
               >
-                <div className="shrink-0 w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[#4f46e5] font-black text-xs group-hover:bg-[#4f46e5] group-hover:text-white transition-colors">
+                <div className="shrink-0 w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-xs group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                   {toRoman(i + 1)}
                 </div>
-                <div className="text-[14.5px] font-bold text-gray-800 leading-relaxed pt-0.5">
+                <div className="text-[14.5px] font-bold text-gray-900 dark:text-gray-100 leading-relaxed pt-0.5">
                   {item.split(/(\*\*.*?\*\*)/g).map((sub, j) =>
                     sub.startsWith('**') && sub.endsWith('**') ? (
-                      <strong key={j} className="text-[#4f46e5] font-black">
+                      <strong key={j} className="text-indigo-600 dark:text-indigo-400 font-black">
                         {sub.slice(2, -2)}
                       </strong>
                     ) : (
@@ -138,7 +136,7 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
             ))}
           </div>
           {finalPart && (
-            <div className="leading-relaxed text-gray-900 font-black text-base pt-3 border-t border-gray-100">
+            <div className="leading-relaxed text-gray-900 dark:text-white font-black text-base pt-3 border-t border-gray-200 dark:border-neutral-800">
               {finalPart}
             </div>
           )}
@@ -169,17 +167,17 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
               key={i}
               className={
                 item.isAsser
-                  ? 'p-5 bg-indigo-50/60 rounded-2xl border border-indigo-100 flex flex-col gap-2'
-                  : 'p-5 bg-gray-50/70 rounded-2xl border border-gray-100 flex flex-col gap-2'
+                  ? 'p-5 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 flex flex-col gap-2'
+                  : 'p-5 bg-gray-50/70 dark:bg-neutral-900/60 rounded-2xl border border-gray-200 dark:border-neutral-700 flex flex-col gap-2'
               }
             >
-              <div className="text-[10px] font-black uppercase tracking-widest text-[#4f46e5]/70">
+              <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
                 {item.isAsser ? 'Assertion (A)' : 'Reason (R)'}
               </div>
-              <div className="text-[14.5px] leading-relaxed font-bold text-gray-800">
+              <div className="text-[14.5px] leading-relaxed font-bold text-gray-900 dark:text-gray-100">
                 {item.text.split(/(\*\*.*?\*\*)/g).map((sub, j) =>
                   sub.startsWith('**') && sub.endsWith('**') ? (
-                    <strong key={j} className="text-[#4f46e5] font-black">
+                    <strong key={j} className="text-indigo-600 dark:text-indigo-400 font-black">
                       {sub.slice(2, -2)}
                     </strong>
                   ) : (
@@ -196,14 +194,14 @@ export function FormattedHeader({ text, isAttempt = false }: { text: string; isA
 
   // 4. FALLBACK: Clean Standard Markdown & Paragraph Formatter
   return (
-    <div className="whitespace-pre-line leading-relaxed font-bold text-gray-800 text-[15px]">
+    <div className="whitespace-pre-line leading-relaxed font-bold text-gray-900 dark:text-gray-100 text-[15px] sm:text-base">
       {text.split(/(\*\*.*?\*\*)/g).map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           const isHeader = /Statement|List|Assertion|Reason|Scenario|Passage/i.test(part);
           return (
             <span key={i}>
               {isHeader && i > 0 && <br />}
-              <strong className={isAttempt ? 'text-[#4f46e5] font-black' : 'text-gray-900 font-black'}>
+              <strong className={isAttempt ? 'text-indigo-600 dark:text-indigo-400 font-black' : 'text-gray-900 dark:text-white font-black'}>
                 {part.slice(2, -2)}
               </strong>
             </span>
