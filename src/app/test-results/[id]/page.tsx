@@ -96,11 +96,21 @@ export default function TestResults() {
   }, [session, params.id, router]);
 
   if (status === 'loading' || loading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loading /></div>;
+    return <Loading message="Loading test results..." />;
   }
 
   if (!attempt) {
-    return <div className="min-h-screen flex items-center justify-center">Results not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-neutral-950 p-4">
+        <div className="text-center p-8 bg-white dark:bg-neutral-900 rounded-2xl border border-gray-200 dark:border-neutral-800 shadow-sm max-w-md">
+          <h2 className="text-lg font-black text-gray-900 dark:text-white mb-2">Results Not Found</h2>
+          <p className="text-xs text-gray-500 mb-6">The requested test results could not be located or may have been removed.</p>
+          <Button onClick={() => router.push('/dashboard')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const totalQs = attempt.totalQuestions || attempt.questions?.length || 1;
@@ -262,40 +272,40 @@ export default function TestResults() {
 
                     {question.explanation && (
                       <div className="mt-3 sm:mt-4 bg-white/80 dark:bg-neutral-900/80 p-3 sm:p-4 rounded-xl border border-gray-200/80 dark:border-neutral-800">
-                        <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
+                        <div className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">
                           Explanation
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                        <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 font-medium leading-relaxed">
                           {question.explanation}
                         </p>
                       </div>
                     )}
 
                     {question.proofQuote && (
-                      <div className="mt-3 bg-emerald-50/80 p-4 rounded-xl border border-emerald-200/80">
+                      <div className="mt-3 bg-emerald-50/80 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40">
                         <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                           <div className="flex items-center gap-2">
                             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800 dark:text-emerald-300">
                               Verified from Source
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             {question.pageReference && (
-                              <span className="bg-white text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
+                              <span className="bg-white/90 dark:bg-black/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200/50">
                                 📄 {question.pageReference}
                               </span>
                             )}
                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
                               question.citationType === 'LOGICAL_DEDUCTION'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-emerald-200 text-emerald-900'
+                                ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'
+                                : 'bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200'
                             }`}>
                               {question.citationType === 'LOGICAL_DEDUCTION' ? '💡 Logical Deduction' : '🛡️ Verbatim Proof'}
                             </span>
                           </div>
                         </div>
-                        <blockquote className="text-xs text-emerald-950 font-medium italic border-l-2 border-emerald-400 pl-3 leading-relaxed">
+                        <blockquote className="text-xs text-emerald-950 dark:text-emerald-100 font-medium italic border-l-2 border-emerald-400 pl-3 leading-relaxed">
                           "{question.proofQuote}"
                         </blockquote>
                       </div>
