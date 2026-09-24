@@ -31,11 +31,18 @@ export async function POST(req: Request) {
     const max_file_size = isAvatar ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB for avatars, 50MB for PDFs
     const timestamp = Math.round(new Date().getTime() / 1000);
 
-    // Sign the upload parameters for direct client upload with strict security constraints
+    // Validate client-reported fileSize upfront if provided
+    if (body?.fileSize && typeof body.fileSize === 'number' && body.fileSize > max_file_size) {
+      return NextResponse.json(
+        { error: `File size exceeds maximum allowed limit of ${max_file_size / (1024 * 1024)} MB` },
+        { status: 400 }
+      );
+    }
+
+    // Sign the exact upload parameters sent to Cloudinary REST API
     const paramsToSign: Record<string, any> = {
       folder,
       timestamp,
-      max_file_size,
     };
 
     const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);

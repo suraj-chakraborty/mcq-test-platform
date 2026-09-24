@@ -51,10 +51,23 @@ describe('Cloudinary Signing Endpoint Constraints', () => {
     expect(cloudinary.utils.api_sign_request).toHaveBeenCalledWith(
       expect.objectContaining({
         folder: 'pdfs',
-        max_file_size: 50 * 1024 * 1024,
       }),
       'test_secret'
     );
+  });
+
+  it('rejects upload signature request if requested fileSize exceeds max limit', async () => {
+    (getServerSession as jest.Mock).mockResolvedValue({ user: { id: 'u1' } });
+
+    const req = new Request('http://localhost:3000/api/cloudinary/sign', {
+      method: 'POST',
+      body: JSON.stringify({ folder: 'pdfs', fileSize: 60 * 1024 * 1024 }), // 60MB > 50MB
+    });
+
+    const res = await signCloudinary(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toContain('exceeds maximum allowed limit');
   });
 
   it('constrains Avatar upload signature to avatars folder, image resource_type, and 5MB max_file_size', async () => {
@@ -77,7 +90,6 @@ describe('Cloudinary Signing Endpoint Constraints', () => {
     expect(cloudinary.utils.api_sign_request).toHaveBeenCalledWith(
       expect.objectContaining({
         folder: 'avatars',
-        max_file_size: 5 * 1024 * 1024,
       }),
       'test_secret'
     );

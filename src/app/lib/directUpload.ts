@@ -27,6 +27,7 @@ export async function uploadPdfDirectToCloudinary(
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ folder: 'pdfs', fileSize: file.size }),
   });
 
   if (!signRes.ok) {
@@ -34,7 +35,11 @@ export async function uploadPdfDirectToCloudinary(
     throw new Error(errorData.error || 'Failed to initialize secure upload signature');
   }
 
-  const { signature, timestamp, apiKey, cloudName, folder } = await signRes.json();
+  const { signature, timestamp, apiKey, cloudName, folder, max_file_size } = await signRes.json();
+
+  if (max_file_size && file.size > max_file_size) {
+    throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds maximum allowed limit of ${max_file_size / (1024 * 1024)} MB.`);
+  }
 
   // 3. Prepare FormData for direct Cloudinary REST endpoint
   const uploadFormData = new FormData();
