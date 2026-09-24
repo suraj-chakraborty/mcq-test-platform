@@ -11,6 +11,8 @@ import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
 
+import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
       const body = await request.json();
       fileUrl = body.pdfUrl || body.url || '';
       publicId = body.publicId || '';
-      fileName = body.fileName || body.name || 'document.pdf';
+      fileName = sanitizeFileName(body.fileName || body.name || 'document.pdf');
       fileSize = body.fileSize || 0;
       topic = body.domainTopic || body.topic || 'General';
       numQuestions = parseInt(body.numQuestions || '10', 10);
@@ -44,10 +46,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'No PDF URL provided' }, { status: 400 });
       }
 
+      if (fileSize > MAX_PDF_SIZE_BYTES) {
+        return NextResponse.json({ error: 'File size exceeds maximum allowed limit of 50 MB.' }, { status: 400 });
+      }
+
       // If client provided text layer, we don't need to download buffer unless empty
       if (!extractedText || extractedText.length < 50) {
         try {
           buffer = await downloadCloudinaryPdf(fileUrl, publicId);
+          if (buffer) {
+            const validation = validatePdfBuffer(buffer, fileName);
+            if (!validation.valid) {
+              return NextResponse.json({ error: validation.error, code: validation.code }, { status: 400 });
+            }
+          }
         } catch (e) {
           console.warn('Could not download buffer for upload route:', e);
         }
@@ -62,14 +74,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 });
       }
 
-      if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-        return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
-      }
-
       const arrayBuffer = await file.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
-      fileName = file.name;
+      fileName = sanitizeFileName(file.name);
       fileSize = file.size;
+
+      const validation = validatePdfBuffer(buffer, fileName);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error, code: validation.code }, { status: 400 });
+      }
+
       fileUrl = await saveFile(file);
     }
 

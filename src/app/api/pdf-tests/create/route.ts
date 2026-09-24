@@ -8,6 +8,8 @@ import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { saveFile } from '@/app/lib/fileStorage';
 import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 
+import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
       numQuestions = parseInt(body.numQuestions || '10', 10);
 
       rawContextPDFs = (body.contextPDFs || []).map((f: any) => ({
-        name: f.name || 'context.pdf',
+        name: sanitizeFileName(f.name || 'context.pdf'),
         url: f.url,
         publicId: f.publicId,
         fileSize: f.fileSize || 0,
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
       }));
 
       rawPyqPDFs = (body.pyqPDFs || []).map((f: any) => ({
-        name: f.name || 'pyq.pdf',
+        name: sanitizeFileName(f.name || 'pyq.pdf'),
         url: f.url,
         publicId: f.publicId,
         fileSize: f.fileSize || 0,
@@ -73,17 +75,27 @@ export async function POST(req: Request) {
       const pyqFiles = formData.getAll('pyqPDF').filter((f) => f instanceof File) as File[];
 
       for (const f of contextFiles) {
+        const sanitized = sanitizeFileName(f.name);
         const ab = await f.arrayBuffer();
         const buf = Buffer.from(ab);
+        const val = validatePdfBuffer(buf, sanitized, MAX_PDF_SIZE_BYTES);
+        if (!val.valid) {
+          return NextResponse.json({ error: `Context PDF (${sanitized}): ${val.error}`, code: val.code }, { status: 400 });
+        }
         const url = await saveFile(f);
-        rawContextPDFs.push({ name: f.name, url, buffer: buf, fileSize: f.size });
+        rawContextPDFs.push({ name: sanitized, url, buffer: buf, fileSize: f.size });
       }
 
       for (const f of pyqFiles) {
+        const sanitized = sanitizeFileName(f.name);
         const ab = await f.arrayBuffer();
         const buf = Buffer.from(ab);
+        const val = validatePdfBuffer(buf, sanitized, MAX_PDF_SIZE_BYTES);
+        if (!val.valid) {
+          return NextResponse.json({ error: `PYQ PDF (${sanitized}): ${val.error}`, code: val.code }, { status: 400 });
+        }
         const url = await saveFile(f);
-        rawPyqPDFs.push({ name: f.name, url, buffer: buf, fileSize: f.size });
+        rawPyqPDFs.push({ name: sanitized, url, buffer: buf, fileSize: f.size });
       }
     }
 

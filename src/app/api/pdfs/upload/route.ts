@@ -7,10 +7,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 
+import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = MAX_PDF_SIZE_BYTES; // 50MB
 export const maxDuration = 60; // Extended for large scanned PDFs
 
 async function safeGenerateMCQs(
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
       }
 
       filesToProcess = directUploads.map((u) => ({
-        name: u.name,
+        name: sanitizeFileName(u.name),
         url: u.url,
         publicId: u.publicId,
         fileSize: u.fileSize || 0,
@@ -99,17 +101,18 @@ export async function POST(request: Request) {
       numQuestions = parseInt(formData.get('numQuestions')?.toString() || '10', 10);
 
       for (const file of files) {
-        if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
-          return NextResponse.json({ error: `File ${file.name} is not a PDF` }, { status: 400 });
-        }
-        if (file.size > MAX_FILE_SIZE) {
-          return NextResponse.json({ error: `File ${file.name} exceeds maximum allowed size` }, { status: 400 });
-        }
+        const sanitizedName = sanitizeFileName(file.name);
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
+
+        const validation = validatePdfBuffer(buffer, sanitizedName, MAX_FILE_SIZE);
+        if (!validation.valid) {
+          return NextResponse.json({ error: `${sanitizedName}: ${validation.error}`, code: validation.code }, { status: 400 });
+        }
+
         const fileUrl = await saveFile(file);
         filesToProcess.push({
-          name: file.name,
+          name: sanitizedName,
           url: fileUrl,
           buffer,
           fileSize: file.size,
@@ -136,6 +139,10 @@ export async function POST(request: Request) {
           }
 
           if (buffer) {
+            const validation = validatePdfBuffer(buffer, fileItem.name, MAX_FILE_SIZE);
+            if (!validation.valid) {
+              throw new Error(validation.error);
+            }
             const result = await extractTextFromPdf(buffer);
             extractedText = result.text;
             pageCount = result.pageCount;
