@@ -12,6 +12,12 @@ import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
 
 import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+import {
+  extractIdempotencyKey,
+  acquireIdempotencyLock,
+  releaseIdempotencyLock,
+  findExistingTestByIdempotencyKey,
+} from '@/app/lib/idempotency';
 
 export async function POST(request: Request) {
   try {
@@ -87,7 +93,39 @@ export async function POST(request: Request) {
       fileUrl = await saveFile(file);
     }
 
-    if (buffer && (!extractedText || extractedText.length < 50)) {
+    const idempotencyKey = extractIdempotencyKey(request, undefined, {
+      userId: session.user.id,
+      title: fileName,
+      topic,
+      numQuestions,
+      files: [fileName],
+    });
+
+    const existingTest = await findExistingTestByIdempotencyKey(session.user.id, idempotencyKey);
+    if (existingTest) {
+      return NextResponse.json({
+        success: true,
+        test: existingTest,
+        url: existingTest.pdfs[0]?.url || fileUrl,
+        questions: existingTest.questions,
+        isDuplicate: true,
+        message: 'Existing test returned via idempotency key.',
+      });
+    }
+
+    const lockAcquired = await acquireIdempotencyLock(idempotencyKey);
+    if (!lockAcquired) {
+      return NextResponse.json(
+        {
+          error: 'Test generation is already in progress for this request. Please wait.',
+          isProcessing: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    try {
+      if (buffer && (!extractedText || extractedText.length < 50)) {
       try {
         const { text, pageCount: pc } = await extractTextFromPdf(buffer);
         extractedText = text;
@@ -126,6 +164,7 @@ export async function POST(request: Request) {
         title: fileName.replace(/\.pdf$/i, ''),
         description: `Generated from ${fileName} for topic: ${topic}`,
         duration: 30,
+        idempotencyKey,
         pdfs: {
           create: [
             {
@@ -167,5 +206,7 @@ export async function POST(request: Request) {
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
+  } finally {
+    await releaseIdempotencyLock(idempotencyKey);
   }
 }

@@ -9,6 +9,12 @@ import { saveFile } from '@/app/lib/fileStorage';
 import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 
 import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+import {
+  extractIdempotencyKey,
+  acquireIdempotencyLock,
+  releaseIdempotencyLock,
+  findExistingTestByIdempotencyKey,
+} from '@/app/lib/idempotency';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -103,7 +109,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields (title or context PDFs)' }, { status: 400 });
     }
 
-    let contextText = '';
+    const idempotencyKey = extractIdempotencyKey(req, undefined, {
+      userId: session.user.id,
+      title,
+      topic,
+      numQuestions,
+      files: rawContextPDFs.map((f) => f.name),
+    });
+
+    // 1. Return existing test if already created for this idempotency key
+    const existingTest = await findExistingTestByIdempotencyKey(session.user.id, idempotencyKey);
+    if (existingTest) {
+      return NextResponse.json({
+        success: true,
+        test: existingTest,
+        isDuplicate: true,
+        message: 'Existing test returned via idempotency key.',
+      });
+    }
+
+    // 2. Acquire lock to prevent duplicate concurrent LLM execution from double-clicks
+    const lockAcquired = await acquireIdempotencyLock(idempotencyKey);
+    if (!lockAcquired) {
+      return NextResponse.json(
+        {
+          error: 'Test generation is already in progress for this request. Please wait.',
+          isProcessing: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    try {
+      let contextText = '';
     let pyqText = '';
     const inlineDataParts: any[] = [];
 
@@ -385,6 +423,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
         title,
         description,
         duration: 60,
+        idempotencyKey,
         questions: {
           create: validQuestions.map((q) => ({
             question: q.question,
@@ -411,5 +450,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
   } catch (error) {
     console.error('Error creating PDF test:', error);
     return NextResponse.json({ error: 'Failed to create test' }, { status: 500 });
+  } finally {
+    await releaseIdempotencyLock(idempotencyKey);
   }
 }

@@ -15,6 +15,7 @@ const config = {
     '^next-auth/react$': '<rootDir>/src/app/__mocks__/next-auth-react.ts',
     '^next-auth/jwt$': '<rootDir>/src/app/__mocks__/next-auth-jwt.ts',
     '^next-auth$': '<rootDir>/src/app/__mocks__/next-auth.ts',
+    '^@upstash/redis$': '<rootDir>/src/app/__mocks__/upstash-redis.ts',
     // Handle module aliases (this will be same as in your tsconfig.json)
     '^@/(.*)$': '<rootDir>/src/$1',
   },
