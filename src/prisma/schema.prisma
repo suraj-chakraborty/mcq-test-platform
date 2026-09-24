@@ -120,6 +120,7 @@ model Test {
   duels       DuelRoom[]
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Question {
@@ -159,6 +160,7 @@ model TestAttempt {
   test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([testId, score, createdAt])
 }
 
@@ -183,6 +185,7 @@ model DescriptiveTest {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Achievement {

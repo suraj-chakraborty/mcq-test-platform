@@ -3,26 +3,37 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
+    const skip = (page - 1) * limit;
+
     const userId = session.user.id;
 
-    // Analyze weak areas based on MCQ performance
-    const attempts = await prisma.testAttempt.findMany({
-      where: { userId },
-      include: {
-        test: {
-          include: {
-            questions: true,
+    // Analyze weak areas based on paginated MCQ performance using [userId, createdAt]
+    const [totalAttempts, attempts] = await Promise.all([
+      prisma.testAttempt.count({ where: { userId } }),
+      prisma.testAttempt.findMany({
+        where: { userId },
+        take: limit,
+        skip: skip,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          test: {
+            include: {
+              questions: true,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     const topicStats: Record<string, { totalQuestions: number; correct: number; attempts: number }> = {};
 
@@ -53,6 +64,12 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       weakAreas: weakAreas.slice(0, 5),
+      pagination: {
+        page,
+        limit,
+        totalAttempts,
+        totalPages: Math.ceil(totalAttempts / limit) || 1,
+      },
     });
   } catch (error) {
     console.error('Weak areas error:', error);
