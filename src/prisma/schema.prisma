@@ -47,7 +47,7 @@ model User {
   mongodbUrl    String?   
   
   // Custom user fields
-  phone         String?   @unique
+  phone         String?
   targetExam    String?
   institution   String?
   academicLevel String?
