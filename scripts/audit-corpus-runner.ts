@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { extractTextFromPdf } from '../src/app/utils/pdfUtils.ts';
+import { extractTextFromPdf } from '../src/app/utils/pdfUtils';
 
 interface TestResult {
   fixture: string;

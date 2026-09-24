@@ -13,7 +13,7 @@ describe('Environment Validation (fail-fast startup check)', () => {
   });
 
   it('allows development mode even with partial configuration', () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as any).NODE_ENV = 'development';
     process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
     process.env.NEXTAUTH_SECRET = 'supersecretlongenough123456';
 
@@ -21,7 +21,7 @@ describe('Environment Validation (fail-fast startup check)', () => {
   });
 
   it('throws in production when MONGODB_URI is missing', () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     delete process.env.MONGODB_URI;
     process.env.NEXTAUTH_SECRET = 'supersecretlongenough123456';
 
@@ -29,7 +29,7 @@ describe('Environment Validation (fail-fast startup check)', () => {
   });
 
   it('throws in production when Upstash Redis is missing', () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     process.env.MONGODB_URI = 'mongodb+srv://cluster.example.mongodb.net/';
     process.env.NEXTAUTH_SECRET = 'supersecretlongenough123456';
     process.env.GOOGLE_AI_API_KEY = 'AIzaSyFakeKey';

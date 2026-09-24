@@ -25,6 +25,7 @@ import {
 } from '@/app/lib/idempotency';
 
 export async function POST(request: Request) {
+  let idempotencyKey: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
       fileUrl = await saveFile(file);
     }
 
-    const idempotencyKey = extractIdempotencyKey(request, undefined, {
+    idempotencyKey = extractIdempotencyKey(request, undefined, {
       userId: session.user.id,
       title: fileName,
       topic,
@@ -134,8 +135,7 @@ export async function POST(request: Request) {
       );
     }
 
-    try {
-      if (buffer && (!extractedText || extractedText.length < 50)) {
+    if (buffer && (!extractedText || extractedText.length < 50)) {
       try {
         const { text, pageCount: pc } = await extractTextFromPdf(buffer);
         extractedText = text;

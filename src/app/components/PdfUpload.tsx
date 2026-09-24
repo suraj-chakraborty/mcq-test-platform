@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import Truncate from './Truncate';
 
 import { TestCreationProgressModal } from './TestCreationProgressModal';
+import { LoadingSpinner as Loading } from './LoadingSpinner';
 import { Loader2, ChevronDown, X } from 'lucide-react';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
@@ -344,7 +345,10 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
             )}
           </div>
           {isLoading ? (
-            <Loading />
+            <div className="flex flex-col items-center justify-center py-12 space-y-3">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+              <p className="text-xs font-semibold text-gray-400">Loading your documents...</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredAndSortedPdfs.map((pdf) => (

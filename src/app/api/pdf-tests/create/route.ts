@@ -30,6 +30,7 @@ interface PdfInputItem {
 }
 
 export async function POST(req: Request) {
+  let idempotencyKey: string | undefined;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields (title or context PDFs)' }, { status: 400 });
     }
 
-    const idempotencyKey = extractIdempotencyKey(req, undefined, {
+    idempotencyKey = extractIdempotencyKey(req, undefined, {
       userId: session.user.id,
       title,
       topic,
@@ -140,8 +141,7 @@ export async function POST(req: Request) {
       );
     }
 
-    try {
-      let contextText = '';
+    let contextText = '';
     let pyqText = '';
     const inlineDataParts: any[] = [];
 

@@ -89,7 +89,7 @@ export async function resolveRateLimitIdentifier(
   // 2. Non-auth routes: Key by authenticated user ID if session JWT is present
   try {
     const token = await getToken({
-      req: request,
+      req: request as any,
       secret: secret || process.env.NEXTAUTH_SECRET,
     });
 

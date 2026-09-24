@@ -78,9 +78,10 @@ export function extractIdempotencyKey(
  * Returns `true` if lock acquired, `false` if operation is already in flight.
  */
 export async function acquireIdempotencyLock(
-  key: string,
+  key?: string,
   ttlMs = DEFAULT_LOCK_TTL_MS
 ): Promise<boolean> {
+  if (!key) return true;
   const lockKey = `lock:idemp:${key}`;
   const redis = getRedisInstance();
 
@@ -91,7 +92,7 @@ export async function acquireIdempotencyLock(
         nx: true,
         px: ttlMs,
       });
-      return res === 'OK' || res === true;
+      return res === 'OK' || (res as any) === true;
     } catch (err) {
       console.warn('Redis lock error, falling back to local memory lock:', err);
     }
@@ -111,7 +112,8 @@ export async function acquireIdempotencyLock(
 /**
  * Releases the in-flight execution lock.
  */
-export async function releaseIdempotencyLock(key: string): Promise<void> {
+export async function releaseIdempotencyLock(key?: string): Promise<void> {
+  if (!key) return;
   const lockKey = `lock:idemp:${key}`;
   const redis = getRedisInstance();
 
