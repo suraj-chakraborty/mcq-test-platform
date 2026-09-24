@@ -1,43 +1,64 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import {
+  RateLimiterService,
+  getRouteCategory,
+  resolveRateLimitIdentifier,
+} from '@/app/lib/rateLimiter';
 
-let ratelimit: Ratelimit | null = null;
-
-if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
-
-  ratelimit = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(20, '60 s'),
-    analytics: true,
-  });
-}
+const rateLimiterService = new RateLimiterService();
 
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api') && ratelimit) {
-    if (request.nextUrl.pathname.startsWith('/api/auth')) {
-      return NextResponse.next();
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith('/api')) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const category = getRouteCategory(pathname);
+    const { identifier, isAuthenticated, userId } = await resolveRateLimitIdentifier(request);
+
+    const result = await rateLimiterService.checkLimit(category, identifier, isProduction);
+
+    if (!result.allowed) {
+      if (result.errorReason === 'CONFIG_MISSING_IN_PROD') {
+        return new NextResponse(
+          JSON.stringify({
+            error: 'Security service unavailable: Rate limiting configuration is missing in production. Requests are blocked by fail-closed policy.',
+            code: 'RATE_LIMIT_CONFIG_MISSING',
+          }),
+          {
+            status: 503,
+            headers: {
+              'Content-Type': 'application/json',
+              'Retry-After': '60',
+            },
+          }
+        );
+      }
+
+      return new NextResponse(
+        JSON.stringify({
+          error: `Too Many Requests. Rate limit exceeded for ${category} bucket.`,
+          code: 'RATE_LIMIT_EXCEEDED',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': result.limit.toString(),
+            'X-RateLimit-Remaining': result.remaining.toString(),
+            'X-RateLimit-Reset': result.reset.toString(),
+            'Retry-After': Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)).toString(),
+          },
+        }
+      );
     }
 
-    // Use headers for IP since 'ip' might not be on NextRequest in all builds/runtimes
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? '127.0.0.1';
-    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
-
-    if (!success) {
-      return new NextResponse('Too Many Requests', {
-        status: 429,
-        headers: {
-          'X-RateLimit-Limit': limit.toString(),
-          'X-RateLimit-Remaining': remaining.toString(),
-          'X-RateLimit-Reset': reset.toString(),
-        },
-      });
-    }
+    const response = NextResponse.next();
+    response.headers.set('X-RateLimit-Limit', result.limit.toString());
+    response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
+    response.headers.set('X-RateLimit-Reset', result.reset.toString());
+    response.headers.set('X-RateLimit-Key-Type', isAuthenticated && userId ? 'user' : 'ip');
+    return response;
   }
 
   return NextResponse.next();
