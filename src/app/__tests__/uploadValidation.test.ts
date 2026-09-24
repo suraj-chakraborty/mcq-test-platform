@@ -5,6 +5,7 @@ import {
 } from '@/app/lib/uploadValidation';
 import fs from 'fs';
 import path from 'path';
+import { TextEncoder } from 'util';
 
 describe('PDF Upload Validation & Sanitization', () => {
   const fixturesDir = path.join(process.cwd(), 'tests', 'fixtures', 'pdf');
@@ -97,6 +98,76 @@ describe('PDF Upload Validation & Sanitization', () => {
         expect(result.code).toBe('FILE_TOO_LARGE');
         expect(result.error).toContain('exceeds maximum allowed limit');
       }
+    });
+  });
+
+  describe('validateDirectPdfUploadByRange (Ranged Fetch Validation)', () => {
+    const { validateDirectPdfUploadByRange } = require('@/app/lib/uploadValidation');
+
+    it('validates remote PDF using HTTP Range request without full download', async () => {
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 206,
+        headers: new Headers({
+          'content-range': 'bytes 0-2047/1048576',
+        }),
+        arrayBuffer: async () => new TextEncoder().encode('%PDF-1.4\n1 0 obj\n<<>>\nendobj').buffer,
+      });
+      global.fetch = mockFetch as any;
+
+      const result = await validateDirectPdfUploadByRange(
+        'https://res.cloudinary.com/demo/raw/upload/test.pdf',
+        'test.pdf'
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://res.cloudinary.com/demo/raw/upload/test.pdf',
+        expect.objectContaining({
+          headers: { Range: 'bytes=0-2047' },
+        })
+      );
+      expect(result.valid).toBe(true);
+    });
+
+    it('rejects remote direct upload if header bytes do not contain %PDF-', async () => {
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 206,
+        headers: new Headers({
+          'content-range': 'bytes 0-2047/50000',
+        }),
+        arrayBuffer: async () => new TextEncoder().encode('<!DOCTYPE html><html><body>Not a PDF</body></html>').buffer,
+      });
+      global.fetch = mockFetch as any;
+
+      const result = await validateDirectPdfUploadByRange(
+        'https://res.cloudinary.com/demo/raw/upload/malicious.pdf',
+        'malicious.pdf'
+      );
+
+      expect(result.valid).toBe(false);
+      expect(result.code).toBe('INVALID_MAGIC_BYTES');
+    });
+
+    it('rejects remote direct upload if content-range reports size exceeding limit', async () => {
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 206,
+        headers: new Headers({
+          'content-range': 'bytes 0-2047/100000000', // ~100MB
+        }),
+        arrayBuffer: async () => Buffer.from('%PDF-1.4\n').buffer,
+      });
+      global.fetch = mockFetch as any;
+
+      const result = await validateDirectPdfUploadByRange(
+        'https://res.cloudinary.com/demo/raw/upload/oversized.pdf',
+        'oversized.pdf',
+        50 * 1024 * 1024
+      );
+
+      expect(result.valid).toBe(false);
+      expect(result.code).toBe('FILE_TOO_LARGE');
     });
   });
 });

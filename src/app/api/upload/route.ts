@@ -11,7 +11,12 @@ import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
 
-import { validatePdfBuffer, sanitizeFileName, MAX_PDF_SIZE_BYTES } from '@/app/lib/uploadValidation';
+import {
+  validatePdfBuffer,
+  validateDirectPdfUploadByRange,
+  sanitizeFileName,
+  MAX_PDF_SIZE_BYTES,
+} from '@/app/lib/uploadValidation';
 import {
   extractIdempotencyKey,
   acquireIdempotencyLock,
@@ -56,8 +61,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'File size exceeds maximum allowed limit of 50 MB.' }, { status: 400 });
       }
 
-      // If client provided text layer, we don't need to download buffer unless empty
-      if (!extractedText || extractedText.length < 50) {
+      if (extractedText && extractedText.length >= 50) {
+        // Validate direct upload with a ranged fetch of the first bytes, never a full download
+        const rangeValidation = await validateDirectPdfUploadByRange(fileUrl, fileName);
+        if (!rangeValidation.valid) {
+          return NextResponse.json({ error: rangeValidation.error, code: rangeValidation.code }, { status: 400 });
+        }
+      } else {
         try {
           buffer = await downloadCloudinaryPdf(fileUrl, publicId);
           if (buffer) {

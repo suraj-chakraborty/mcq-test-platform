@@ -112,3 +112,95 @@ export function validatePdfBuffer(
     size: buffer.length,
   };
 }
+
+/**
+ * Validates a direct remote upload (e.g. Cloudinary) using an HTTP Ranged fetch.
+ * Reads ONLY the first 2048 bytes of the file, never performing a full download.
+ */
+export async function validateDirectPdfUploadByRange(
+  url: string,
+  fileName: string = 'document.pdf',
+  maxBytes: number = MAX_PDF_SIZE_BYTES
+): Promise<UploadValidationResult> {
+  if (!url || typeof url !== 'string') {
+    return {
+      valid: false,
+      error: 'Invalid or missing upload URL.',
+      code: 'EMPTY_FILE',
+    };
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Range: 'bytes=0-2047',
+      },
+    });
+
+    if (!res.ok && res.status !== 206) {
+      return {
+        valid: false,
+        error: `Could not verify remote upload: HTTP ${res.status}`,
+        code: 'INVALID_MAGIC_BYTES',
+      };
+    }
+
+    // Check Content-Range or Content-Length for size cap
+    const contentRange = res.headers.get('content-range'); // e.g. "bytes 0-2047/10485760"
+    if (contentRange) {
+      const match = contentRange.match(/\/(\d+)$/);
+      if (match && parseInt(match[1], 10) > maxBytes) {
+        const sizeMb = (parseInt(match[1], 10) / (1024 * 1024)).toFixed(1);
+        const maxMb = (maxBytes / (1024 * 1024)).toFixed(0);
+        return {
+          valid: false,
+          error: `File size (${sizeMb} MB) exceeds maximum allowed limit of ${maxMb} MB.`,
+          code: 'FILE_TOO_LARGE',
+        };
+      }
+    }
+
+    // Read only the first chunk from the stream and cancel the stream
+    let buffer: Buffer;
+    if (res.body && typeof (res.body as any).getReader === 'function') {
+      const reader = (res.body as any).getReader();
+      const { value } = await reader.read();
+      reader.cancel().catch(() => {});
+      buffer = value ? Buffer.from(value) : Buffer.alloc(0);
+    } else {
+      buffer = Buffer.from(await res.arrayBuffer());
+    }
+
+    if (buffer.length === 0) {
+      return {
+        valid: false,
+        error: 'The uploaded file is empty.',
+        code: 'EMPTY_FILE',
+      };
+    }
+
+    // PDF Magic Bytes: Must contain %PDF- in the header (first 1024 bytes per PDF spec)
+    const headerSlice = buffer.slice(0, Math.min(1024, buffer.length)).toString('latin1');
+    if (!headerSlice.includes('%PDF-')) {
+      return {
+        valid: false,
+        error: 'Invalid file format: File missing "%PDF-" magic header bytes. Only valid PDF files are accepted.',
+        code: 'INVALID_MAGIC_BYTES',
+      };
+    }
+
+    return {
+      valid: true,
+      sanitizedFileName: sanitizeFileName(fileName),
+      size: buffer.length,
+    };
+  } catch (error: any) {
+    return {
+      valid: false,
+      error: `Network error verifying remote upload: ${error?.message || 'Connection failed'}`,
+      code: 'INVALID_MAGIC_BYTES',
+    };
+  }
+}
+

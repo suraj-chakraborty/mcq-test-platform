@@ -25,17 +25,20 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const folder = body?.folder === 'avatars' ? 'avatars' : 'pdfs';
+    const isAvatar = body?.folder === 'avatars';
+    const folder = isAvatar ? 'avatars' : 'pdfs';
+    const resource_type = isAvatar ? 'image' : 'raw';
+    const max_file_size = isAvatar ? 5 * 1024 * 1024 : 50 * 1024 * 1024; // 5MB for avatars, 50MB for PDFs
     const timestamp = Math.round(new Date().getTime() / 1000);
 
-    // Sign the upload parameters for direct client upload
-    const signature = cloudinary.utils.api_sign_request(
-      {
-        folder,
-        timestamp,
-      },
-      apiSecret
-    );
+    // Sign the upload parameters for direct client upload with strict security constraints
+    const paramsToSign: Record<string, any> = {
+      folder,
+      timestamp,
+      max_file_size,
+    };
+
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
     return NextResponse.json({
       success: true,
@@ -44,6 +47,8 @@ export async function POST(req: Request) {
       apiKey,
       cloudName,
       folder,
+      resource_type,
+      max_file_size,
     });
   } catch (error) {
     console.error('Error creating Cloudinary upload signature:', error);
