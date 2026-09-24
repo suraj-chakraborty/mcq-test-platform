@@ -58,9 +58,25 @@ describe('Idempotency Key & In-Flight Lock Protection', () => {
       const keyDiffUser = extractIdempotencyKey(req1, payload, { userId: 'usr_2' });
 
       expect(key1).toBeDefined();
-      expect(key1).toHaveLength(64); // SHA-256 hex string
+      expect(key1).toMatch(/^fp:[a-f0-9]{64}$/); // SHA-256 hex string with fp: prefix
       expect(key1).toBe(key2); // Deterministic matching
       expect(key1).not.toBe(keyDiffUser); // Different user produces different key
+    });
+
+    it('incorporates clientNonce to prevent blocking intentional regenerations', () => {
+      const req = new Request('http://localhost:3000/api/pdf-tests/create', {
+        headers: { 'x-client-nonce': 'click-nonce-1' },
+      });
+      const payload = { title: 'Math Quiz', topic: 'Calculus' };
+
+      const keyClick1 = extractIdempotencyKey(req, payload, { userId: 'u1' });
+
+      const req2 = new Request('http://localhost:3000/api/pdf-tests/create', {
+        headers: { 'x-client-nonce': 'click-nonce-2' },
+      });
+      const keyClick2 = extractIdempotencyKey(req2, payload, { userId: 'u1' });
+
+      expect(keyClick1).not.toBe(keyClick2); // Intentional regeneration is NOT blocked!
     });
   });
 
@@ -113,6 +129,27 @@ describe('Idempotency Key & In-Flight Lock Protection', () => {
         },
       });
       expect(found).toEqual(mockTest);
+    });
+
+    it('applies short 120s TTL window on automatic fingerprint deduplication', async () => {
+      (prisma.test.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const fpKey = 'fp:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+      await findExistingTestByIdempotencyKey('u1', fpKey);
+
+      expect(prisma.test.findFirst).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          userId: 'u1',
+          idempotencyKey: fpKey,
+          createdAt: expect.objectContaining({
+            gte: expect.any(Date),
+          }),
+        }),
+        include: {
+          questions: true,
+          pdfs: true,
+        },
+      });
     });
 
     it('returns null when no existing test matches the key', async () => {
