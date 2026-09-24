@@ -15,6 +15,9 @@ jest.mock('@/app/lib/prisma', () => ({
     test: {
       findUnique: jest.fn(),
     },
+    testAttempt: {
+      findFirst: jest.fn(),
+    },
   },
 }));
 
@@ -51,6 +54,7 @@ describe('Flashcards API', () => {
       (getServerSession as jest.Mock).mockResolvedValue({ user: { id: 'u1' } });
       (prisma.test.findUnique as jest.Mock).mockResolvedValue({
         id: 't1',
+        userId: 'u1',
         questions: [{ id: 'q1' }, { id: 'q2' }],
       });
       (prisma.flashcard.upsert as jest.Mock).mockResolvedValue({ id: 'fc1' });

@@ -101,17 +101,21 @@ export async function GET(
       return NextResponse.json({ error: 'Test not found or unauthorized' }, { status: 404 });
     }
 
-    const hasCompletedAttempt = await prisma.testAttempt.findFirst({
+    // Check latest attempt status and retake intent
+    const latestAttempt = await prisma.testAttempt.findFirst({
       where: {
         testId: id,
         userId: session.user.id,
-        completed: true,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const isSubmitted = !!hasCompletedAttempt;
+    const url = new URL(request.url);
+    const forceTake = url.searchParams.get('retake') === 'true' || url.searchParams.get('mode') === 'take';
 
-    // Exam Integrity: strip correctAnswer, explanation, proofQuote before submission
+    // Exam Integrity: answers revealed ONLY if latest attempt is completed and user is not retaking
+    const isSubmitted = !forceTake && !!latestAttempt?.completed;
+
     const sanitizedQuestions = test.questions.map((q) => {
       if (isSubmitted) {
         return q;

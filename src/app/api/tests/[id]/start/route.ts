@@ -22,7 +22,7 @@ export async function GET(
       }
     });
 
-    if (!test) {
+    if (!test || test.userId !== session.user.id) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 

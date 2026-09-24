@@ -135,14 +135,20 @@ export async function POST(
       }
     });
 
+    const sanitizedQuestions = test.questions.map((q) => {
+      if (isComplete) return q;
+      const { correctAnswer, explanation, proofQuote, ...safeQ } = q;
+      return safeQ;
+    });
+
     return NextResponse.json({
       message: 'Answer submitted successfully',
       test: {
         ...updatedAttempt,
         totalQuestions: test.questions.length,
-        correctAnswers: correctAnswersCount,
-        wrongAnswers: wrongAnswersCount,
-        questions: test.questions,
+        correctAnswers: isComplete ? correctAnswersCount : undefined,
+        wrongAnswers: isComplete ? wrongAnswersCount : undefined,
+        questions: sanitizedQuestions,
       },
     });
   } catch (error) {

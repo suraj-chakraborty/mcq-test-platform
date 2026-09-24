@@ -57,6 +57,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
+    if (test.userId !== session.user.id) {
+      const hasCompletedAttempt = await prisma.testAttempt.findFirst({
+        where: { testId, userId: session.user.id, completed: true }
+      });
+      if (!hasCompletedAttempt) {
+        return NextResponse.json(
+          { error: 'Forbidden: You cannot generate flashcards for an incomplete or unauthorized test' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Bulk create flashcards, skipping duplicates
     const flashcardData = test.questions.map(q => ({
       userId: session.user.id,

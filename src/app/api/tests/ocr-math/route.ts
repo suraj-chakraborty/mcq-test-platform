@@ -117,9 +117,17 @@ Format the response EXACTLY as a JSON object with this structure:
       },
     });
 
+    const sanitizedQuestions = test.questions.map((q) => {
+      const { correctAnswer, explanation, proofQuote, ...safeQ } = q;
+      return safeQ;
+    });
+
     return NextResponse.json({
       success: true,
-      test,
+      test: {
+        ...test,
+        questions: sanitizedQuestions,
+      },
       originalQuestion: parsed.originalQuestion,
       solutionSteps: parsed.solutionSteps,
       finalAnswer: parsed.finalAnswer,
