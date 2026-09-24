@@ -1,0 +1,51 @@
+%PDF-1.6
+1 0 obj << /Type /Catalog /Pages 2 0 R /OpenAction 6 0 R /Names 7 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Contents 4 0 R >> endobj
+4 0 obj << /Length 55 >>
+stream
+BT /F1 12 Tf 50 700 Td (Invoice Document with Active Automation) Tj ET
+endstream
+endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+6 0 obj <<
+  /Type /Action
+  /S /JavaScript
+  /JS (app.alert("SECURITY WARNING: Executing embedded JavaScript in PDF context!");)
+>> endobj
+7 0 obj <<
+  /EmbeddedFiles <<
+    /Names [(malicious_payload.exe) 8 0 R]
+  >>
+>> endobj
+8 0 obj <<
+  /Type /Filespec
+  /F (malicious_payload.exe)
+  /UF (malicious_payload.exe)
+  /EF << /F 9 0 R >>
+>> endobj
+9 0 obj <<
+  /Type /EmbeddedFile
+  /Subtype /application#2Foctet-stream
+  /Length 18
+>>
+stream
+MZ90FAKEEXECUTABLE
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000096 00000 n 
+0000000153 00000 n 
+0000000240 00000 n 
+0000000346 00000 n 
+0000000420 00000 n 
+0000000551 00000 n 
+0000000628 00000 n 
+0000000735 00000 n 
+trailer << /Size 10 /Root 1 0 R >>
+startxref
+844
+%%EOF
