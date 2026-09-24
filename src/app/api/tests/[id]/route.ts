@@ -33,9 +33,32 @@ export async function GET(
       );
     }
 
+    const hasCompletedAttempt = await prisma.testAttempt.findFirst({
+      where: {
+        testId: id,
+        userId: session.user.id,
+        completed: true,
+      },
+    });
+
+    const isSubmitted = !!hasCompletedAttempt;
+
+    // Exam Integrity: strip correctAnswer, explanation, proofQuote before submission
+    const sanitizedQuestions = test.questions.map((q) => {
+      if (isSubmitted) {
+        return q;
+      }
+      const { correctAnswer, explanation, proofQuote, ...safeQ } = q;
+      return safeQ;
+    });
+
     return NextResponse.json({
       message: 'Test fetched successfully',
-      test,
+      test: {
+        ...test,
+        questions: sanitizedQuestions,
+      },
+      isSubmitted,
     });
   } catch (error) {
     console.error('Test fetch error:', error);

@@ -64,6 +64,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [revealedQuestions, setRevealedQuestions] = useState<Question[] | null>(null);
   const [resultData, setResultData] = useState<{ score: number; percentage: number; totalQuestions?: number }>({
     score: 0,
     percentage: 0,
@@ -153,6 +154,10 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit test');
+      }
+
+      if (data.questions && Array.isArray(data.questions)) {
+        setRevealedQuestions(data.questions);
       }
 
       setResultData({
@@ -335,7 +340,7 @@ export default function PDFTestAttempt({ test }: { test: PDFTest }) {
               </h2>
             </div>
 
-            {test.questions.map((q, idx) => {
+            {(revealedQuestions || test.questions).map((q, idx) => {
               const userAns = answers[idx];
               const correctAns = typeof q.correctAnswer === 'number' ? q.correctAnswer : parseInt(String(q.correctAnswer), 10);
               const isCorrect = userAns !== undefined && userAns !== -1 && userAns === correctAns;

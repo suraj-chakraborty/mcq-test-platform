@@ -101,9 +101,32 @@ export async function GET(
       return NextResponse.json({ error: 'Test not found or unauthorized' }, { status: 404 });
     }
 
+    const hasCompletedAttempt = await prisma.testAttempt.findFirst({
+      where: {
+        testId: id,
+        userId: session.user.id,
+        completed: true,
+      },
+    });
+
+    const isSubmitted = !!hasCompletedAttempt;
+
+    // Exam Integrity: strip correctAnswer, explanation, proofQuote before submission
+    const sanitizedQuestions = test.questions.map((q) => {
+      if (isSubmitted) {
+        return q;
+      }
+      const { correctAnswer, explanation, proofQuote, ...safeQ } = q;
+      return safeQ;
+    });
+
     return NextResponse.json({
       success: true,
-      test
+      test: {
+        ...test,
+        questions: sanitizedQuestions,
+      },
+      isSubmitted,
     });
 
   } catch (error) {

@@ -70,12 +70,20 @@ export async function POST(request: Request) {
       attempt.id
     );
 
+    // Grade questions server-side and reveal answers and explanations post-submit
+    const gradedQuestions = questions.map((question, index) => ({
+      ...question,
+      userAnswer: answersArray[index],
+      isCorrect: answersArray[index] === question.correctAnswer,
+    }));
+
     return NextResponse.json({
       success: true,
       score: rawScore,
       totalQuestions: questions.length,
       percentage,
       attempt,
+      questions: gradedQuestions,
       gamification: gamificationResult
     });
 
