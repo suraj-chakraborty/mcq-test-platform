@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useRouter } from 'next/navigation';
 import Truncate from './Truncate';
 
-import { LoadingSpinner as Loading } from './LoadingSpinner';
+import { TestCreationProgressModal } from './TestCreationProgressModal';
 import { Loader2, ChevronDown, X } from 'lucide-react';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
@@ -47,6 +47,7 @@ const ACCEPTED_FILE_TYPES = {
 
 export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadError }: PdfUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadComplete, setIsUploadComplete] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
@@ -145,6 +146,7 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
       return;
     }
     setIsUploading(true);
+    setIsUploadComplete(false);
     setUploadProgress(10);
     onUploadPending?.();
 
@@ -181,19 +183,24 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
         throw new Error(data.error || 'Failed to process PDFs');
       }
 
+      setIsUploadComplete(true);
       setUploadProgress(100);
       setMcqs(data.mcqs || []);
       setShowMcqs(true);
-      ShowModal(false);
       toast.success('PDFs uploaded and questions synthesized successfully!');
       onUploadSuccess?.();
       fetchPdfs();
+      setTimeout(() => {
+        setIsUploading(false);
+        setIsUploadComplete(false);
+        ShowModal(false);
+      }, 1000);
     } catch (err) {
       console.error('Upload error:', err);
       toast.error(err instanceof Error ? err.message : 'Upload failed');
-      onUploadError?.();
-    } finally {
       setIsUploading(false);
+      setIsUploadComplete(false);
+      onUploadError?.();
     }
   };
 
@@ -261,24 +268,22 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
   // console.log(isUploading, currentFiles, uploadProgress, mcqs, showMcqs, pdfs, isLoading);
   return (
     <div className="space-y-6">
+      {/* Comprehensive Test Creation Progress & Timer Modal */}
+      <TestCreationProgressModal
+        isOpen={isUploading}
+        uploadProgress={uploadProgress}
+        numQuestions={numQuestions}
+        fileCount={currentFiles.length}
+        testTitle={domainTopic || currentFiles[0]?.name || 'PDF Assessment'}
+        isComplete={isUploadComplete}
+      />
+
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
       >
         <input {...getInputProps()} />
-        <AnimatePresence>
-          {isUploading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100]"
-            >
-              <Loading />
-            </motion.div>
-          )}
-        </AnimatePresence>
         {isUploading === true ? (
           <div>
             <p>Uploading {currentFiles.length} files</p>

@@ -21,7 +21,35 @@ export async function uploadPdfDirectToCloudinary(
   // 1. In parallel, start client-side text extraction (super fast in browser)
   const clientTextPromise = extractTextFromPdfClient(file).catch(() => ({ text: '', pageCount: 1 }));
 
-  // 2. Fetch authenticated signed credentials from our server API
+  // 2. Cloudinary free tier enforces a strict 10MB (10485760 bytes) limit on raw uploads.
+  // For PDFs > 10MB, if client-side extraction yields high-quality text, bypass Cloudinary raw storage
+  // and pass the extracted text directly to our AI generation pipeline!
+  const CLOUDINARY_RAW_MAX_BYTES = 10485760;
+
+  if (file.size > CLOUDINARY_RAW_MAX_BYTES) {
+    onProgress?.(30);
+    const { text, pageCount } = await clientTextPromise;
+    onProgress?.(80);
+
+    if (text && text.trim().length >= 50) {
+      onProgress?.(100);
+      return {
+        name: file.name,
+        url: `client-text://${encodeURIComponent(file.name)}`,
+        publicId: undefined,
+        fileSize: file.size,
+        text,
+        pageCount: pageCount || 1,
+      };
+    }
+
+    // Scanned image-only document > 10MB cannot be extracted client-side without OCR
+    throw new Error(
+      `This scanned document is ${(file.size / (1024 * 1024)).toFixed(1)} MB without an embedded text layer. Cloud storage accepts scanned PDFs up to 10 MB. Please upload a searchable text PDF or a document under 10 MB.`
+    );
+  }
+
+  // 3. Fetch authenticated signed credentials from our server API for files <= 10MB
   const signRes = await fetch('/api/cloudinary/sign', {
     method: 'POST',
     headers: {
@@ -41,7 +69,7 @@ export async function uploadPdfDirectToCloudinary(
     throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds maximum allowed limit of ${max_file_size / (1024 * 1024)} MB.`);
   }
 
-  // 3. Prepare FormData for direct Cloudinary REST endpoint
+  // 4. Prepare FormData for direct Cloudinary REST endpoint
   const uploadFormData = new FormData();
   uploadFormData.append('file', file);
   uploadFormData.append('api_key', apiKey);
@@ -49,8 +77,8 @@ export async function uploadPdfDirectToCloudinary(
   uploadFormData.append('signature', signature);
   uploadFormData.append('folder', folder);
 
-  // 4. Upload directly using XMLHttpRequest to support live upload progress
-  const uploadResult: { url: string; publicId: string } = await new Promise((resolve, reject) => {
+  // 5. Upload directly using XMLHttpRequest to support live upload progress
+  const uploadResult: { url: string; publicId?: string } = await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
 
@@ -63,7 +91,7 @@ export async function uploadPdfDirectToCloudinary(
       };
     }
 
-    xhr.onload = () => {
+    xhr.onload = async () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const res = JSON.parse(xhr.responseText);
@@ -77,9 +105,27 @@ export async function uploadPdfDirectToCloudinary(
       } else {
         try {
           const errRes = JSON.parse(xhr.responseText);
-          reject(new Error(errRes.error?.message || `Upload failed with status ${xhr.status}`));
-        } catch {
-          reject(new Error(`Direct Cloudinary upload failed (HTTP ${xhr.status})`));
+          const errMsg = errRes.error?.message || '';
+
+          // If Cloudinary rejects due to file size, check if client already extracted text!
+          if (errMsg.includes('File size too large')) {
+            const { text } = await clientTextPromise;
+            if (text && text.trim().length >= 50) {
+              resolve({
+                url: `client-text://${encodeURIComponent(file.name)}`,
+                publicId: undefined,
+              });
+              return;
+            }
+          }
+
+          reject(new Error(errMsg || `Upload failed with status ${xhr.status}`));
+        } catch (e: any) {
+          if (e?.message) {
+            reject(e);
+          } else {
+            reject(new Error(`Direct Cloudinary upload failed (HTTP ${xhr.status})`));
+          }
         }
       }
     };
