@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { LoadingSpinner as Loading } from './LoadingSpinner';
 import { FormattedHeader } from './FormattedHeader';
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+import { TestCreationProgressModal } from './TestCreationProgressModal';
 
 interface PDFFile {
   name: string;
@@ -42,6 +43,8 @@ export default function PDFTestCreator() {
   const [tests, setTests] = useState<PDFTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreateComplete, setIsCreateComplete] = useState(false);
+  const [createUploadProgress, setCreateUploadProgress] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [testToDelete, setTestToDelete] = useState<PDFTest | null>(null);
   const [formData, setFormData] = useState({
@@ -90,13 +93,24 @@ export default function PDFTestCreator() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
+    setIsCreateComplete(false);
+    setCreateUploadProgress(10);
 
     try {
       // 1. Upload files directly to Cloudinary
       toast.info('Uploading documents to cloud storage...');
+      const totalFiles = formData.contextPDFs.length + (formData.pyqPDF ? 1 : 0);
+      let uploadedCount = 0;
+
+      const trackProgress = () => {
+        uploadedCount += 1;
+        setCreateUploadProgress(Math.round((uploadedCount / Math.max(1, totalFiles)) * 100));
+      };
+
       const contextPDFs = await Promise.all(
         formData.contextPDFs.map(async (file) => {
           const res = await uploadPdfDirectToCloudinary(file);
+          trackProgress();
           return {
             name: file.name,
             url: res.url,
@@ -108,9 +122,11 @@ export default function PDFTestCreator() {
       let pyqPDFs: any[] = [];
       if (formData.pyqPDF) {
         const pyqRes = await uploadPdfDirectToCloudinary(formData.pyqPDF);
+        trackProgress();
         pyqPDFs = [{ name: formData.pyqPDF.name, url: pyqRes.url, fileSize: pyqRes.fileSize }];
       }
 
+      setCreateUploadProgress(100);
       toast.info('Synthesizing questions with source citations...');
 
       // 2. Create test with direct JSON payload
@@ -131,6 +147,7 @@ export default function PDFTestCreator() {
 
       const data = await response.json();
       if (data.success) {
+        setIsCreateComplete(true);
         setTests([data.test, ...tests]);
         setFormData({
           title: '',
@@ -139,11 +156,17 @@ export default function PDFTestCreator() {
           pyqPDF: null
         });
         toast.success('Test created successfully');
+        setTimeout(() => {
+          setIsCreating(false);
+          setIsCreateComplete(false);
+        }, 1000);
+      } else {
+        throw new Error(data.error || 'Failed to create test');
       }
     } catch (error) {
-      toast.error('Failed to create test');
-    } finally {
+      toast.error(error instanceof Error ? error.message : 'Failed to create test');
       setIsCreating(false);
+      setIsCreateComplete(false);
     }
   };
 
@@ -431,6 +454,16 @@ export default function PDFTestCreator() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Comprehensive Test Creation Progress & Timer Modal */}
+      <TestCreationProgressModal
+        isOpen={isCreating}
+        uploadProgress={createUploadProgress}
+        numQuestions={10}
+        fileCount={formData.contextPDFs.length + (formData.pyqPDF ? 1 : 0)}
+        testTitle={formData.title || 'PDF Test'}
+        isComplete={isCreateComplete}
+      />
     </div>
   );
 } 

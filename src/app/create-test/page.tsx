@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+import { TestCreationProgressModal } from '@/app/components/TestCreationProgressModal';
 
 interface Question {
   question: string;
@@ -43,6 +44,8 @@ export default function CreateTestPage() {
   const [contextFiles, setContextFiles] = useState<File[]>([]);
   const [pyqFiles, setPyqFiles] = useState<File[]>([]);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [isAiComplete, setIsAiComplete] = useState(false);
+  const [aiUploadProgress, setAiUploadProgress] = useState(0);
 
   // Tab 2: Manual Question Creator State
   const [manualTitle, setManualTitle] = useState('');
@@ -71,17 +74,36 @@ export default function CreateTestPage() {
     }
 
     setIsGeneratingAi(true);
+    setIsAiComplete(false);
+    setAiUploadProgress(5);
 
     try {
       // 1. Upload all context and PYQ PDFs directly to Cloudinary
       toast.info('Uploading documents to cloud storage...');
+      const totalFilesCount = contextFiles.length + pyqFiles.length;
+      let completedFiles = 0;
+
+      const trackFileProgress = () => {
+        completedFiles += 1;
+        setAiUploadProgress(Math.round((completedFiles / totalFilesCount) * 100));
+      };
+
       const uploadedContextPDFs = await Promise.all(
-        contextFiles.map((f) => uploadPdfDirectToCloudinary(f))
+        contextFiles.map(async (f) => {
+          const res = await uploadPdfDirectToCloudinary(f);
+          trackFileProgress();
+          return res;
+        })
       );
       const uploadedPyqPDFs = await Promise.all(
-        pyqFiles.map((f) => uploadPdfDirectToCloudinary(f))
+        pyqFiles.map(async (f) => {
+          const res = await uploadPdfDirectToCloudinary(f);
+          trackFileProgress();
+          return res;
+        })
       );
 
+      setAiUploadProgress(100);
       toast.info('Analyzing document citations & synthesizing test...');
 
       // 2. Post lightweight JSON payload to Next.js API
@@ -105,16 +127,20 @@ export default function CreateTestPage() {
         throw new Error(data.error || 'Failed to synthesize test');
       }
 
+      setIsAiComplete(true);
       toast.success('Test synthesized successfully with verified citations!');
-      if (data.test?.id) {
-        router.push(`/take-test/${data.test.id}`);
-      } else {
-        router.push('/dashboard');
-      }
+
+      setTimeout(() => {
+        if (data.test?.id) {
+          router.push(`/take-test/${data.test.id}`);
+        } else {
+          router.push('/dashboard');
+        }
+      }, 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error generating test');
-    } finally {
       setIsGeneratingAi(false);
+      setIsAiComplete(false);
     }
   };
 
@@ -458,6 +484,16 @@ export default function CreateTestPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Comprehensive Test Creation Progress & Timer Modal */}
+      <TestCreationProgressModal
+        isOpen={isGeneratingAi}
+        uploadProgress={aiUploadProgress}
+        numQuestions={aiNumQuestions}
+        fileCount={contextFiles.length + pyqFiles.length}
+        testTitle={aiTitle || 'AI Synthesized Test'}
+        isComplete={isAiComplete}
+      />
     </div>
   );
 }

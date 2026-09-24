@@ -29,6 +29,7 @@ import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@/app/providers/SettingsProvider';
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+import { TestCreationProgressModal } from '@/app/components/TestCreationProgressModal';
 import {
   Brain,
   Menu,
@@ -237,6 +238,9 @@ export default function Dashboard() {
   const [testToDelete, setTestToDelete] = useState<PDFFile | null>(null);
   const [testToUpdate, setTestToUpdate] = useState<PDFFile | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isCreatingPdfTest, setIsCreatingPdfTest] = useState(false);
+  const [pdfTestUploadProgress, setPdfTestUploadProgress] = useState(0);
+  const [isPdfTestComplete, setIsPdfTestComplete] = useState(false);
   const [editingTest, setEditingTest] = useState<PDFFile | null>(null);
   const [viewTest, setViewTest] = useState<PDFFile | null>(null);
   const [selectedTest, setSelectedTest] = useState<Test | null>(null);
@@ -613,25 +617,43 @@ export default function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsCreatingPdfTest(true);
+    setIsPdfTestComplete(false);
+    setPdfTestUploadProgress(10);
 
     try {
       toast.info('Uploading documents to cloud storage...');
+      const totalFiles = (formData.contextPDF?.length || 0) + (formData.pyqPDF?.length || 0);
+      let uploadedCount = 0;
+
+      const trackProgress = () => {
+        uploadedCount += 1;
+        setPdfTestUploadProgress(Math.round((uploadedCount / Math.max(1, totalFiles)) * 100));
+      };
 
       let uploadedContextPDFs: any[] = [];
       if (formData.contextPDF && formData.contextPDF.length > 0) {
         uploadedContextPDFs = await Promise.all(
-          formData.contextPDF.map((file) => uploadPdfDirectToCloudinary(file))
+          formData.contextPDF.map(async (file) => {
+            const res = await uploadPdfDirectToCloudinary(file);
+            trackProgress();
+            return res;
+          })
         );
       }
 
       let uploadedPyqPDFs: any[] = [];
       if (formData.pyqPDF && formData.pyqPDF.length > 0) {
         uploadedPyqPDFs = await Promise.all(
-          formData.pyqPDF.map((file) => uploadPdfDirectToCloudinary(file))
+          formData.pyqPDF.map(async (file) => {
+            const res = await uploadPdfDirectToCloudinary(file);
+            trackProgress();
+            return res;
+          })
         );
       }
 
+      setPdfTestUploadProgress(100);
       toast.info('Synthesizing questions with source citations...');
 
       const response = await fetch('/api/pdf-tests/create', {
@@ -651,24 +673,29 @@ export default function Dashboard() {
 
       const data = await response.json();
       if (response.ok && data.success) {
+        setIsPdfTestComplete(true);
         toast.success('PDF test created successfully!');
-        setShowCreateForm(false);
-        setFormData({
-          title: '',
-          description: '',
-          domainTopic: '',
-          numQuestions: 10,
-          contextPDF: [],
-          pyqPDF: [],
-        });
-        fetchPDFTests();
+        setTimeout(() => {
+          setIsCreatingPdfTest(false);
+          setIsPdfTestComplete(false);
+          setShowCreateForm(false);
+          setFormData({
+            title: '',
+            description: '',
+            domainTopic: '',
+            numQuestions: 10,
+            contextPDF: [],
+            pyqPDF: [],
+          });
+          fetchPDFTests();
+        }, 1000);
       } else {
         throw new Error(data.error || 'Failed to create PDF test');
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+      setIsCreatingPdfTest(false);
+      setIsPdfTestComplete(false);
     }
   };
 
@@ -1612,6 +1639,16 @@ export default function Dashboard() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Comprehensive Test Creation Progress & Timer Modal */}
+      <TestCreationProgressModal
+        isOpen={isCreatingPdfTest}
+        uploadProgress={pdfTestUploadProgress}
+        numQuestions={formData.numQuestions}
+        fileCount={(formData.contextPDF?.length || 0) + (formData.pyqPDF?.length || 0)}
+        testTitle={formData.title || 'Interactive Assessment'}
+        isComplete={isPdfTestComplete}
+      />
 
       <AlertDialog open={!!testToDelete} onOpenChange={() => setTestToDelete(null)}>
         <AlertDialogContent className="rounded-xl">

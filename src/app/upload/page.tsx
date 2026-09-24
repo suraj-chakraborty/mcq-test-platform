@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
+import { TestCreationProgressModal } from '@/app/components/TestCreationProgressModal';
 
 const TOPIC_PRESETS = [
   { label: 'Vocabulary & English', icon: '📖', value: 'Vocabulary & English Language' },
@@ -45,16 +46,8 @@ export default function UploadPage() {
   const [topic, setTopic] = useState('');
   const [numQuestions, setNumQuestions] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [generationStep, setGenerationStep] = useState(0);
-
-  const steps = [
-    'Securely Uploading Document to Cloud...',
-    'Extracting Key Concepts & Citations...',
-    'Analyzing Subject Archetype & Domain Topics...',
-    'Generating High-Yield Questions & Formats...',
-    'Auditing Verifiable Source Proofs & Citations...',
-  ];
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const pdfFiles = acceptedFiles.filter((f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
@@ -83,17 +76,13 @@ export default function UploadPage() {
     }
 
     setIsGenerating(true);
-    setGenerationStep(0);
+    setIsComplete(false);
     setUploadProgress(10);
-
-    const stepInterval = setInterval(() => {
-      setGenerationStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 3500);
 
     try {
       // 1. Direct Cloudinary Upload (Bypasses Netlify 4.5MB Payload limit)
       const uploadedPdf = await uploadPdfDirectToCloudinary(files[0], (pct) => {
-        setUploadProgress(Math.max(10, Math.min(90, pct)));
+        setUploadProgress(Math.max(10, Math.min(100, pct)));
       });
 
       setUploadProgress(100);
@@ -111,25 +100,27 @@ export default function UploadPage() {
         }),
       });
 
-      clearInterval(stepInterval);
-
       const data = await response.json();
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to generate test');
       }
 
+      setIsComplete(true);
       toast.success('Test generated with verified source citations!');
+
       const createdTestId = data.tests?.[0]?.id;
-      if (createdTestId) {
-        router.push(`/take-test/${createdTestId}`);
-      } else {
-        router.push('/dashboard');
-      }
+      setTimeout(() => {
+        if (createdTestId) {
+          router.push(`/take-test/${createdTestId}`);
+        } else {
+          router.push('/dashboard');
+        }
+      }, 1000);
     } catch (err) {
-      clearInterval(stepInterval);
       toast.error(err instanceof Error ? err.message : 'Generation failed. Please try again.');
       setIsGenerating(false);
+      setIsComplete(false);
     }
   };
 
@@ -309,58 +300,15 @@ export default function UploadPage() {
           </CardContent>
         </Card>
 
-        {/* Live Generation Progress Modal */}
-        <AnimatePresence>
-          {isGenerating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                className="bg-white dark:bg-neutral-900 max-w-md w-full rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-neutral-800 text-center space-y-6"
-              >
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 flex items-center justify-center animate-pulse">
-                  <Brain className="w-8 h-8" />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-xl font-black text-gray-900 dark:text-white">
-                    Generating Assessment
-                  </h3>
-                  <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 min-h-[20px]">
-                    {steps[generationStep]}
-                  </p>
-                </div>
-
-                <div className="space-y-2 text-left">
-                  {steps.map((st, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-3 text-xs font-bold p-2.5 rounded-xl transition-colors ${
-                        i < generationStep
-                          ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40'
-                          : i === generationStep
-                          ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 animate-pulse'
-                          : 'text-gray-300 dark:text-neutral-700'
-                      }`}
-                    >
-                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${i <= generationStep ? 'opacity-100' : 'opacity-20'}`} />
-                      <span>{st}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-[11px] text-gray-400 font-medium">
-                  Extracting formulas, terms, and diagrams with anti-hallucination ground truth.
-                </p>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Comprehensive Test Creation Progress & Timer Modal */}
+        <TestCreationProgressModal
+          isOpen={isGenerating}
+          uploadProgress={uploadProgress}
+          numQuestions={numQuestions}
+          fileCount={files.length}
+          testTitle={topic || files[0]?.name || 'Interactive PDF Assessment'}
+          isComplete={isComplete}
+        />
       </div>
     </div>
   );
