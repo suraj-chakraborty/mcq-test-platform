@@ -3,13 +3,32 @@ import { Redis } from '@upstash/redis';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-export type RouteCategory = 'auth' | 'heavy' | 'general';
+export type RouteCategory = 'auth' | 'heavy' | 'duel' | 'general';
+
+/**
+ * Extracts client IP giving strict precedence to Netlify's trusted client headers
+ */
+export function getClientIp(request: Request): string {
+  const netlifyClientIp =
+    request.headers.get('x-nf-client-connection-ip') ||
+    request.headers.get('client-ip');
+  if (netlifyClientIp && netlifyClientIp.trim()) {
+    return netlifyClientIp.trim();
+  }
+
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+
+  return '127.0.0.1';
+}
 
 /**
  * Maps a given API route pathname to its corresponding rate limiting bucket
  */
 export function getRouteCategory(pathname: string): RouteCategory {
-  if (pathname.startsWith('/api/auth')) {
+  if (pathname.startsWith('/api/auth') || pathname.toLowerCase().startsWith('/api/verify-otp')) {
     return 'auth';
   }
   if (
@@ -17,22 +36,57 @@ export function getRouteCategory(pathname: string): RouteCategory {
     pathname.startsWith('/api/pdfs/upload') ||
     pathname.startsWith('/api/pdf-tests/create') ||
     pathname.startsWith('/api/generate') ||
-    pathname.startsWith('/api/duels/create')
+    pathname === '/api/duels/create'
   ) {
     return 'heavy';
+  }
+  if (pathname.startsWith('/api/duels')) {
+    return 'duel';
   }
   return 'general';
 }
 
 /**
  * Extracts rate limit identifier:
- * - When user is authenticated (NextAuth JWT token present): returns `user:<userId>`
- * - When user is anonymous: returns `ip:<clientIp>`
+ * - Auth bucket: Keyed on `auth:<ip>:<submittedAccountIdentifier>`
+ * - Authenticated requests: Keyed on `user:<userId>`
+ * - Anonymous requests: Keyed on `ip:<clientIp>`
  */
 export async function resolveRateLimitIdentifier(
-  request: NextRequest,
+  request: NextRequest | Request,
   secret?: string
 ): Promise<{ identifier: string; isAuthenticated: boolean; userId?: string }> {
+  const ip = getClientIp(request);
+  const nextUrl = (request as any).nextUrl;
+  const urlObj = nextUrl ? nextUrl : new URL(request.url, 'http://localhost:3000');
+  const pathname = urlObj.pathname;
+  const category = getRouteCategory(pathname);
+
+  // 1. Auth Bucket: Keyed by IP + submitted account identifier
+  if (category === 'auth') {
+    let accountIdentifier = '';
+    const searchParams = urlObj.searchParams;
+    accountIdentifier =
+      searchParams.get('email') ||
+      searchParams.get('phone') ||
+      searchParams.get('username') ||
+      '';
+
+    if (!accountIdentifier) {
+      accountIdentifier =
+        request.headers.get('x-account-identifier') ||
+        request.headers.get('x-auth-identifier') ||
+        '';
+    }
+
+    const cleanAccount = accountIdentifier.trim().toLowerCase() || 'anonymous';
+    return {
+      identifier: `auth:${ip}:${cleanAccount}`,
+      isAuthenticated: false,
+    };
+  }
+
+  // 2. Non-auth routes: Key by authenticated user ID if session JWT is present
   try {
     const token = await getToken({
       req: request,
@@ -51,8 +105,7 @@ export async function resolveRateLimitIdentifier(
     // If token parsing fails, fall back to IP identifier
   }
 
-  const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+  // 3. Anonymous fallback: Key by IP
   return {
     identifier: `ip:${ip}`,
     isAuthenticated: false,
@@ -64,7 +117,8 @@ export interface RateLimitCheckResult {
   limit: number;
   remaining: number;
   reset: number;
-  errorReason?: 'CONFIG_MISSING_IN_PROD' | 'RATE_EXCEEDED';
+  errorReason?: 'CONFIG_MISSING_IN_PROD' | 'RATE_EXCEEDED' | 'UPSTASH_UNREACHABLE_FAIL_CLOSED';
+  isDegraded?: boolean;
 }
 
 export class RateLimiterService {
@@ -82,18 +136,28 @@ export class RateLimiterService {
       });
 
       this.limiters = {
+        // Strict brute-force protection
         auth: new Ratelimit({
           redis: this.redis,
           limiter: Ratelimit.slidingWindow(10, '60 s'),
           prefix: 'rl:auth',
           analytics: true,
         }),
+        // Heavy resource/LLM endpoints
         heavy: new Ratelimit({
           redis: this.redis,
           limiter: Ratelimit.slidingWindow(10, '60 s'),
           prefix: 'rl:heavy',
           analytics: true,
         }),
+        // Duel routes: 120 req/60s (well above ~25 req/min measured polling rate for 2+ players on same IP)
+        duel: new Ratelimit({
+          redis: this.redis,
+          limiter: Ratelimit.slidingWindow(120, '60 s'),
+          prefix: 'rl:duel',
+          analytics: true,
+        }),
+        // Standard API endpoints
         general: new Ratelimit({
           redis: this.redis,
           limiter: Ratelimit.slidingWindow(60, '60 s'),
@@ -134,14 +198,52 @@ export class RateLimiterService {
     }
 
     const limiter = this.limiters[category];
-    const { success, limit, remaining, reset } = await limiter.limit(identifier);
 
-    return {
-      allowed: success,
-      limit,
-      remaining,
-      reset,
-      errorReason: success ? undefined : 'RATE_EXCEEDED',
-    };
+    // Enforce 1500ms timeout on Upstash connection to prevent hanging requests
+    try {
+      const limitPromise = limiter.limit(identifier);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('UPSTASH_TIMEOUT')), 1500)
+      );
+
+      const { success, limit, remaining, reset } = await Promise.race([
+        limitPromise,
+        timeoutPromise,
+      ]);
+
+      return {
+        allowed: success,
+        limit,
+        remaining,
+        reset,
+        errorReason: success ? undefined : 'RATE_EXCEEDED',
+      };
+    } catch (error) {
+      console.error(`[RATE_LIMIT_UNREACHABLE] Upstash error on category ${category}:`, error);
+
+      // Define runtime behavior when Upstash is unreachable:
+      // FAIL CLOSED for high-risk categories (auth / heavy token-burning routes)
+      if (category === 'auth' || category === 'heavy') {
+        return {
+          allowed: false,
+          limit: 0,
+          remaining: 0,
+          reset: Date.now() + 60000,
+          errorReason: 'UPSTASH_UNREACHABLE_FAIL_CLOSED',
+        };
+      }
+
+      // FAIL OPEN WITH ALERT for low-risk interactive categories (general / duel polling)
+      console.warn(
+        `[RATE_LIMIT_ALERT] Upstash unreachable: Failing open for ${category} category to maintain user experience.`
+      );
+      return {
+        allowed: true,
+        limit: 9999,
+        remaining: 9999,
+        reset: 0,
+        isDegraded: true,
+      };
+    }
   }
 }

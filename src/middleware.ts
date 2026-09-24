@@ -19,11 +19,14 @@ export async function middleware(request: NextRequest) {
     const result = await rateLimiterService.checkLimit(category, identifier, isProduction);
 
     if (!result.allowed) {
-      if (result.errorReason === 'CONFIG_MISSING_IN_PROD') {
+      if (result.errorReason === 'CONFIG_MISSING_IN_PROD' || result.errorReason === 'UPSTASH_UNREACHABLE_FAIL_CLOSED') {
+        const isUnreachable = result.errorReason === 'UPSTASH_UNREACHABLE_FAIL_CLOSED';
         return new NextResponse(
           JSON.stringify({
-            error: 'Security service unavailable: Rate limiting configuration is missing in production. Requests are blocked by fail-closed policy.',
-            code: 'RATE_LIMIT_CONFIG_MISSING',
+            error: isUnreachable
+              ? 'Security service unavailable: Rate limiting store is unreachable. Sensitive operations fail closed for safety.'
+              : 'Security service unavailable: Rate limiting configuration is missing in production. Requests are blocked by fail-closed policy.',
+            code: isUnreachable ? 'RATE_LIMIT_UNREACHABLE_FAIL_CLOSED' : 'RATE_LIMIT_CONFIG_MISSING',
           }),
           {
             status: 503,
