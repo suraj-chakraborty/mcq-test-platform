@@ -17,74 +17,70 @@ export async function GET(request: Request) {
 
     const userId = session.user.id;
 
-    // Utilize compound index [userId, createdAt] with pagination & ordering
-    const [totalMcqTests, mcqAttempts, totalDescriptiveTests, descriptiveTests] = await Promise.all([
-      prisma.testAttempt.count({ where: { userId } }),
+    // Use DB-side aggregations for totals and averages across the entire dataset (never from a paginated window)
+    const [mcqAgg, descAgg, mcqAttempts, descriptiveTests] = await Promise.all([
+      prisma.testAttempt.aggregate({
+        where: { userId },
+        _count: { _all: true },
+        _avg: { score: true },
+      }),
+      (prisma as any).descriptiveTest.aggregate({
+        where: { userId },
+        _count: { _all: true },
+        _avg: { score: true },
+      }),
       prisma.testAttempt.findMany({
         where: { userId },
         take: limit,
         skip: skip,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          score: true,
+          createdAt: true,
           test: {
             select: {
               title: true,
-              questions: { select: { id: true } }
-            }
-          }
-        }
+            },
+          },
+        },
       }),
-      (prisma as any).descriptiveTest.count({ where: { userId } }),
       (prisma as any).descriptiveTest.findMany({
         where: { userId },
         take: limit,
         skip: skip,
         orderBy: { createdAt: 'desc' },
-        select: { score: true, createdAt: true, examName: true }
+        select: { score: true, createdAt: true, examName: true },
       }),
     ]);
 
-    // Calculate MCQ average score (normalized to percentage)
-    let totalMcqPercentage = 0;
-    let validMcqAttemptsCount = 0;
+    const totalMcqTests = mcqAgg._count?._all || 0;
+    const totalDescriptiveTests = descAgg._count?._all || 0;
+    const avgMcqScore = Math.round(mcqAgg._avg?.score || 0);
+    const avgDescScore = Math.round(descAgg._avg?.score || 0);
 
-    mcqAttempts.forEach((attempt: any) => {
-      const qCount = attempt.test?.questions?.length || 0;
-      if (qCount > 0) {
-        const attemptPercentage = (Math.min(attempt.score, qCount) / qCount) * 100;
-        totalMcqPercentage += attemptPercentage;
-        validMcqAttemptsCount++;
-      }
-    });
-
-    const avgMcqScore = validMcqAttemptsCount > 0 ? totalMcqPercentage / validMcqAttemptsCount : 0;
-
-    // Calculate Descriptive average score
-    const totalDescScore = (descriptiveTests as any[]).reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
-    const avgDescScore = totalDescriptiveTests > 0 ? totalDescScore / totalDescriptiveTests : 0;
-
-    // Combined recent activity
+    // Combined recent activity from paginated window
     const activity = [
       ...mcqAttempts.map((a: any) => ({
         type: 'mcq',
         score: a.score,
         date: a.createdAt,
-        title: a.test?.title || 'MCQ Test'
+        title: a.test?.title || 'MCQ Test',
       })),
       ...(descriptiveTests as any[]).map((d: any) => ({
         type: 'descriptive',
         score: d.score,
         date: d.createdAt,
-        title: d.examName || 'Descriptive Test'
-      }))
+        title: d.examName || 'Descriptive Test',
+      })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return NextResponse.json({
       success: true,
       summary: {
         totalTests: totalMcqTests + totalDescriptiveTests,
-        avgMcqScore: Math.round(avgMcqScore),
-        avgDescScore: Math.round(avgDescScore),
+        avgMcqScore,
+        avgDescScore,
         recentActivity: activity.slice(0, 10),
         pagination: {
           page,
@@ -94,7 +90,7 @@ export async function GET(request: Request) {
           totalTests: totalMcqTests + totalDescriptiveTests,
           totalPages: Math.ceil((totalMcqTests + totalDescriptiveTests) / limit) || 1,
         },
-      }
+      },
     });
 
   } catch (error) {

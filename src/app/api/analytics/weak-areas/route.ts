@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     const userId = session.user.id;
 
-    // Analyze weak areas based on paginated MCQ performance using [userId, createdAt]
+    // Analyze weak areas based on paginated window of recent attempts
     const [totalAttempts, attempts] = await Promise.all([
       prisma.testAttempt.count({ where: { userId } }),
       prisma.testAttempt.findMany({
@@ -25,10 +25,15 @@ export async function GET(request: Request) {
         take: limit,
         skip: skip,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          score: true,
           test: {
-            include: {
-              questions: true,
+            select: {
+              title: true,
+              questions: {
+                select: { id: true },
+              },
             },
           },
         },
@@ -63,6 +68,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
+      window: `last ${attempts.length} attempts`,
       weakAreas: weakAreas.slice(0, 5),
       pagination: {
         page,
