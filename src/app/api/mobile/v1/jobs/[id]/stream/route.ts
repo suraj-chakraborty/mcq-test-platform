@@ -52,7 +52,7 @@ export async function GET(
     const StreamClass = typeof ReadableStream !== 'undefined' ? ReadableStream : (WebReadableStream as any);
 
     const stream = new StreamClass({
-      async start(controller) {
+      async start(controller: any) {
         // Send initial connection comment
         controller.enqueue(encoder.encode(': stream connected\n\n'));
 
