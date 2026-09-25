@@ -40,6 +40,7 @@ export function getRouteCategory(pathname: string): RouteCategory {
     pathname.startsWith('/api/descriptive') ||
     pathname === '/api/tests/start' ||
     pathname === '/api/tests/ocr-math' ||
+    pathname.startsWith('/api/mobile/v1/math') ||
     pathname === '/api/duels/create'
   ) {
     return 'heavy';

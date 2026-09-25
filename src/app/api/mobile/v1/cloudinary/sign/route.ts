@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 const signRequestSchema = z
   .object({
-    folder: z.enum(['avatars', 'pdfs']).optional().default('pdfs'),
+    folder: z.enum(['avatars', 'pdfs', 'math_photos']).optional().default('pdfs'),
     fileSize: z.number().int().positive().optional(),
   })
   .strict();
