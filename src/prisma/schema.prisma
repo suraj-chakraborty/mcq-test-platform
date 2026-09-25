@@ -78,6 +78,7 @@ model User {
   guestDuels       DuelRoom[] @relation("GuestDuels")
   flashcards       Flashcard[]
   questionAudits   QuestionAudit[]
+  jobs             Job[]
 }
 
 model VerificationToken {
@@ -255,4 +256,43 @@ model QuestionAudit {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
+}
+
+model Job {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String    @db.ObjectId
+  type           String    @default("PDF_TO_TEST") // PDF_TO_TEST, OCR_EXTRACT
+  status         String    @default("QUEUED") // QUEUED, UPLOADED, VALIDATING, EXTRACTING, OCR, CHUNKING, GENERATING, VERIFYING, FINALIZING, COMPLETED, FAILED, CANCELLED
+  progress       Int       @default(0) // 0-100 percentage
+  totalSteps     Int       @default(5)
+  currentStep    Int       @default(0)
+  stage          String?   // User-facing description e.g. "Extracting layout from document..."
+  error          String?   // User-facing error message
+  errorCode      String?   // ENCRYPTED, CORRUPT, SCANNED, EMPTY, TOO_LARGE, ACTIVE_CONTENT, TIMEOUT, LLM_ERROR
+  metadata       Json?     // Payload parameters (titles, hashes, options, metrics)
+  idempotencyKey String?
+  testId         String?   @db.ObjectId // Created test ID upon completion
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, idempotencyKey])
+  @@index([status, createdAt])
+}
+
+model CachedDocument {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  sha256        String   @unique
+  name          String
+  fileSize      Int
+  pageCount     Int
+  extractedText String
+  isScanned     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

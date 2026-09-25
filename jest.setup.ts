@@ -102,3 +102,9 @@ Object.defineProperty(window, 'matchMedia', {
 jest.mock('@/app/lib/auth', () => ({
   authOptions: {},
 }));
+
+// Polyfill setImmediate for jsdom environment
+if (typeof (global as any).setImmediate === 'undefined') {
+  (global as any).setImmediate = (fn: (...args: any[]) => void, ...args: any[]) =>
+    setTimeout(fn, 0, ...args);
+}
