@@ -1,7 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { z } from 'zod';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
+
+const attemptSubmissionSchema = z.object({
+  testId: objectIdSchema,
+  answers: z.union([
+    z.array(z.number().int().min(-1).max(10)),
+    z.record(z.string().regex(/^\d+$/), z.number().int().min(-1).max(10))
+  ]),
+  timeTaken: z.number().nonnegative().max(86400).optional().default(0),
+}).strict();
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +21,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { testId, answers, timeTaken } = await request.json();
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+
+    const validation = attemptSubmissionSchema.safeParse(parseResult.data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid attempt submission data', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { testId, answers, timeTaken } = validation.data;
+
 
     const test = await prisma.test.findUnique({
       where: { id: testId },

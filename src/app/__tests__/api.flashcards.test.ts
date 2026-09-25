@@ -29,7 +29,7 @@ describe('Flashcards API', () => {
   describe('GET /api/flashcards', () => {
     it('returns 401 when unauthenticated', async () => {
       (getServerSession as jest.Mock).mockResolvedValue(null);
-      const res = await GET();
+      const res = await GET(new Request('http://localhost/api/flashcards'));
       expect(res.status).toBe(401);
     });
 
@@ -40,8 +40,9 @@ describe('Flashcards API', () => {
       ];
       (prisma.flashcard.findMany as jest.Mock).mockResolvedValue(mockCards);
 
-      const res = await GET();
+      const res = await GET(new Request('http://localhost/api/flashcards'));
       const data = await res.json();
+
 
       expect(res.status).toBe(200);
       expect(data.success).toBe(true);

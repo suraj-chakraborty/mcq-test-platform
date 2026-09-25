@@ -2,18 +2,34 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema, paginationQuerySchema, safeJsonParse } from '@/app/lib/validations/common';
+import { z } from 'zod';
+
+const createFlashcardSchema = z
+  .object({
+    testId: objectIdSchema,
+  })
+  .strict();
 
 /**
  * GET: Fetch flashcards due for review
  * POST: Create flashcards from a Test
  */
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const url = new URL(request.url);
+
+    const queryParams = Object.fromEntries(url.searchParams.entries());
+    const queryParsed = paginationQuerySchema.safeParse(queryParams);
+    const { page, limit } = queryParsed.success ? queryParsed.data : { page: 1, limit: 50 };
+    const skip = (page - 1) * limit;
+
 
     const now = new Date();
     const flashcards = await prisma.flashcard.findMany({
@@ -26,10 +42,12 @@ export async function GET() {
       },
       orderBy: {
         nextReviewAt: 'asc'
-      }
+      },
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json({ success: true, flashcards });
+    return NextResponse.json({ success: true, flashcards, page, limit });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -42,10 +60,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { testId } = await request.json();
-    if (!testId) {
-      return NextResponse.json({ error: 'Test ID is required' }, { status: 400 });
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
     }
+
+    const schemaResult = createFlashcardSchema.safeParse(parseResult.data);
+    if (!schemaResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input: valid testId is required', details: schemaResult.error.format() },
+        { status: 400 }
+      );
+    }
+    const { testId } = schemaResult.data;
 
     // Get all questions from the test
     const test = await prisma.test.findUnique({

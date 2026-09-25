@@ -1,13 +1,30 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/app/lib/prisma';
+import { safeJsonParse } from '@/app/lib/validations/common';
+
+const verifyOtpSchema = z.object({
+  email: z.string().trim().email('Invalid email address'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be exactly 6 digits'),
+}).strict();
 
 export async function POST(req: Request) {
   try {
-    const { email, otp } = await req.json();
-
-    if (!email || !otp) {
-      return NextResponse.json({ message: 'Email and OTP required' }, { status: 400 });
+    const parseResult = await safeJsonParse(req);
+    if (!parseResult.success) {
+      return parseResult.response;
     }
+
+    const validation = verifyOtpSchema.safeParse(parseResult.data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { message: 'Invalid email or OTP format', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { email, otp } = validation.data;
+
 
     const user = await prisma.user.findUnique({
       where: { email },

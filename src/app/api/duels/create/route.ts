@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { v4 as uuidv4 } from 'uuid';
+import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
+import crypto from 'crypto';
+import { z } from 'zod';
+
+const createDuelSchema = z
+  .object({
+    testId: objectIdSchema,
+  })
+  .strict();
 
 export async function POST(request: Request) {
   try {
@@ -11,13 +19,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { testId } = await request.json();
-    if (!testId) {
-      return NextResponse.json({ error: 'Test ID is required' }, { status: 400 });
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
     }
 
-    // Generate a unique 6-character room code
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const schemaResult = createDuelSchema.safeParse(parseResult.data);
+    if (!schemaResult.success) {
+      return NextResponse.json(
+        { error: 'Valid test ID is required', details: schemaResult.error.format() },
+        { status: 400 }
+      );
+    }
+    const { testId } = schemaResult.data;
+
+    // Verify test exists if test repository is available
+    if (prisma.test?.findUnique) {
+      const test = await prisma.test.findUnique({
+        where: { id: testId },
+      });
+
+      if (!test) {
+        return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+      }
+    }
+
+
+    // Generate a unique 6-character room code using cryptographic random bytes
+    const roomCode = crypto.randomBytes(3).toString('hex').toUpperCase();
 
     const duelRoom = await prisma.duelRoom.create({
       data: {

@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { z } from 'zod';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import { getGenAIInstance } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
+import { safeJsonParse } from '@/app/lib/validations/common';
+
+const ocrMathSchema = z.object({
+  image: z.string().min(1, 'Image is required').max(10 * 1024 * 1024, 'Image data exceeds 10MB limit'),
+  topic: z.string().trim().max(100).optional().default('Mathematics'),
+}).strict();
 
 export async function POST(req: Request) {
   try {
@@ -12,23 +19,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { image, topic } = await req.json();
-
-    if (!image) {
-      return NextResponse.json({ error: 'Image is required' }, { status: 400 });
+    const parseResult = await safeJsonParse(req, 10 * 1024 * 1024);
+    if (!parseResult.success) {
+      return parseResult.response;
     }
+
+    const validation = ocrMathSchema.safeParse(parseResult.data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request payload', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { image, topic } = validation.data;
 
     // Extract base64 content
     const base64Data = image.split(',')[1] || image;
 
     const ai = getGenAIInstance();
 
+    const sanitizedTopic = topic.replace(/[<>]/g, '');
+
     const prompt = `
 Analyze this image containing a math problem.
 1. Extract the plain text of the problem.
 2. Provide a detailed, step-by-step solution formatted in clear Markdown.
 3. Generate 5 multiple-choice questions (MCQs) that are similar in logic and difficulty.
-4. Topic: ${topic || 'Mathematics'}
+4. Target Topic Context: <math_topic>${sanitizedTopic}</math_topic>
+
 
 Format the response EXACTLY as a JSON object with this structure:
 {

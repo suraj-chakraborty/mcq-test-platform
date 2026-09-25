@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
+import { z } from 'zod';
+
+const auditReportSchema = z
+  .object({
+    reason: z.string().trim().min(1, 'Reason is required').max(500, 'Reason too long'),
+    details: z.string().trim().max(2000, 'Details too long').optional(),
+  })
+  .strict();
 
 export async function POST(
   request: Request,
@@ -13,12 +22,38 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { reason, details } = await request.json();
-    const questionId = (await params).id;
-
-    if (!reason) {
-      return NextResponse.json({ error: 'Reason is required' }, { status: 400 });
+    const rawId = (await params).id;
+    const idValidation = objectIdSchema.safeParse(rawId);
+    if (!idValidation.success) {
+      return NextResponse.json({ error: 'Invalid question ID format' }, { status: 400 });
     }
+    const questionId = idValidation.data;
+
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+
+    const bodyValidation = auditReportSchema.safeParse(parseResult.data);
+    if (!bodyValidation.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: bodyValidation.error.format() },
+        { status: 400 }
+      );
+    }
+    const { reason, details } = bodyValidation.data;
+
+    // Verify question actually exists
+    if (prisma.question?.findUnique) {
+      const question = await prisma.question.findUnique({
+        where: { id: questionId },
+      });
+
+      if (!question) {
+        return NextResponse.json({ error: 'Question not found' }, { status: 404 });
+      }
+    }
+
 
     const audit = await prisma.questionAudit.create({
       data: {
