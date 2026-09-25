@@ -158,10 +158,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: 'Unsupported AI provider' }, { status: 400 });
   } catch (error) {
+    console.error('AI Verification Error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to connect to AI provider',
+        error: 'Failed to connect to AI provider',
       },
       { status: 500 }
     );
