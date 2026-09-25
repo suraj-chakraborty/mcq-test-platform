@@ -43,3 +43,6 @@ next-env.d.ts
 .vscode/
 .idea/ 
 .qodo
+
+# Mobile Application (independent repository)
+mcq-test-platform-mobile/
