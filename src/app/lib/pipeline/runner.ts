@@ -11,6 +11,7 @@ import { sanitizePdfBuffer } from './sanitizer';
 import { extractTextFromPdfResilient } from './extractor';
 import { downloadCloudinaryPdf } from '@/app/lib/cloudinary';
 import { generateMCQs, generateMCQsFromPdfBuffer } from '@/app/lib/ai';
+import { generateMCQsMapReduce } from './mapReduceGenerator';
 
 export interface IJobRunner {
   enqueue(payload: EnqueueJobPayload): Promise<{ jobId: string; status: JobStatus }>;
@@ -184,6 +185,7 @@ export class NetlifyBackgroundRunner implements IJobRunner {
     });
 
     let combinedContextText = '';
+    let totalDocumentPages = 1;
     const collectedBuffers: { name: string; buffer: Buffer; url?: string }[] = [];
 
     // Step 2: EXTRACTING
@@ -233,6 +235,8 @@ export class NetlifyBackgroundRunner implements IJobRunner {
         combinedContextText += `\n--- Document: ${pdfItem.name} ---\n${extraction.text}\n`;
       }
 
+      totalDocumentPages = Math.max(totalDocumentPages, extraction.pageCount);
+
       if (extraction.needsOcr) {
         anyNeedsOcr = true;
       }
@@ -277,8 +281,17 @@ export class NetlifyBackgroundRunner implements IJobRunner {
     });
 
     let questions: any[] = [];
+    let coverageReport: any = null;
+
     if (combinedContextText && combinedContextText.length >= 50) {
-      questions = await generateMCQs(combinedContextText, topic, numQuestions);
+      const mapReduceResult = await generateMCQsMapReduce({
+        documentText: combinedContextText,
+        topic,
+        numQuestions,
+        totalPages: totalDocumentPages,
+      });
+      questions = mapReduceResult.questions;
+      coverageReport = mapReduceResult.coverage;
     } else if (collectedBuffers.length > 0) {
       questions = await generateMCQsFromPdfBuffer(collectedBuffers[0].buffer, topic, numQuestions);
     }
@@ -354,6 +367,10 @@ export class NetlifyBackgroundRunner implements IJobRunner {
         stage: 'Test generated successfully!',
         testId: test.id,
         completedAt: new Date(),
+        metadata: {
+          ...(typeof payload.metadata === 'object' ? payload.metadata : {}),
+          coverage: coverageReport,
+        },
       },
     });
   }

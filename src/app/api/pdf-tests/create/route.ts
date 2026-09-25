@@ -15,6 +15,8 @@ import {
   releaseIdempotencyLock,
   findExistingTestByIdempotencyKey,
 } from '@/app/lib/idempotency';
+import { buildSecureDocumentEnvelope, SECURE_SYSTEM_INSTRUCTION } from '@/app/lib/pipeline/promptSecurity';
+import { generateMCQsMapReduce } from '@/app/lib/pipeline/mapReduceGenerator';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -349,9 +351,9 @@ STRICT PEDAGOGICAL CONTENT MANDATE & ANTI-PATTERNS
 SOURCE MATERIAL
 ----------------------
 **Context PDFs Extracted Text (100% Knowledge Source):**
-${contextText.slice(0, 50000)}
+${buildSecureDocumentEnvelope(contextText).wrappedContent}
 
-${hasPYQs ? `**PYQ Reference PDFs Extracted Text (Structural Question Blueprint):**\n${pyqText.slice(0, 50000)}` : ''}
+${hasPYQs ? `**PYQ Reference PDFs Extracted Text (Structural Question Blueprint):**\n${buildSecureDocumentEnvelope(pyqText).wrappedContent}` : ''}
 
 Format the response EXACTLY as a JSON array of question objects (do not wrap in an outer object):
 [
@@ -382,6 +384,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
           model: modelName,
           contents: [...inlineDataParts, prompt],
           config: {
+            systemInstruction: SECURE_SYSTEM_INSTRUCTION,
             responseMimeType: 'application/json',
           },
         });
