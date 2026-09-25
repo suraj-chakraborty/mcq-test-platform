@@ -1,9 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/lib/auth';
+import { RateLimiterService } from '@/app/lib/rateLimiter';
 import { GoogleGenAI } from '@google/genai';
 import { getGenAIInstance } from '@/app/lib/ai';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rateLimiterService = new RateLimiterService();
+    const isProd = process.env.NODE_ENV === 'production';
+    const limitResult = await rateLimiterService.checkLimit('heavy', `user:${session.user.id}`, isProd);
+    if (!limitResult.allowed) {
+      const resetTime = typeof limitResult.reset === 'number' ? limitResult.reset : Date.now() + 60000;
+      const retryAfter = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000)).toString();
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many verification attempts. Please wait before verifying again.',
+          code: 'RATE_LIMIT_EXCEEDED',
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': retryAfter,
+          },
+        }
+      );
+    }
+
     const { provider, apiKey, model } = await req.json();
 
     if (provider === 'default') {

@@ -97,7 +97,6 @@ export async function PUT(request: Request) {
         academicLevel: updatedUser.academicLevel,
         bio: updatedUser.bio,
         image: updatedUser.image,
-        mongodbUrl: updatedUser.mongodbUrl,
       },
     });
   } catch (error) {

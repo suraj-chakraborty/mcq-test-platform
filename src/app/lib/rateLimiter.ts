@@ -36,6 +36,7 @@ export function getRouteCategory(pathname: string): RouteCategory {
     pathname.startsWith('/api/pdfs/upload') ||
     pathname.startsWith('/api/pdf-tests/create') ||
     pathname.startsWith('/api/generate') ||
+    pathname.startsWith('/api/settings/verify-ai') ||
     pathname === '/api/duels/create'
   ) {
     return 'heavy';
