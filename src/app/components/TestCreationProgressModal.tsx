@@ -209,7 +209,7 @@ export function TestCreationProgressModal({
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.95, y: 16, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-xl overflow-hidden rounded-[2.5rem] bg-white/95 dark:bg-neutral-900/95 border border-indigo-100/80 dark:border-neutral-800 shadow-[0_25px_70px_-15px_rgba(79,70,229,0.35)] p-6 sm:p-8 space-y-6"
+          className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl sm:rounded-[2.5rem] bg-white/95 dark:bg-neutral-900/95 border border-indigo-100/80 dark:border-neutral-800 shadow-[0_25px_70px_-15px_rgba(79,70,229,0.35)] p-4 sm:p-8 space-y-4 sm:space-y-6"
         >
           {/* Glowing Background Radial Accents */}
           <div className="absolute -top-24 -left-24 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />

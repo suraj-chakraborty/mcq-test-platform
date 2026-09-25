@@ -255,7 +255,7 @@ export default function DescriptiveWriting() {
         )}
       </AnimatePresence>
       <Card className="max-w-4xl mx-auto">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <CardTitle>Descriptive Writing Practice</CardTitle>
           <Button
             variant="outline"

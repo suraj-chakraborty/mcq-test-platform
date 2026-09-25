@@ -21,7 +21,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 text-gray-900 dark:text-white pb-16">
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         {/* Top Header & Breadcrumbs */}
         <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -46,7 +46,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Card Container */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-200 dark:border-neutral-800 p-6 sm:p-8 shadow-sm">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-gray-200 dark:border-neutral-800 p-4 sm:p-8 shadow-sm">
           <UserProfile />
         </div>
       </main>

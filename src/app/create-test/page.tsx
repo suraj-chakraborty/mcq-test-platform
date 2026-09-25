@@ -210,7 +210,7 @@ export default function CreateTestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="space-y-1.5 border-b border-gray-200 dark:border-neutral-800 pb-5">
@@ -247,7 +247,7 @@ export default function CreateTestPage() {
           {/* TAB 1: AI Dual PDF Synthesizer */}
           <TabsContent value="ai-synthesis">
             <Card className="rounded-xl border border-gray-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900">
-              <CardContent className="p-6 space-y-5">
+              <CardContent className="p-4 sm:p-6 space-y-5">
                 <form onSubmit={handleAiSubmit} className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -331,7 +331,7 @@ export default function CreateTestPage() {
                     <Label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                       Question Quota: {aiNumQuestions} Questions
                     </Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {[5, 10, 15, 20, 25].map((cnt) => (
                         <button
                           key={cnt}

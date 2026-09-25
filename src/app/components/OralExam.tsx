@@ -91,22 +91,22 @@ export default function OralExam({ question, onClose }: OralExamProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden border-none text-gray-900">
-        <div className="bg-indigo-600 p-8 text-white">
-          <div className="flex justify-between items-center mb-6">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl sm:rounded-[40px] shadow-2xl border-none text-gray-900">
+        <div className="bg-indigo-600 p-5 sm:p-8 text-white">
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                 <Sparkles className="h-6 w-6 text-amber-300" />
               </div>
-              <h2 className="text-2xl font-black">Oral Exam Mode</h2>
+              <h2 className="text-xl sm:text-2xl font-black">Oral Exam Mode</h2>
             </div>
             <Button variant="ghost" onClick={onClose} className="text-white/80 hover:text-white rounded-full">Close</Button>
           </div>
           <p className="text-indigo-100 font-bold uppercase tracking-widest text-[10px] mb-2">Subjective Challenge</p>
-          <h3 className="text-xl font-bold leading-tight">{question}</h3>
+          <h3 className="text-lg sm:text-xl font-bold leading-tight">{question}</h3>
         </div>
 
-        <CardContent className="p-8">
+        <CardContent className="p-5 sm:p-8">
           {!evaluation ? (
             <div className="space-y-8">
               <div className="bg-gray-50 rounded-[30px] p-8 min-h-[200px] border-2 border-dashed border-gray-200 flex items-center justify-center relative group">

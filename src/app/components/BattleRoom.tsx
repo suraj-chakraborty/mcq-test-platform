@@ -79,15 +79,15 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
   if (isTestActive && room.status === 'ACTIVE') {
     return (
       <div className="relative">
-         <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50 p-4 flex justify-between items-center">
-            <div className="flex-1 px-4">
+          <div className="fixed top-0 left-0 right-0 bg-white dark:bg-neutral-900 shadow-md z-50 p-2.5 sm:p-4 flex justify-between items-center">
+            <div className="flex-1 px-2 sm:px-4">
                <p className="text-[10px] font-black uppercase text-gray-400">Your Progress</p>
                <Progress value={isHost ? room.hostProgress : room.guestProgress} className="h-2" />
             </div>
-            <div className="flex flex-col items-center px-8 border-x mx-4">
-                <span className="text-xl font-black">VS</span>
+            <div className="flex flex-col items-center px-3 sm:px-8 border-x mx-2 sm:mx-4">
+                <span className="text-lg sm:text-xl font-black">VS</span>
             </div>
-            <div className="flex-1 px-4 text-right">
+            <div className="flex-1 px-2 sm:px-4 text-right">
                <p className="text-[10px] font-black uppercase text-gray-400">Opponent</p>
                <Progress value={isHost ? room.guestProgress : room.hostProgress} className="h-2" />
             </div>
@@ -107,16 +107,16 @@ export default function BattleRoom({ roomCode, userId, onExit }: BattleRoomProps
   const guestName = room.guest?.name || 'Opponent';
 
   return (
-    <div className="container mx-auto max-w-2xl pt-20">
+    <div className="container mx-auto max-w-2xl px-3 sm:px-4 pt-12 sm:pt-20">
       <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
-        <CardHeader className="bg-indigo-600 text-white p-8 text-center">
-          <CardTitle className="text-3xl font-black">🔥 Battle Room</CardTitle>
+        <CardHeader className="bg-indigo-600 text-white p-6 sm:p-8 text-center">
+          <CardTitle className="text-2xl sm:text-3xl font-black">🔥 Battle Room</CardTitle>
           <p className="opacity-80 font-bold uppercase tracking-widest text-xs mt-2">{room.test?.title || 'Battle MCQ'}</p>
         </CardHeader>
-        <CardContent className="p-8 space-y-8">
-          <div className="bg-gray-50 rounded-2xl p-6 text-center border-2 border-dashed border-gray-200">
+        <CardContent className="p-5 sm:p-8 space-y-6 sm:space-y-8">
+          <div className="bg-gray-50 rounded-2xl p-4 sm:p-6 text-center border-2 border-dashed border-gray-200">
              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Room Code</p>
-             <span className="text-5xl font-black tracking-tighter text-indigo-600 font-mono">{room.roomCode}</span>
+             <span className="text-3xl sm:text-5xl font-black tracking-tighter text-indigo-600 font-mono break-all">{room.roomCode}</span>
              <p className="text-[10px] font-bold text-gray-500 mt-4">Share this code with your opponent to start the duel!</p>
           </div>
 
