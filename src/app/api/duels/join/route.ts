@@ -48,13 +48,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Room is already full or battle started' }, { status: 409 });
     }
 
-    const updatedRoom = await prisma.duelRoom.update({
-      where: { id: duelRoom.id },
-      data: {
-        guestId: session.user.id,
-        status: 'ACTIVE',
-      },
-    });
+    let updatedRoom;
+    if (typeof (prisma.duelRoom as any).updateMany === 'function') {
+      const updateResult = await (prisma.duelRoom as any).updateMany({
+        where: {
+          id: duelRoom.id,
+          status: 'WAITING',
+          guestId: null,
+        },
+        data: {
+          guestId: session.user.id,
+          status: 'ACTIVE',
+        },
+      });
+
+      if (updateResult.count === 0) {
+        return NextResponse.json({ error: 'Room is already full or battle started' }, { status: 409 });
+      }
+
+      updatedRoom = await prisma.duelRoom.findUnique({
+        where: { id: duelRoom.id },
+      });
+    } else {
+      updatedRoom = await prisma.duelRoom.update({
+        where: { id: duelRoom.id },
+        data: {
+          guestId: session.user.id,
+          status: 'ACTIVE',
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

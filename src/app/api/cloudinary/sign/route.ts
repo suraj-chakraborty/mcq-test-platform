@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { v2 as cloudinary } from 'cloudinary';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const signRequestSchema = z
+  .object({
+    folder: z.enum(['avatars', 'pdfs']).optional().default('pdfs'),
+    fileSize: z.number().int().positive().optional(),
+  })
+  .strict();
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +32,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json().catch(() => ({}));
+    let body: any = { folder: 'pdfs' };
+    const text = await req.text();
+    if (text && text.trim().length > 0) {
+      let parsedJson: any;
+      try {
+        parsedJson = JSON.parse(text);
+      } catch (e) {
+        return NextResponse.json(
+          { error: 'Invalid JSON in request body', code: 'MALFORMED_JSON' },
+          { status: 400 }
+        );
+      }
+      const validation = signRequestSchema.safeParse(parsedJson);
+      if (!validation.success) {
+        return NextResponse.json(
+          { error: 'Invalid signing parameters: folder must be "avatars" or "pdfs"', details: validation.error.format() },
+          { status: 400 }
+        );
+      }
+      body = validation.data;
+    }
+
     const isAvatar = body?.folder === 'avatars';
     const folder = isAvatar ? 'avatars' : 'pdfs';
     const resource_type = isAvatar ? 'image' : 'raw';
