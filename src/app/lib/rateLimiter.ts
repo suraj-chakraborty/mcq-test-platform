@@ -1,7 +1,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { getToken, decode } from 'next-auth/jwt';
 
 export type RouteCategory = 'auth' | 'heavy' | 'duel' | 'general';
 
@@ -91,8 +91,25 @@ export async function resolveRateLimitIdentifier(
     };
   }
 
-  // 2. Non-auth routes: Key by authenticated user ID if session JWT is present
+  // 2. Non-auth routes: Key by authenticated user ID if session JWT or Bearer token is present
   try {
+    const authHeader = (request as any).headers?.get?.('authorization');
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+      const rawToken = authHeader.substring(7).trim();
+      const decoded = await decode({
+        token: rawToken,
+        secret: secret || process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'dev_secret_jwt_key_32_characters_long_min!',
+      });
+      const userId = (decoded?.id as string) || (decoded?.sub as string);
+      if (userId) {
+        return {
+          identifier: `user:${userId}`,
+          isAuthenticated: true,
+          userId,
+        };
+      }
+    }
+
     const token = await getToken({
       req: request as any,
       secret: secret || process.env.NEXTAUTH_SECRET,
