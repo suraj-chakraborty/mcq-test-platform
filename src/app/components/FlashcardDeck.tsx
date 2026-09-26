@@ -146,79 +146,92 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
       <div className="relative min-h-[380px] sm:min-h-[420px] perspective-1000 mb-6">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentIndex + (isFlipped ? '-flipped' : '')}
-            initial={{ rotateY: isFlipped ? -180 : 180, scale: 0.9 }}
-            animate={{ rotateY: isFlipped ? 180 : 0, scale: 1 }}
-            exit={{ rotateY: isFlipped ? 0 : -180, scale: 0.9 }}
-            transition={{ duration: 0.4, type: 'spring', damping: 20 }}
-            className={`w-full min-h-[380px] sm:min-h-[420px] cursor-pointer rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-300 ${
-              isFlipped
-                ? 'bg-[#15161e] border-2 border-indigo-500/40 shadow-indigo-500/5'
-                : 'bg-[#121316] border border-neutral-800 hover:border-indigo-500/40 hover:shadow-indigo-500/10'
-            }`}
-            onClick={() => !isFlipped && setIsFlipped(true)}
+            key={currentIndex}
+            initial={{ rotateY: -70, scale: 0.9, opacity: 0 }}
+            animate={{ rotateY: 0, scale: 1, opacity: 1 }}
+            exit={{ rotateY: 70, scale: 0.9, opacity: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full h-full"
           >
-            {/* Background Ambient Glow */}
-            <div className="absolute -top-24 -right-24 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+            {/* Smooth 3D Flippable Card */}
+            <motion.div
+              animate={{ rotateY: isFlipped ? 180 : 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformStyle: 'preserve-3d' }}
+              className="relative w-full min-h-[380px] sm:min-h-[420px]"
+            >
+              {/* FRONT: QUESTION FACE */}
+              <div
+                className="absolute inset-0 w-full h-full cursor-pointer rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#121316] border border-neutral-800 hover:border-indigo-500/40 hover:shadow-indigo-500/10 transition-colors duration-300 backface-hidden"
+                onClick={() => !isFlipped && setIsFlipped(true)}
+              >
+                {/* Background Ambient Glow */}
+                <div className="absolute -top-24 -right-24 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {!isFlipped ? (
-              /* FRONT: QUESTION */
-              <div className="h-full flex flex-col items-center justify-center text-center my-auto">
-                {/* Modern Glowing Icon Badge */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 flex items-center justify-center mb-6 shadow-inner shadow-indigo-500/20">
-                  <Brain className="w-8 h-8 text-indigo-400" />
-                </div>
-
-                <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">
-                  Question Prompt
-                </span>
-
-                <p className="text-xl sm:text-2xl font-bold text-white leading-relaxed max-w-lg mx-auto">
-                  {currentCard.question.question}
-                </p>
-
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Tap to reveal Answer</span>
-                </div>
-              </div>
-            ) : (
-              /* BACK: ANSWER & EXPLANATION */
-              <div className="rotate-y-180 w-full flex flex-col items-center justify-center text-center my-auto">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Correct Answer</span>
-                </div>
-
-                <p className="text-2xl sm:text-3xl font-extrabold text-white mb-6 leading-snug max-w-lg">
-                  {currentCard.question.options[currentCard.question.correctAnswer]}
-                </p>
-
-                {currentCard.question.explanation && (
-                  <div className="w-full max-w-lg bg-neutral-900/90 border border-neutral-800/90 rounded-2xl p-5 text-left mb-2 shadow-inner">
-                    <div className="flex items-center gap-2 mb-2 text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                      <Quote className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Key Explanation</span>
-                    </div>
-                    <p className="text-sm text-neutral-300 leading-relaxed font-normal">
-                      {currentCard.question.explanation}
-                    </p>
+                <div className="h-full flex flex-col items-center justify-center text-center my-auto relative z-10">
+                  {/* Modern Glowing Icon Badge */}
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 flex items-center justify-center mb-6 shadow-inner shadow-indigo-500/20">
+                    <Brain className="w-8 h-8 text-indigo-400" />
                   </div>
-                )}
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsFlipped(false);
-                  }}
-                  className="mt-4 text-xs font-semibold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Flip back to Question</span>
-                </button>
+                  <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">
+                    Question Prompt
+                  </span>
+
+                  <p className="text-xl sm:text-2xl font-bold text-white leading-relaxed max-w-lg mx-auto">
+                    {currentCard.question.question}
+                  </p>
+
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Tap to reveal Answer</span>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {/* BACK: ANSWER & EXPLANATION FACE */}
+              <div
+                className="absolute inset-0 w-full h-full rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#15161e] border-2 border-indigo-500/40 shadow-indigo-500/5 transition-colors duration-300 backface-hidden rotate-y-180"
+              >
+                {/* Background Ambient Glow */}
+                <div className="absolute -top-24 -right-24 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="w-full flex flex-col items-center justify-center text-center my-auto relative z-10">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Correct Answer</span>
+                  </div>
+
+                  <p className="text-2xl sm:text-3xl font-extrabold text-white mb-6 leading-snug max-w-lg">
+                    {currentCard.question.options[currentCard.question.correctAnswer]}
+                  </p>
+
+                  {currentCard.question.explanation && (
+                    <div className="w-full max-w-lg bg-neutral-900/90 border border-neutral-800/90 rounded-2xl p-5 text-left mb-2 shadow-inner">
+                      <div className="flex items-center gap-2 mb-2 text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                        <Quote className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Key Explanation</span>
+                      </div>
+                      <p className="text-sm text-neutral-300 leading-relaxed font-normal">
+                        {currentCard.question.explanation}
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsFlipped(false);
+                    }}
+                    className="mt-4 text-xs font-semibold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Flip back to Question</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -305,6 +318,13 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
       <style jsx global>{`
         .perspective-1000 {
           perspective: 1000px;
+        }
+        .preserve-3d {
+          transform-style: preserve-3d;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
         .rotate-y-180 {
           transform: rotateY(180deg);
