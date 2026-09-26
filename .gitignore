@@ -44,5 +44,5 @@ next-env.d.ts
 .idea/ 
 .qodo
 
-# Mobile Application (independent repository)
+# mobile sub-repo
 mcq-test-platform-mobile/
