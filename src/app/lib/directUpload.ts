@@ -130,7 +130,17 @@ export async function uploadPdfDirectToCloudinary(
       }
     };
 
-    xhr.onerror = () => {
+    xhr.onerror = async () => {
+      try {
+        const { text } = await clientTextPromise;
+        if (text && text.trim().length >= 50) {
+          resolve({
+            url: `client-text://${encodeURIComponent(file.name)}`,
+            publicId: undefined,
+          });
+          return;
+        }
+      } catch (_) {}
       reject(new Error('Network error during direct Cloudinary upload'));
     };
 

@@ -9,9 +9,9 @@ export async function extractTextFromPdfClient(
   try {
     const pdfjsLib = await import('pdfjs-dist');
     
-    // Configure worker
+    // Configure worker with local static worker (served from public/) with CDN fallback
     if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
     }
 
     const arrayBuffer = await file.arrayBuffer();

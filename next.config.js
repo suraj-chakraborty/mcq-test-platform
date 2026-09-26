@@ -2,11 +2,12 @@
 
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://accounts.google.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://accounts.google.com https://cdnjs.cloudflare.com;
+  worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' blob: data: https://res.cloudinary.com https://lh3.googleusercontent.com;
   font-src 'self' https://fonts.gstatic.com data:;
-  connect-src 'self' https://res.cloudinary.com https://generativelanguage.googleapis.com https://api.groq.com https://api.openai.com https://api.anthropic.com;
+  connect-src 'self' https://api.cloudinary.com https://res.cloudinary.com https://generativelanguage.googleapis.com https://api.groq.com https://api.openai.com https://api.anthropic.com;
   frame-src 'self' https://accounts.google.com;
   media-src 'self' blob: data: https://res.cloudinary.com;
   object-src 'none';

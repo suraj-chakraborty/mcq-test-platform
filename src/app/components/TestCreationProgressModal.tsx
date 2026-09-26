@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Brain, 
-  UploadCloud, 
-  FileText, 
-  Sparkles, 
-  CheckCircle2, 
-  Clock, 
-  Hourglass, 
-  ShieldCheck, 
-  Zap, 
+import {
+  Brain,
+  UploadCloud,
+  FileText,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  Hourglass,
+  ShieldCheck,
+  Zap,
   Layers,
   BookOpen
 } from 'lucide-react';
@@ -201,101 +201,87 @@ export function TestCreationProgressModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-neutral-950/80 backdrop-blur-xl"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-neutral-950/85 backdrop-blur-xl"
       >
         <motion.div
           key="test-creation-modal"
-          initial={{ scale: 0.92, y: 24, opacity: 0 }}
+          initial={{ scale: 0.94, y: 16, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.95, y: 16, opacity: 0 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl sm:rounded-[2.5rem] bg-white/95 dark:bg-neutral-900/95 border border-indigo-100/80 dark:border-neutral-800 shadow-[0_25px_70px_-15px_rgba(79,70,229,0.35)] p-4 sm:p-8 space-y-4 sm:space-y-6"
+          exit={{ scale: 0.96, y: 12, opacity: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+          className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] rounded-2xl sm:rounded-3xl bg-[#0f1015] border border-neutral-800 shadow-[0_25px_80px_-15px_rgba(0,0,0,0.8)] p-5 sm:p-6 space-y-4 overflow-hidden"
         >
-          {/* Glowing Background Radial Accents */}
-          <div className="absolute -top-24 -left-24 w-60 h-60 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Modal Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200/60 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 text-[11px] font-black uppercase tracking-wider">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600" />
-                </span>
-                AI Multimodal Synthesis Engine
+          {/* Centered Logo & Header */}
+          <div className="text-center space-y-2 pt-0.5">
+            <div className="flex justify-center">
+              <div className="relative group">
+                <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900 border border-neutral-800 p-2.5 flex items-center justify-center shadow-lg shadow-black/40">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
+                <div className="absolute -inset-1 rounded-2xl bg-indigo-500/10 blur-md pointer-events-none -z-10 animate-pulse" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+            </div>
+
+            <div className="space-y-0.5">
+              <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                 Synthesizing Your Test
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
+              <p className="text-xs text-neutral-400 font-medium line-clamp-1">
                 {`${testTitle ? `"${testTitle}" • ` : ''}${numQuestions} Questions • Bloom's Taxonomy Citations`}
               </p>
             </div>
-
-            {/* Glowing Icon Badge */}
-            <div className="relative shrink-0">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/25">
-                <div className="w-full h-full rounded-[14px] bg-white dark:bg-neutral-900 flex items-center justify-center">
-                  <Brain className="w-7 h-7 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Dynamic Progress Bar Section */}
-          <div className="space-y-3 rounded-2xl bg-gray-50/80 dark:bg-neutral-800/50 p-4 border border-gray-100 dark:border-neutral-700/60">
-            <div className="flex items-center justify-between text-xs font-black">
-              <span className="text-gray-500 dark:text-gray-400 uppercase tracking-widest text-[10px] flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-indigo-500" />
+          {/* Centralized Dynamic Progress & Status Card */}
+          <div className="space-y-2.5 rounded-2xl bg-neutral-900/60 p-4 border border-neutral-800/80">
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="text-neutral-400 text-[11px] flex items-center gap-1.5 font-medium">
+                <Zap className="w-3.5 h-3.5 text-indigo-400" />
                 Phase {activeStepIndex + 1} of 5: {PIPELINE_STEPS[activeStepIndex].title}
               </span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-black text-base tabular-nums">
+              <span className="text-indigo-400 font-bold text-sm tabular-nums">
                 {currentProgress}%
               </span>
             </div>
 
-            {/* Visual Progress Bar with Shimmer */}
-            <div className="relative h-3.5 w-full overflow-hidden rounded-full bg-gray-200/80 dark:bg-neutral-700/80 p-0.5">
+            {/* Single Theme-Based Progress Track */}
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-neutral-800">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-600 via-purple-500 to-emerald-400 relative overflow-hidden"
+                className="h-full rounded-full bg-indigo-500 relative overflow-hidden shadow-sm shadow-indigo-500/30"
                 initial={{ width: 0 }}
                 animate={{ width: `${currentProgress}%` }}
-                transition={{ ease: 'easeOut', duration: 0.5 }}
+                transition={{ ease: 'easeOut', duration: 0.4 }}
               >
-                {/* Internal Animated Shimmer Line */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full"
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent w-full"
                   animate={{ x: ['-100%', '200%'] }}
                   transition={{ repeat: Infinity, duration: 1.8, ease: 'linear' }}
                 />
               </motion.div>
             </div>
 
-            {/* Smart Dual Timer Display */}
-            <div className="flex items-center justify-between pt-1 text-xs font-bold text-gray-600 dark:text-gray-300">
-              {/* Estimated Time Remaining */}
-              <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300">
-                <Hourglass className="w-4 h-4 text-indigo-500 animate-spin" style={{ animationDuration: '6s' }} />
+            {/* Timers */}
+            <div className="flex items-center justify-between text-[11px] pt-0.5">
+              <div className="flex items-center gap-1.5 text-indigo-400 font-medium">
+                <Hourglass className="w-3.5 h-3.5 text-indigo-400 animate-spin" style={{ animationDuration: '6s' }} />
                 <span>
                   {isComplete
                     ? 'Finalizing test session...'
                     : remainingSeconds > 0
-                    ? `Estimated: ~${remainingSeconds}s remaining`
-                    : 'Deep citation verification in progress...'}
+                      ? `Estimated: ~${remainingSeconds}s remaining`
+                      : 'Deep citation verification in progress...'}
                 </span>
               </div>
 
-              {/* Elapsed Time */}
-              <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-[11px] font-semibold tabular-nums">
-                <Clock className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1.5 text-neutral-500 font-mono text-[10px]">
+                <Clock className="w-3 h-3" />
                 <span>Elapsed: {formatTime(elapsedSeconds)}</span>
               </div>
             </div>
           </div>
 
-          {/* Stepper Pipeline Flow */}
-          <div className="space-y-2">
+          {/* Icon-First Pipeline Stepper (Dashboard Vibe, No Text Clutter) */}
+          <div className="grid grid-cols-5 gap-2 py-1">
             {PIPELINE_STEPS.map((step, idx) => {
               const isPast = idx < activeStepIndex;
               const isCurrent = idx === activeStepIndex && !isComplete;
@@ -305,81 +291,56 @@ export function TestCreationProgressModal({
               return (
                 <div
                   key={step.id}
-                  className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all duration-300 ${
-                    isCurrent
-                      ? 'bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200/80 dark:border-indigo-800/80 shadow-sm'
-                      : isDone
-                      ? 'bg-emerald-50/50 dark:bg-emerald-950/20 text-gray-500 dark:text-gray-400'
-                      : 'opacity-40 text-gray-400 dark:text-neutral-500'
-                  }`}
+                  className="flex flex-col items-center text-center gap-1.5"
                 >
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       isDone
-                        ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                        ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shadow-sm shadow-emerald-500/10'
                         : isCurrent
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 animate-pulse'
-                        : 'bg-gray-100 dark:bg-neutral-800 text-gray-400'
+                          ? 'bg-indigo-600/20 border border-indigo-500/60 text-indigo-400 shadow-sm shadow-indigo-500/20 ring-1 ring-indigo-500/40 animate-pulse'
+                          : 'bg-neutral-900 border border-neutral-800 text-neutral-500'
                     }`}
                   >
                     {isDone ? (
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     ) : (
                       <StepIcon className="w-4 h-4" />
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p
-                        className={`text-xs font-black truncate ${
-                          isCurrent
-                            ? 'text-indigo-950 dark:text-indigo-200'
-                            : isDone
-                            ? 'text-gray-700 dark:text-gray-300'
-                            : 'text-gray-400'
-                        }`}
-                      >
-                        {step.title}
-                      </p>
-                      {isCurrent && (
-                        <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">
-                          In Progress
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
-                      {step.detail}
-                    </p>
-                  </div>
+                  <span
+                    className={`text-[10px] sm:text-[11px] font-medium tracking-tight line-clamp-1 max-w-full ${
+                      isCurrent
+                        ? 'text-indigo-300 font-semibold'
+                        : isDone
+                          ? 'text-neutral-300'
+                          : 'text-neutral-500'
+                    }`}
+                    title={step.title}
+                  >
+                    {step.title}
+                  </span>
                 </div>
               );
             })}
           </div>
 
-          {/* Interactive "While You Wait" Study Insight Card */}
-          <div className="rounded-2xl border border-indigo-100/60 dark:border-neutral-800 bg-gradient-to-br from-indigo-50/40 via-purple-50/30 to-pink-50/20 dark:from-neutral-800/40 dark:via-neutral-800/30 dark:to-neutral-800/20 p-3.5">
-            <div className="flex items-start gap-3">
-              <span className="text-xl shrink-0">
-                {DID_YOU_KNOW_TIPS[tipIndex].icon}
-              </span>
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                  While You Wait • {DID_YOU_KNOW_TIPS[tipIndex].title}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
-                  {DID_YOU_KNOW_TIPS[tipIndex].tip}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Anti-Crash Reassurance Footer */}
-          <div className="flex items-center justify-center gap-2 text-[11px] text-gray-400 font-medium text-center">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>
-              Real-time synthesis active • Please keep this tab open while questions are verified
+          {/* Compact "While You Wait" Study Insight Card */}
+          <div className="rounded-xl border border-neutral-800/80 bg-neutral-900/40 px-3.5 py-2.5 flex items-center gap-3">
+            <span className="text-base shrink-0">
+              {DID_YOU_KNOW_TIPS[tipIndex].icon}
             </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+                <span>While You Wait</span>
+                <span className="text-neutral-600">•</span>
+                <span className="truncate">{DID_YOU_KNOW_TIPS[tipIndex].title}</span>
+              </div>
+              <p className="text-xs text-neutral-400 font-normal truncate mt-0.5">
+                {DID_YOU_KNOW_TIPS[tipIndex].tip}
+              </p>
+            </div>
           </div>
         </motion.div>
       </motion.div>
