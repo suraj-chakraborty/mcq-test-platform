@@ -16,7 +16,7 @@ const updateProgressSchema = z.object({
 
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ roomCode: string }> | { roomCode: string } }
+  { params }: { params: Promise<{ roomCode: string }> }
 ) {
   try {
     let user = await getMobileAuthUser(req);
@@ -111,7 +111,7 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ roomCode: string }> | { roomCode: string } }
+  { params }: { params: Promise<{ roomCode: string }> }
 ) {
   try {
     let user = await getMobileAuthUser(req);
