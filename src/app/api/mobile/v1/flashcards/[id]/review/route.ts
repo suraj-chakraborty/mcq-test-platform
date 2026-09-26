@@ -16,7 +16,7 @@ const reviewFlashcardSchema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     let user = await getMobileAuthUser(req);
