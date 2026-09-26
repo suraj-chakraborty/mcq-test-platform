@@ -1351,10 +1351,8 @@ export default function Dashboard() {
         </TabsContent>
 
         {/* TAB 5: Descriptive */}
-        <TabsContent value="descriptive">
-          <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800">
-            <DescriptivePage />
-          </div>
+        <TabsContent value="descriptive" className="space-y-4">
+          <DescriptivePage />
         </TabsContent>
       </Tabs>
 
