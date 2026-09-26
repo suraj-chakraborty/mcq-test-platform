@@ -39,3 +39,6 @@ next-env.d.ts
 .vscode/
 .idea/ 
 .qodo
+
+# mobile sub-repo
+mcq-test-platform-mobile/
