@@ -1294,53 +1294,89 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {pdfTests.length > 0 ? (
-                pdfTests.map((test) => (
-                  <Card key={test.id} className="border border-gray-200 dark:border-neutral-800 shadow-sm hover:shadow-md bg-white dark:bg-neutral-900 hover:bg-gradient-to-br hover:from-white hover:via-indigo-50/30 hover:to-indigo-50/70 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-indigo-950/30 rounded-xl overflow-hidden group transition-all duration-300">
-                    <CardHeader className="p-4 pb-0">
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 bg-gray-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center p-1.5 shrink-0 border border-gray-200/70 dark:border-neutral-700">
-                            <FileText className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                          </div>
-                          <div className="flex flex-col items-start justify-center">
-                            <CardTitle className="text-sm font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1 inline-block max-w-[140px] truncate">
-                              {test.title}
-                            </CardTitle>
-                            <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-neutral-800 px-2 py-0.5 rounded border border-slate-200/60 dark:border-neutral-700">
-                              PYQ TEST
-                            </span>
+                pdfTests.map((test) => {
+                  const topic = getTestTopic(test);
+                  const questionCount = test.questions?.length || 10;
+
+                  return (
+                    <Card
+                      key={test.id}
+                      className="flex flex-col justify-between h-full bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-neutral-800 hover:border-indigo-500/40 shadow-sm hover:shadow-md dark:hover:shadow-indigo-500/5 hover:bg-gradient-to-br hover:from-white hover:via-indigo-50/20 hover:to-indigo-50/50 dark:hover:from-neutral-900 dark:hover:via-neutral-900 dark:hover:to-indigo-950/20 rounded-xl p-4 sm:p-5 group transition-all duration-300"
+                    >
+                      <div className="space-y-3">
+                        {/* Top Topic Badge & Action Icons */}
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold tracking-wide border bg-indigo-50 text-indigo-700 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/50">
+                            {topic === 'General Knowledge' ? 'PYQ Assessment' : topic}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setViewTest(viewTest?.id === test.id ? null : test)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+                              title="View Preview"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setEditingTest(test)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+                              title="Edit Test"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setTestToDelete(test)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
+                              title="Delete Test"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-lg shrink-0 transition-colors" onClick={() => setViewTest(viewTest?.id === test.id ? null : test)} title="View Preview">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900 rounded-lg shrink-0 transition-colors" onClick={() => setEditingTest(test)} title="Edit Test">
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-rose-600 rounded-lg shrink-0 transition-colors" onClick={() => setTestToDelete(test)} title="Delete Test">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+
+                        {/* Title */}
+                        <h3
+                          className="font-bold text-base text-gray-900 dark:text-white tracking-tight leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
+                          title={test.title}
+                        >
+                          {test.title}
+                        </h3>
+
+                        {/* Meta Stats Row */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 font-medium pt-0.5">
+                          <span className="flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-indigo-500/70" />
+                            {questionCount} Qs
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-indigo-500/70" />
+                            30m
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-indigo-500/70" />
+                            Benchmark
+                          </span>
                         </div>
+
+                        {/* Description */}
+                        <p className="text-gray-500 dark:text-neutral-400 text-xs leading-relaxed line-clamp-2 font-medium">
+                          {test.description || 'Assessment generated from benchmark previous year question paper.'}
+                        </p>
                       </div>
-                    </CardHeader>
 
-                    <CardContent className="p-4 pt-3 flex flex-col gap-3">
-                      {test.description ? (
-                        <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed h-[32px]">{test.description}</p>
-                      ) : (
-                        <div className="h-[32px] w-full" />
-                      )}
-
-                      <Button
-                        onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}
-                        className="w-full h-10 bg-slate-900 hover:bg-black text-white rounded-lg font-bold text-xs uppercase tracking-wider transition-all"
-                      >
-                        Attempt Assessment <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
+                      {/* CTA Button */}
+                      <div className="pt-4">
+                        <Button
+                          onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}
+                          className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 group/btn cursor-pointer"
+                        >
+                          <span>Attempt Assessment</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })
               ) : (
                 <div className="col-span-full text-center py-16 bg-gray-50 dark:bg-neutral-900 rounded-xl border border-dashed border-gray-200 dark:border-neutral-800">
                   <p className="text-gray-500 text-xs font-semibold">No PYQ tests created yet.</p>
