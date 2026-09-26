@@ -23,7 +23,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
   MicOff,
-  Sparkles,
   PenTool,
   Clock,
   BookOpen,
@@ -32,12 +31,10 @@ import {
   AlertTriangle,
   Lightbulb,
   Shuffle,
-  Volume2,
   FileText,
   RotateCcw,
   Send,
   X,
-  Target,
 } from 'lucide-react';
 import OralExam from './OralExam';
 
@@ -338,7 +335,7 @@ export default function DescriptiveWriting() {
             className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center"
           >
             <Loading />
-            <p className="mt-4 text-sm font-semibold text-white">AI Examiner is analyzing your answer against official rubrics...</p>
+            <p className="mt-4 text-sm font-semibold text-white">Analyzing your answer against official rubrics...</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -476,53 +473,59 @@ export default function DescriptiveWriting() {
           <div className="space-y-4">
             {/* Interactive Oral Defense Card */}
             <div className="bg-white dark:bg-[#121316] border border-gray-200 dark:border-neutral-800/90 rounded-2xl p-5 shadow-sm space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800/50 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                  <Sparkles className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                  <Mic className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">AI Oral Defense</h3>
-                  <p className="text-[11px] text-gray-500 dark:text-neutral-400">Verbal viva & interview mode</p>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Oral Defense Mode</h3>
+                  <p className="text-[11px] text-gray-500 dark:text-neutral-400">Verbal viva & interview defense</p>
                 </div>
               </div>
               <p className="text-xs text-gray-600 dark:text-neutral-300 leading-relaxed">
-                Prefer speaking your thoughts? Defend your arguments live against our conversational AI examiner.
+                Prefer speaking your thoughts? Defend your arguments verbally with real-time speech evaluation.
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsOralExamOpen(true)}
-                className="w-full rounded-xl border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-300 font-bold text-xs h-9 gap-1.5 hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                className="w-full rounded-xl border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-800 dark:text-neutral-200 font-semibold text-xs h-9 gap-1.5 transition-all"
               >
-                <Volume2 className="w-3.5 h-3.5" />
+                <Mic className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                 <span>Launch Oral Exam</span>
               </Button>
             </div>
 
-            {/* AI Evaluation Rubric Breakdown */}
+            {/* Evaluation Rubric Breakdown */}
             <div className="bg-white dark:bg-[#121316] border border-gray-200 dark:border-neutral-800/90 rounded-2xl p-5 shadow-sm space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <Award className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Grading Rubric</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-neutral-300">
+                  Evaluation Rubric
+                </h3>
+                <span className="text-[10px] font-bold text-neutral-400">3 Criteria</span>
               </div>
 
-              <div className="space-y-2.5 text-xs">
-                <div className="flex items-start gap-2 text-gray-600 dark:text-neutral-300">
-                  <Target className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+              <div className="space-y-3 text-xs">
+                <div className="flex items-start gap-2.5 text-gray-600 dark:text-neutral-300">
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700/60 mt-0.5 shrink-0">
+                    01
+                  </span>
                   <div>
                     <span className="font-bold text-gray-900 dark:text-white">Structure & Thesis:</span> Clear introduction, structured arguments, and decisive conclusion.
                   </div>
                 </div>
-                <div className="flex items-start gap-2 text-gray-600 dark:text-neutral-300">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                <div className="flex items-start gap-2.5 text-gray-600 dark:text-neutral-300">
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700/60 mt-0.5 shrink-0">
+                    02
+                  </span>
                   <div>
                     <span className="font-bold text-gray-900 dark:text-white">Critical Depth:</span> Evidence, counter-perspectives, and analytical reasoning.
                   </div>
                 </div>
-                <div className="flex items-start gap-2 text-gray-600 dark:text-neutral-300">
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                <div className="flex items-start gap-2.5 text-gray-600 dark:text-neutral-300">
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700/60 mt-0.5 shrink-0">
+                    03
+                  </span>
                   <div>
                     <span className="font-bold text-gray-900 dark:text-white">Vocabulary & Tone:</span> Lexical precision, academic register, and syntactic fluency.
                   </div>
@@ -530,13 +533,11 @@ export default function DescriptiveWriting() {
               </div>
             </div>
 
-            {/* Voice Dictation Callout */}
-            <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                <Mic className="w-4 h-4" />
-              </div>
-              <p className="text-xs text-indigo-950 dark:text-indigo-200 leading-snug font-medium">
-                Real-time speech dictation is available during the writing test. Speak answers freely.
+            {/* Dictation Tip */}
+            <div className="bg-gray-50/70 dark:bg-neutral-900/60 border border-gray-200 dark:border-neutral-800 rounded-xl p-3.5 flex items-center gap-2.5">
+              <Mic className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+              <p className="text-xs text-gray-600 dark:text-neutral-400 leading-snug">
+                Speech dictation is available during the writing test. Speak answers freely.
               </p>
             </div>
           </div>
@@ -639,7 +640,7 @@ export default function DescriptiveWriting() {
               className="h-11 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-indigo-600/20 gap-2"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Submit for AI Evaluation</span>
+              <span>Submit for Evaluation</span>
             </Button>
           </div>
         </div>
@@ -652,7 +653,7 @@ export default function DescriptiveWriting() {
             <div className="flex items-center gap-2 mb-1">
               <Award className="w-5 h-5 text-indigo-500" />
               <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                AI Evaluation Report
+                Evaluation Report
               </DialogTitle>
             </div>
             <p className="text-xs text-gray-500 dark:text-neutral-400">
