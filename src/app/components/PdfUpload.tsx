@@ -13,7 +13,7 @@ import Truncate from './Truncate';
 
 import { TestCreationProgressModal } from './TestCreationProgressModal';
 import { LoadingSpinner as Loading } from './LoadingSpinner';
-import { Loader2, ChevronDown, X } from 'lucide-react';
+import { Loader2, ChevronDown, X, Play, FileText, HardDrive, Calendar, ListChecks } from 'lucide-react';
 
 import { uploadPdfDirectToCloudinary } from '@/app/lib/directUpload';
 
@@ -354,44 +354,74 @@ export default function PdfUpload({ onUploadSuccess, onUploadPending, onUploadEr
               {filteredAndSortedPdfs.map((pdf) => (
                 <div
                   key={pdf.id}
-                  className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
+                  className="bg-white dark:bg-[#121316] border border-gray-200 dark:border-neutral-800/90 hover:border-gray-300 dark:hover:border-neutral-700 rounded-2xl p-4 sm:p-5 shadow-sm transition-all"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium truncate">
-                        {Truncate(pdf.title, 30)}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Size: {pdf.fileSize ? (pdf.fileSize / (1024 * 1024)).toFixed(2) + 'MB' : 'N/A'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Pages: {pdf.pageCount || 'N/A'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Uploaded: {pdf.createdAt ? new Date(pdf.createdAt).toLocaleDateString() : 'Unknown date'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        MCQs: {pdf.mcqs?.length || 0}
-                      </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="flex items-center gap-2.5 mb-1.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center shrink-0">
+                          <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <h3
+                          className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate block min-w-0 flex-1"
+                          title={pdf.title}
+                        >
+                          {Truncate(pdf.title, 45)}
+                        </h3>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-neutral-400 pl-0 sm:pl-10">
+                        <span className="flex items-center gap-1">
+                          <HardDrive className="w-3 h-3 text-gray-400 dark:text-neutral-500" />
+                          {pdf.fileSize ? (pdf.fileSize / (1024 * 1024)).toFixed(2) + 'MB' : 'N/A'}
+                        </span>
+                        <span className="text-gray-300 dark:text-neutral-700 hidden sm:inline">•</span>
+                        <span className="flex items-center gap-1">
+                          <FileText className="w-3 h-3 text-gray-400 dark:text-neutral-500" />
+                          {pdf.pageCount || 'N/A'} {pdf.pageCount === 1 ? 'page' : 'pages'}
+                        </span>
+                        <span className="text-gray-300 dark:text-neutral-700 hidden sm:inline">•</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-gray-400 dark:text-neutral-500" />
+                          {pdf.createdAt ? new Date(pdf.createdAt).toLocaleDateString() : 'Unknown date'}
+                        </span>
+                        <span className="text-gray-300 dark:text-neutral-700 hidden sm:inline">•</span>
+                        <span className="inline-flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-500/20">
+                          <ListChecks className="w-3 h-3" />
+                          {pdf.mcqs?.length || 0} MCQs
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedPdfs.includes(pdf.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedPdfs([...selectedPdfs, pdf.id]);
-                          } else {
-                            setSelectedPdfs(selectedPdfs.filter(id => id !== pdf.id));
-                          }
-                        }}
-                      />
+
+                    <div className="flex items-center justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-gray-100 dark:border-neutral-800/60 sm:border-0 mt-1 sm:mt-0">
+                      <label
+                        htmlFor={`select-pdf-${pdf.id}`}
+                        className="flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-600 dark:text-neutral-400 select-none"
+                      >
+                        <input
+                          id={`select-pdf-${pdf.id}`}
+                          type="checkbox"
+                          checked={selectedPdfs.includes(pdf.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPdfs([...selectedPdfs, pdf.id]);
+                            } else {
+                              setSelectedPdfs(selectedPdfs.filter(id => id !== pdf.id));
+                            }
+                          }}
+                          className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600 border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-800"
+                        />
+                        <span className="sm:hidden text-xs">Select</span>
+                      </label>
+
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleStartTest('pdf', [pdf.id])}
                         disabled={!pdf.mcqs?.length}
+                        className="whitespace-nowrap shrink-0 text-xs font-semibold h-9 px-3.5 rounded-xl border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white dark:hover:border-indigo-600 text-gray-800 dark:text-neutral-200 transition-all flex items-center gap-1.5 shadow-sm"
                       >
+                        <Play className="w-3.5 h-3.5 text-indigo-500 group-hover:text-white fill-indigo-500/20" />
                         Take Test
                       </Button>
                     </div>
