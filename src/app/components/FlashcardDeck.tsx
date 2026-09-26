@@ -35,12 +35,25 @@ interface FlashcardDeckProps {
 export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [rotationAngle, setRotationAngle] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [sessionCards] = useState(cards);
 
   const currentCard = sessionCards[currentIndex];
+
+  const handleFlipToAnswer = () => {
+    if (isFlipped) return;
+    setIsFlipped(true);
+    setRotationAngle((prev) => prev + 540); // 1 complete spin (360) + 180 to reveal answer
+  };
+
+  const handleFlipToQuestion = () => {
+    if (!isFlipped) return;
+    setIsFlipped(false);
+    setRotationAngle((prev) => prev - 180); // 1 single spin (180) directly back to question
+  };
 
   const handleReview = async (quality: number) => {
     if (isSubmitting || !currentCard) return;
@@ -57,6 +70,7 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
         setReviewedCount((prev) => prev + 1);
         if (currentIndex < sessionCards.length - 1) {
           setIsFlipped(false);
+          setRotationAngle(0);
           setTimeout(() => {
             setCurrentIndex((prev) => prev + 1);
             setIsSubmitting(false);
@@ -155,15 +169,20 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
           >
             {/* Smooth 3D Flippable Card */}
             <motion.div
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              animate={{ rotateY: rotationAngle }}
+              transition={{
+                duration: isFlipped ? 0.8 : 0.5,
+                ease: [0.25, 1, 0.35, 1],
+              }}
               style={{ transformStyle: 'preserve-3d' }}
               className="relative w-full min-h-[380px] sm:min-h-[420px]"
             >
               {/* FRONT: QUESTION FACE */}
               <div
-                className="absolute inset-0 w-full h-full cursor-pointer rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#121316] border border-neutral-800 hover:border-indigo-500/40 hover:shadow-indigo-500/10 transition-colors duration-300 backface-hidden"
-                onClick={() => !isFlipped && setIsFlipped(true)}
+                className={`absolute inset-0 w-full h-full rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#121316] border border-neutral-800 hover:border-indigo-500/40 hover:shadow-indigo-500/10 transition-colors duration-300 backface-hidden select-none ${
+                  isFlipped ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'
+                }`}
+                onClick={handleFlipToAnswer}
               >
                 {/* Background Ambient Glow */}
                 <div className="absolute -top-24 -right-24 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -191,7 +210,9 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
 
               {/* BACK: ANSWER & EXPLANATION FACE */}
               <div
-                className="absolute inset-0 w-full h-full rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#15161e] border-2 border-indigo-500/40 shadow-indigo-500/5 transition-colors duration-300 backface-hidden rotate-y-180"
+                className={`absolute inset-0 w-full h-full rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden flex flex-col justify-between items-center text-center bg-[#15161e] border-2 border-indigo-500/40 shadow-indigo-500/5 transition-colors duration-300 backface-hidden rotate-y-180 select-none ${
+                  isFlipped ? 'pointer-events-auto' : 'pointer-events-none'
+                }`}
               >
                 {/* Background Ambient Glow */}
                 <div className="absolute -top-24 -right-24 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -222,11 +243,11 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsFlipped(false);
+                      handleFlipToQuestion();
                     }}
-                    className="mt-4 text-xs font-semibold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="relative z-30 mt-4 text-xs font-bold text-neutral-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 transition-colors cursor-pointer border border-neutral-700/60"
                   >
-                    <RotateCcw className="w-3 h-3" />
+                    <RotateCcw className="w-3.5 h-3.5" />
                     <span>Flip back to Question</span>
                   </button>
                 </div>
@@ -298,7 +319,7 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
             /* REVEAL ANSWER BUTTON */
             <Button
               className="h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-base font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              onClick={() => setIsFlipped(true)}
+              onClick={handleFlipToAnswer}
             >
               <RotateCcw className="w-5 h-5 text-white" />
               <span>REVEAL ANSWER</span>
