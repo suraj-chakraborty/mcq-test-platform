@@ -2,12 +2,18 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema } from '@/app/lib/validations/common';
 
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }>}
 ) {
   const id = (await params).id;
+  const idValidation = objectIdSchema.safeParse(id);
+  if (!idValidation.success) {
+    return NextResponse.json({ message: 'Invalid PDF ID format' }, { status: 400 });
+  }
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -23,12 +29,13 @@ export async function DELETE(
       include: { test: true }
     });
 
-    if (!pdf || pdf.test.userId !== session.user.id) {
+    if (!pdf || !pdf.test || pdf.test.userId !== session.user.id) {
       return NextResponse.json(
         { message: 'PDF not found' },
         { status: 404 }
       );
     }
+
 
     await prisma.pdfDocument.delete({
       where: { id }

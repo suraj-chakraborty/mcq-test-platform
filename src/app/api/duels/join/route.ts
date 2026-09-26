@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { safeJsonParse } from '@/app/lib/validations/common';
+import { z } from 'zod';
+
+const joinDuelSchema = z
+  .object({
+    roomCode: z.string().trim().min(4, 'Room code must be at least 4 characters').max(12).regex(/^[a-zA-Z0-9]+$/, 'Invalid room code format'),
+  })
+  .strict();
 
 export async function POST(request: Request) {
   try {
@@ -10,39 +18,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { roomCode } = await request.json();
-    if (!roomCode) {
-      return NextResponse.json({ error: 'Room code is required' }, { status: 400 });
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
     }
 
+    const schemaResult = joinDuelSchema.safeParse(parseResult.data);
+    if (!schemaResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid room code', details: schemaResult.error.format() },
+        { status: 400 }
+      );
+    }
+    const cleanRoomCode = schemaResult.data.roomCode.toUpperCase();
+
     const duelRoom = await prisma.duelRoom.findUnique({
-      where: { roomCode },
+      where: { roomCode: cleanRoomCode },
     });
 
     if (!duelRoom) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    if (duelRoom.status !== 'WAITING') {
-      return NextResponse.json({ error: 'Room is already full or battle started' }, { status: 400 });
-    }
-
     if (duelRoom.hostId === session.user.id) {
       return NextResponse.json({ error: 'You are already the host' }, { status: 400 });
     }
 
-    const updatedRoom = await prisma.duelRoom.update({
-      where: { id: duelRoom.id },
-      data: {
-        guestId: session.user.id,
-        status: 'ACTIVE', // Automatically start when guest joins for now
-      },
-    });
+    if (duelRoom.status !== 'WAITING' || duelRoom.guestId) {
+      return NextResponse.json({ error: 'Room is already full or battle started' }, { status: 409 });
+    }
+
+    let updatedRoom;
+    if (typeof (prisma.duelRoom as any).updateMany === 'function') {
+      const updateResult = await (prisma.duelRoom as any).updateMany({
+        where: {
+          id: duelRoom.id,
+          status: 'WAITING',
+          guestId: null,
+        },
+        data: {
+          guestId: session.user.id,
+          status: 'ACTIVE',
+        },
+      });
+
+      if (updateResult.count === 0) {
+        return NextResponse.json({ error: 'Room is already full or battle started' }, { status: 409 });
+      }
+
+      updatedRoom = await prisma.duelRoom.findUnique({
+        where: { id: duelRoom.id },
+      });
+    } else {
+      updatedRoom = await prisma.duelRoom.update({
+        where: { id: duelRoom.id },
+        data: {
+          guestId: session.user.id,
+          status: 'ACTIVE',
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       room: updatedRoom,
     });
+
 
   } catch (error) {
     console.error('Error joining duel room:', error);

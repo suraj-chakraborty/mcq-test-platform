@@ -1,4 +1,5 @@
 import path from 'path';
+import { validateSafeUrl } from '@/app/lib/ssrf';
 
 export const MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB size cap
 
@@ -130,8 +131,17 @@ export async function validateDirectPdfUploadByRange(
     };
   }
 
+  const urlCheck = validateSafeUrl(url, { requireCloudinaryCloudName: true });
+  if (!urlCheck.valid) {
+    return {
+      valid: false,
+      error: `Remote upload rejected: ${urlCheck.error}`,
+      code: 'INVALID_MAGIC_BYTES',
+    };
+  }
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(urlCheck.url.toString(), {
       method: 'GET',
       headers: {
         Range: 'bytes=0-2047',

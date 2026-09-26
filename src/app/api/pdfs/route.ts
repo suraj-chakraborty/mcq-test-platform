@@ -57,8 +57,8 @@ export async function GET(req: NextRequest) {
     const pdfsWithTitle = pdfs.map(pdf => ({
       ...pdf,
       title: pdf.name,
-      createdAt: pdf.test.createdAt,
-      mcqs: { length: pdf.test._count.questions }, // Mocking mcqs.length for UI compatibility
+      createdAt: pdf.test?.createdAt || new Date(),
+      mcqs: { length: pdf.test?._count?.questions || 0 }, // Mocking mcqs.length for UI compatibility
       fileSize: pdf.fileSize,
       pageCount: pdf.pageCount
     }));

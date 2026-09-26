@@ -97,13 +97,12 @@ export async function PUT(request: Request) {
         academicLevel: updatedUser.academicLevel,
         bio: updatedUser.bio,
         image: updatedUser.image,
-        mongodbUrl: updatedUser.mongodbUrl,
       },
     });
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

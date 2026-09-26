@@ -82,7 +82,7 @@ export default function MathPhotoUpload({ onSuccess, onClose }: MathPhotoUploadP
         </AnimatePresence>
         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <Card className="border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-[3rem] overflow-hidden flex flex-col h-full bg-[#f8fafc]">
-            <CardHeader className="bg-white border-b border-gray-100 p-8 shrink-0 relative">
+            <CardHeader className="bg-white border-b border-gray-100 p-4 sm:p-8 shrink-0 relative">
               <Button variant="ghost" size="icon" className="absolute right-6 top-6 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-2xl" onClick={onClose}><X className="h-6 w-6" /></Button>
               <div className="flex items-center gap-4 mb-2">
                 <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 p-2">
@@ -95,7 +95,7 @@ export default function MathPhotoUpload({ onSuccess, onClose }: MathPhotoUploadP
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-y-auto custom-scrollbar flex-1">
-              <div className="p-8 space-y-10">
+              <div className="p-4 sm:p-8 space-y-6 sm:space-y-10">
                 {/* Top Section: Snapshot and Extracted Problem */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   <div className="lg:col-span-5 space-y-4">
@@ -217,7 +217,7 @@ export default function MathPhotoUpload({ onSuccess, onClose }: MathPhotoUploadP
             </CardTitle>
             <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mt-1">Snap &rarr; Solve &rarr; Practice</p>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <div className="mb-8">
               {image ? (
                 <div className="relative group rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-black/5 aspect-video bg-gray-50 flex items-center justify-center">

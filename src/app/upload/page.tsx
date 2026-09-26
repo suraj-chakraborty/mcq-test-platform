@@ -125,24 +125,24 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-wider border border-indigo-200/50">
             <Sparkles className="w-3.5 h-3.5" /> AI Multimodal Ingestion Engine
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
             Transform Any PDF into an <span className="gradient-text">Interactive Test</span>
           </h1>
-          <p className="text-sm sm:text-base text-gray-500 max-w-2xl mx-auto font-medium">
+          <p className="text-xs sm:text-base text-gray-500 max-w-2xl mx-auto font-medium">
             Upload notes, question banks, or scanned textbooks. Our AI analyzes the document and synthesizes verified MCQs with exact source citations.
           </p>
         </div>
 
         {/* Main Generator Studio Card */}
         <Card className="glass-card rounded-[2.5rem] overflow-hidden border border-gray-100 dark:border-neutral-800">
-          <CardContent className="p-6 sm:p-10 space-y-8">
+          <CardContent className="p-4 sm:p-10 space-y-6 sm:space-y-8">
             {/* Step 1: Dropzone */}
             <div className="space-y-3">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function UploadPage() {
                 Subject / Topic Context
               </label>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {TOPIC_PRESETS.map((preset) => (
                   <button
                     key={preset.value}

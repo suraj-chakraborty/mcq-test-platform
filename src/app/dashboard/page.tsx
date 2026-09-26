@@ -874,48 +874,50 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* Main Hero Card (Theme Adaptive Accent Gradient) */}
-      <div className="hero-gradient-card w-full rounded-xl p-5 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">
-        <div className="space-y-1 relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Dashboard</h1>
-          <p className="text-xs sm:text-sm font-medium text-indigo-200/90">Manage assessments, active recall, and analytics</p>
-        </div>
-
-        <div className="flex items-center gap-3 relative z-10 w-full md:w-auto">
-          {/* Level & Progress Box */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-3 px-4 flex flex-col justify-center min-w-[130px] sm:min-w-[160px] flex-1 md:flex-none">
-            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-indigo-200 mb-1.5">
-              <span>Level {userStats?.level || 4}</span>
-              <span>{Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
-            </div>
-            <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.max(4, Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100))}%` }}
-                className="h-full bg-gradient-to-r from-indigo-400 to-purple-300 rounded-full"
-              />
-            </div>
+      {/* Main Hero Card (Theme Adaptive Accent Gradient) - Only rendered on primary Dashboard (Normal Test) view */}
+      {activeTab === 'current_affair' && !isStudying && (
+        <div className="hero-gradient-card w-full rounded-xl p-4 sm:p-8 mb-6 sm:mb-8 text-white shadow-lg shadow-indigo-950/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative overflow-hidden transition-all duration-300">
+          <div className="space-y-1 relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">Dashboard</h1>
+            <p className="text-xs sm:text-sm font-medium text-indigo-200/90">Manage assessments, active recall, and analytics</p>
           </div>
 
-          {/* Rank & User Name Box */}
-          <button
-            onClick={() => setIsProfileModalOpen(true)}
-            className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-2 px-3 text-left flex items-center gap-2.5 min-w-[130px] sm:min-w-[160px] hover:bg-white/15 transition-all flex-1 md:flex-none cursor-pointer"
-          >
-            <UserAvatar
-              image={userProfile?.image || session?.user?.image}
-              name={userProfile?.name || session?.user?.name}
-              size="sm"
-            />
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-300">Rank: Challenger</span>
-              <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[110px]">
-                {userProfile?.name || session?.user?.name || 'User'}
-              </span>
+          <div className="flex flex-col min-[380px]:flex-row items-stretch min-[380px]:items-center gap-2.5 sm:gap-3 relative z-10 w-full md:w-auto">
+            {/* Level & Progress Box */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-2.5 sm:p-3 px-3 sm:px-4 flex flex-col justify-center min-w-0 sm:min-w-[150px] flex-1 md:flex-none">
+              <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-indigo-200 mb-1.5">
+                <span>Level {userStats?.level || 4}</span>
+                <span>{Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100)}%</span>
+              </div>
+              <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.max(4, Math.floor(((userStats?.xpInCurrentLevel || 40) / (userStats?.xpNeededForNextLevel || 100)) * 100))}%` }}
+                  className="h-full bg-gradient-to-r from-indigo-400 to-purple-300 rounded-full"
+                />
+              </div>
             </div>
-          </button>
+
+            {/* Rank & User Name Box */}
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg p-2 px-3 text-left flex items-center gap-2.5 min-w-0 sm:min-w-[150px] hover:bg-white/15 transition-all flex-1 md:flex-none cursor-pointer"
+            >
+              <UserAvatar
+                image={userProfile?.image || session?.user?.image}
+                name={userProfile?.name || session?.user?.name}
+                size="sm"
+              />
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-300">Rank: Challenger</span>
+                <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[110px]">
+                  {userProfile?.name || session?.user?.name || 'User'}
+                </span>
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs Container */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1349,10 +1351,8 @@ export default function Dashboard() {
         </TabsContent>
 
         {/* TAB 5: Descriptive */}
-        <TabsContent value="descriptive">
-          <div className="bg-white dark:bg-neutral-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-neutral-800">
-            <DescriptivePage />
-          </div>
+        <TabsContent value="descriptive" className="space-y-4">
+          <DescriptivePage />
         </TabsContent>
       </Tabs>
 
@@ -1561,7 +1561,7 @@ export default function Dashboard() {
             {viewTest?.questions?.map((q, idx) => (
               <div key={idx} className="bg-gray-50 dark:bg-neutral-800 p-4 rounded-lg border border-gray-200 dark:border-neutral-700">
                 <p className="font-bold text-sm text-gray-900 dark:text-white mb-3">Q{idx + 1}: {q.question}</p>
-                <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-xs">
                   {q.options.map((opt, i) => (
                     <div key={i} className={`p-2.5 rounded-md border ${i === q.correctAnswer ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-semibold' : 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-gray-300'}`}>
                       {opt}

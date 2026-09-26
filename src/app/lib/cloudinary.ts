@@ -34,16 +34,23 @@ export async function uploadToCloudinary(buffer: Buffer, filename: string): Prom
   });
 }
 
+import { validateSafeUrl } from '@/app/lib/ssrf';
+
 /**
  * Downloads a PDF buffer from Cloudinary with full signature authentication fallback
  * to resolve Cloudinary "401 Unauthorized" when PDF delivery restrictions are enabled.
  */
 export async function downloadCloudinaryPdf(url: string, publicId?: string): Promise<Buffer> {
+  const urlCheck = validateSafeUrl(url, { requireCloudinaryCloudName: true });
+  if (!urlCheck.valid) {
+    throw new Error(`SSRF validation failed: ${urlCheck.error}`);
+  }
+
   configureCloudinary();
 
   // 1. Try public fetch directly
   try {
-    const res = await fetch(url);
+    const res = await fetch(urlCheck.url.toString());
     if (res.ok) {
       return Buffer.from(await res.arrayBuffer());
     }
@@ -98,25 +105,5 @@ export async function downloadCloudinaryPdf(url: string, publicId?: string): Pro
     }
   }
 
-  // 4. Try Basic Auth header using API key & secret
-  if (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-    try {
-      const basicAuth = Buffer.from(
-        `${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`
-      ).toString('base64');
-
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Basic ${basicAuth}`,
-        },
-      });
-      if (res.ok) {
-        return Buffer.from(await res.arrayBuffer());
-      }
-    } catch (e) {
-      console.warn('Basic auth fetch error:', e);
-    }
-  }
-
-  throw new Error('Failed to download PDF from Cloudinary (401 Unauthorized)');
+  throw new Error('Failed to download PDF from Cloudinary: Authentication failed or asset inaccessible.');
 }

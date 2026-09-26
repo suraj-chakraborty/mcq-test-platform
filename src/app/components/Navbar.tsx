@@ -39,7 +39,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border-b border-gray-200/80 dark:border-neutral-800 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -205,16 +205,16 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   href="/auth/signin"
-                  className="h-9 px-3.5 rounded-lg flex items-center text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="h-9 px-2.5 sm:px-3.5 rounded-lg flex items-center text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="h-9 px-4 rounded-lg flex items-center text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
+                  className="h-9 px-3 sm:px-4 rounded-lg flex items-center text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
                 >
                   Get Started
                 </Link>

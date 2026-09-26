@@ -2,18 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { paginationQuerySchema } from '@/app/lib/validations/common';
 
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
+    const parsedQuery = paginationQuerySchema.safeParse(Object.fromEntries(searchParams.entries()));
+    const { page, limit, search } = parsedQuery.success
+      ? parsedQuery.data
+      : { page: 1, limit: 10, search: '' };
     const skip = (page - 1) * limit;
 
     const where = {

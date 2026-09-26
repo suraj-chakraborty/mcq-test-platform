@@ -572,16 +572,16 @@ export default function UserProfile({ onUpdate }: UserProfileProps) {
       {/* Tabs Layout */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full grid grid-cols-3 bg-gray-100 dark:bg-neutral-800/80 p-1 rounded-xl border border-gray-200 dark:border-neutral-700">
-          <TabsTrigger value="overview" className="rounded-lg text-xs font-bold py-1.5">
+          <TabsTrigger value="overview" className="rounded-lg text-[10px] sm:text-xs font-bold py-1.5 px-1 sm:px-3">
             Overview & Stats
           </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg text-xs font-bold py-1.5">
+          <TabsTrigger value="history" className="rounded-lg text-[10px] sm:text-xs font-bold py-1.5 px-1 sm:px-3">
             Test History
           </TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-lg text-xs font-bold py-1.5 relative">
+          <TabsTrigger value="settings" className="rounded-lg text-[10px] sm:text-xs font-bold py-1.5 px-1 sm:px-3 relative">
             <span>Account Details</span>
             {isProfileIncomplete && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-3 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2 right-1 sm:right-3 animate-ping" />
             )}
           </TabsTrigger>
         </TabsList>
@@ -1045,7 +1045,7 @@ export default function UserProfile({ onUpdate }: UserProfileProps) {
               <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
                 Option 2: Pick an Instant Avatar
               </span>
-              <div className="grid grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {PRESET_AVATARS.map((avatar) => (
                   <button
                     key={avatar.id}

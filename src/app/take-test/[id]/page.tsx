@@ -310,7 +310,7 @@ export default function TakeTestPage() {
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-neutral-950 text-gray-900 dark:text-white select-none">
       {/* 1. TOP HEADER (Responsive & Compact on Mobile) */}
       <header className="bg-slate-900 dark:bg-neutral-900 text-white shadow-md border-b border-slate-800 dark:border-neutral-800 shrink-0 sticky top-0 z-30">
-        <div className="max-w-[1700px] mx-auto px-3 sm:px-6 h-13 sm:h-14 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-[1700px] mx-auto px-2.5 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Exit & Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button

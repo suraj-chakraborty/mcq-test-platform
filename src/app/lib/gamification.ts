@@ -53,9 +53,28 @@ export async function processGamification(userId: string, score: number, totalQu
 
     if (!user) return null;
 
+    // Idempotency check: if attemptId already had XP awarded, return without updating user stats
+    if (attemptId && (prisma.testAttempt as any)?.findUnique) {
+      const existingAttempt = await (prisma.testAttempt as any).findUnique({
+        where: { id: attemptId },
+        select: { xpEarned: true }
+      });
+      if (existingAttempt && typeof existingAttempt.xpEarned === 'number' && existingAttempt.xpEarned > 0) {
+        return {
+          xpEarned: 0,
+          leveledUp: false,
+          newLevel: user.level || 1,
+          newStreak: user.streak || 0,
+          newAchievements: [],
+          isDuplicate: true,
+        };
+      }
+    }
+
     // 1. Update Streak
     const now = new Date();
     let newStreak = user.streak || 0;
+
     const lastActive = (user as any).lastActivityAt;
 
     if (!lastActive) {

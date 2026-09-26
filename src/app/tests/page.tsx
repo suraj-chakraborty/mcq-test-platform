@@ -107,26 +107,26 @@ export default function TestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         {/* Header Ribbon */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-neutral-800 pb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-neutral-800 pb-6 sm:pb-8">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-wider mb-2">
               <BookOpen className="w-3.5 h-3.5" /> Assessment Catalog
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white tracking-tight">
               Explore & Practice Tests
             </h1>
-            <p className="text-sm font-medium text-gray-500 mt-1">
+            <p className="text-xs sm:text-sm font-medium text-gray-500 mt-1">
               Select an uploaded PDF assessment or jump into AI knowledge sprints.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <Link
               href="/upload"
-              className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 h-11 sm:h-12 w-full sm:w-auto px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
               <span>Create New Test</span>

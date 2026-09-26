@@ -1,7 +1,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { getToken, decode } from 'next-auth/jwt';
 
 export type RouteCategory = 'auth' | 'heavy' | 'duel' | 'general';
 
@@ -36,6 +36,11 @@ export function getRouteCategory(pathname: string): RouteCategory {
     pathname.startsWith('/api/pdfs/upload') ||
     pathname.startsWith('/api/pdf-tests/create') ||
     pathname.startsWith('/api/generate') ||
+    pathname.startsWith('/api/settings/verify-ai') ||
+    pathname.startsWith('/api/descriptive') ||
+    pathname === '/api/tests/start' ||
+    pathname === '/api/tests/ocr-math' ||
+    pathname.startsWith('/api/mobile/v1/math') ||
     pathname === '/api/duels/create'
   ) {
     return 'heavy';
@@ -45,6 +50,7 @@ export function getRouteCategory(pathname: string): RouteCategory {
   }
   return 'general';
 }
+
 
 /**
  * Extracts rate limit identifier:
@@ -86,8 +92,25 @@ export async function resolveRateLimitIdentifier(
     };
   }
 
-  // 2. Non-auth routes: Key by authenticated user ID if session JWT is present
+  // 2. Non-auth routes: Key by authenticated user ID if session JWT or Bearer token is present
   try {
+    const authHeader = (request as any).headers?.get?.('authorization');
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+      const rawToken = authHeader.substring(7).trim();
+      const decoded = await decode({
+        token: rawToken,
+        secret: secret || process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'dev_secret_jwt_key_32_characters_long_min!',
+      });
+      const userId = (decoded?.id as string) || (decoded?.sub as string);
+      if (userId) {
+        return {
+          identifier: `user:${userId}`,
+          isAuthenticated: true,
+          userId,
+        };
+      }
+    }
+
     const token = await getToken({
       req: request as any,
       secret: secret || process.env.NEXTAUTH_SECRET,
@@ -246,4 +269,114 @@ export class RateLimiterService {
       };
     }
   }
+
+  /**
+   * Dedicated per-account brute-force limit independent of client IP.
+   * Rejects after 5 failed login attempts per account across 5 minutes.
+   */
+  async checkAccountLoginLimit(
+    accountIdentifier: string,
+    isProduction: boolean
+  ): Promise<RateLimitCheckResult> {
+    const cleanAccount = accountIdentifier.trim().toLowerCase();
+    if (!cleanAccount || cleanAccount === 'anonymous') {
+      return { allowed: true, limit: 5, remaining: 5, reset: 0 };
+    }
+
+    return this.checkLimit('auth', `account:${cleanAccount}`, isProduction);
+  }
+
+  /**
+   * Per-user daily LLM quota enforcement (50 heavy generations per 24 hours).
+   */
+  async checkHeavyDailyQuota(
+    userId: string,
+    isProduction: boolean
+  ): Promise<RateLimitCheckResult> {
+    return this.checkLimit('heavy', `daily:${userId}`, isProduction);
+  }
 }
+
+export interface OtpAttemptStatus {
+  allowed: boolean;
+  remainingAttempts: number;
+  isLocked: boolean;
+  retryAfterSeconds: number;
+}
+
+export const OTP_MAX_ATTEMPTS = 5;
+export const OTP_LOCKOUT_SECONDS = 900; // 15 minutes
+
+const inMemoryOtpStore = new Map<string, { count: number; lockedUntil: number }>();
+
+/**
+ * Checks if an email is currently locked out from OTP verification due to excessive failures.
+ */
+export async function checkOtpRateLimit(email: string): Promise<OtpAttemptStatus> {
+  const cleanEmail = email.trim().toLowerCase();
+  const record = inMemoryOtpStore.get(cleanEmail);
+
+  if (record) {
+    const now = Date.now();
+    if (record.lockedUntil > now) {
+      const retryAfterSeconds = Math.ceil((record.lockedUntil - now) / 1000);
+      return {
+        allowed: false,
+        remainingAttempts: 0,
+        isLocked: true,
+        retryAfterSeconds,
+      };
+    }
+
+    // Lockout expired, reset counter
+    if (record.lockedUntil > 0 && record.lockedUntil <= now) {
+      inMemoryOtpStore.delete(cleanEmail);
+    }
+  }
+
+  const count = record?.count || 0;
+  return {
+    allowed: count < OTP_MAX_ATTEMPTS,
+    remainingAttempts: Math.max(0, OTP_MAX_ATTEMPTS - count),
+    isLocked: false,
+    retryAfterSeconds: 0,
+  };
+}
+
+/**
+ * Records a failed OTP verification attempt. Locks account for 15 minutes after 5 failures.
+ */
+export async function recordFailedOtpAttempt(email: string): Promise<OtpAttemptStatus> {
+  const cleanEmail = email.trim().toLowerCase();
+  const record = inMemoryOtpStore.get(cleanEmail) || { count: 0, lockedUntil: 0 };
+
+  record.count += 1;
+  const now = Date.now();
+
+  if (record.count >= OTP_MAX_ATTEMPTS) {
+    record.lockedUntil = now + OTP_LOCKOUT_SECONDS * 1000;
+  }
+
+  inMemoryOtpStore.set(cleanEmail, record);
+
+  const isLocked = record.count >= OTP_MAX_ATTEMPTS;
+  const retryAfterSeconds = isLocked
+    ? Math.ceil((record.lockedUntil - now) / 1000)
+    : 0;
+
+  return {
+    allowed: !isLocked,
+    remainingAttempts: Math.max(0, OTP_MAX_ATTEMPTS - record.count),
+    isLocked,
+    retryAfterSeconds,
+  };
+}
+
+/**
+ * Clears failed OTP verification attempts on successful authentication.
+ */
+export async function clearOtpAttempts(email: string): Promise<void> {
+  const cleanEmail = email.trim().toLowerCase();
+  inMemoryOtpStore.delete(cleanEmail);
+}
+

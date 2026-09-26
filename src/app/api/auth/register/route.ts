@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '@/app/lib/prisma';
 import { registerSchema } from '@/app/lib/validations/auth';
+import { safeJsonParse } from '@/app/lib/validations/common';
 import { sendEmail } from '@/app/lib/send-mail';
 
 export async function POST(req: Request) {
-  const OTPgenerator = Math.floor(100000 + Math.random() * 900000);
-
   try {
-    const body = await req.json();
-    
+    const parseResult = await safeJsonParse(req);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+
     // Zod validation
-    const result = registerSchema.safeParse(body);
+    const result = registerSchema.safeParse(parseResult.data);
     if (!result.success) {
       return NextResponse.json(
         { message: 'Validation failed', errors: result.error.format() },
@@ -46,6 +49,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // Generate cryptographically secure OTP (SEC-006)
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
@@ -58,13 +64,13 @@ export async function POST(req: Request) {
         password: hashedPassword,
         phone: phone && phone.trim() !== '' ? phone.trim() : null,
         targetExam: targetExam && targetExam.trim() !== '' ? targetExam.trim() : null,
-        otp: OTPgenerator.toString(),
+        otp: otpCode,
         otpExpiresAt: otpExpiry,
         isVerified: false,
       }
     });
 
-    await sendEmail(email, 'Your OTP Code', `Your OTP is ${OTPgenerator}`);
+    await sendEmail(email, 'Your OTP Code', `Your OTP is ${otpCode}`);
 
     return NextResponse.json(
       { 
@@ -80,4 +86,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+}
+

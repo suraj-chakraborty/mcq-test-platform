@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { GoogleGenAI } from '@google/genai';
+import { z } from 'zod';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { generateMCQs, generateKnowledgeMCQs } from '@/app/lib/ai';
+import { generateKnowledgeMCQs } from '@/app/lib/ai';
+import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
+const startTestSchema = z.object({
+  type: z.enum(['current-affairs', 'general-knowledge']).optional(),
+  pdfIds: z.array(objectIdSchema).max(20).optional(),
+  count: z.union([z.number().int().min(1).max(50), z.string()]).optional(),
+  customConfig: z.record(z.string(), z.any()).optional(),
+}).strict().refine((data) => Boolean(data.type || (data.pdfIds && data.pdfIds.length > 0)), {
+  message: 'Either type or at least one valid pdfId is required',
+});
 
 const predefinedTests = {
   'current-affairs': {
@@ -64,8 +72,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { type, pdfIds, count, customConfig } = await request.json();
-    const finalCount = count ? parseInt(count) : 10;
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+
+    const validation = startTestSchema.safeParse(parseResult.data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid test configuration', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { type, pdfIds, count, customConfig } = validation.data;
+    const parsedCount = count ? (typeof count === 'number' ? count : parseInt(count, 10)) : 10;
+    const finalCount = Math.min(50, Math.max(1, isNaN(parsedCount) ? 10 : parsedCount));
+
 
     let testData: any;
 
@@ -73,9 +96,10 @@ export async function POST(request: Request) {
       testData = await generateCurrentAffairsQuestions(finalCount, customConfig);
     } else if (type === 'general-knowledge') {
       testData = await generateGeneralKnowledgeQuestions(finalCount, customConfig);
-    } else if (type in predefinedTests) {
+    } else if (type && (type as string) in predefinedTests) {
       testData = predefinedTests[type as keyof typeof predefinedTests];
     } else if (pdfIds && Array.isArray(pdfIds) && pdfIds.length > 0) {
+
       // Handle PDF-based test (finding existing tests with these PDFs)
       // Actually the original logic seemed to assume `Pdf` model had `mcqs`.
       // In our new schema, `Test` has `questions` and `pdfs`.
@@ -144,7 +168,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Test creation error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

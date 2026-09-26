@@ -175,10 +175,10 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#fafafc] dark:bg-neutral-950 py-6 sm:py-8 px-3 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-neutral-800 pb-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-neutral-800 pb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Button
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                 Settings & Preferences
               </h1>
             </div>
-            <p className="text-xs sm:text-sm font-medium text-gray-500 pl-10">
+            <p className="text-xs sm:text-sm font-medium text-gray-500 pl-0 sm:pl-10">
               Customize visual theme mode, card palettes, and AI provider credentials.
             </p>
           </div>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
               resetSettings();
               toast.success('Settings reset to defaults');
             }}
-            className="rounded-lg text-xs font-semibold h-9 gap-1.5 text-gray-600 dark:text-gray-400"
+            className="rounded-lg text-xs font-semibold h-9 gap-1.5 text-gray-600 dark:text-gray-400 self-end sm:self-center"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Reset
           </Button>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
 
         {/* SECTION 1: Appearance & Theme Mode */}
         <Card className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm">
-          <CardHeader className="p-5 pb-3 border-b border-gray-100 dark:border-neutral-800">
+          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-gray-100 dark:border-neutral-800">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <Sun className="w-4 h-4" />
@@ -225,9 +225,9 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-5 space-y-6">
+          <CardContent className="p-4 sm:p-5 space-y-6">
             {/* Theme Mode Selector */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {[
                 { id: 'light' as ThemeMode, label: 'Light', icon: Sun },
                 { id: 'dark' as ThemeMode, label: 'Dark', icon: Moon },
@@ -240,13 +240,13 @@ export default function SettingsPage() {
                     key={item.id}
                     type="button"
                     onClick={() => setThemeMode(item.id)}
-                    className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl border transition-all text-center ${active
+                    className={`flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2 sm:p-3.5 rounded-xl border transition-all text-center ${active
                         ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm'
                         : 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:border-gray-300 font-medium'
                       }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs">{item.label}</span>
+                    <Icon className="w-4 sm:w-5 h-4 sm:h-5" />
+                    <span className="text-[10px] sm:text-xs">{item.label}</span>
                   </button>
                 );
               })}

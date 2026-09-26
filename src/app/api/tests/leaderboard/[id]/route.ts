@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema } from '@/app/lib/validations/common';
 
 export async function GET(
   request: Request,
@@ -7,6 +8,10 @@ export async function GET(
 ) {
   try {
     const { id: testId } = await params;
+    const idValidation = objectIdSchema.safeParse(testId);
+    if (!idValidation.success) {
+      return NextResponse.json({ error: 'Invalid test ID format' }, { status: 400 });
+    }
 
     // Fetch attempts for this test
     const attempts = await prisma.testAttempt.findMany({
@@ -16,7 +21,6 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            email: true,
           },
         },
       },
@@ -37,13 +41,14 @@ export async function GET(
         seenUsers.add(userId);
         uniqueLeaderboard.push({
           id: a.id,
-          userName: a.user?.name || (a.user?.email ? a.user.email.split('@')[0] : 'Anonymous'),
+          userName: a.user?.name || 'Candidate',
           score: a.score,
           date: a.createdAt,
         });
       }
       if (uniqueLeaderboard.length >= 10) break;
     }
+
 
     return NextResponse.json({
       success: true,

@@ -6,9 +6,10 @@ export const registerSchema = z.object({
   phone: z.string().regex(/^[0-9+\s()-]{7,20}$/, "Please enter a valid phone number").optional().or(z.literal('')),
   targetExam: z.string().max(100).optional(),
   password: z.string().min(6, "Password must be at least 6 characters").max(100, "Password too long"),
-});
+}).strict();
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
-});
+}).strict();
+

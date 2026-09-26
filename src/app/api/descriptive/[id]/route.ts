@@ -2,17 +2,24 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import { objectIdSchema } from '@/app/lib/validations/common';
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> } 
 ) {
   const id = (await params).id;
+  const idValidation = objectIdSchema.safeParse(id);
+  if (!idValidation.success) {
+    return NextResponse.json({ error: 'Invalid test ID format' }, { status: 400 });
+  }
+
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
 
     // Prisma doesn't have an exact findOneAndDelete, so we first find to check ownership
     const test = await prisma.descriptiveTest.findUnique({

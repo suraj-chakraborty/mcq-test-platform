@@ -1,12 +1,45 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/app/lib/prisma';
+import { safeJsonParse } from '@/app/lib/validations/common';
+import { checkOtpRateLimit, recordFailedOtpAttempt, clearOtpAttempts } from '@/app/lib/rateLimiter';
+
+
+const verifyOtpSchema = z.object({
+  email: z.string().trim().email('Invalid email address'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'OTP must be exactly 6 digits'),
+}).strict();
 
 export async function POST(req: Request) {
   try {
-    const { email, otp } = await req.json();
+    const parseResult = await safeJsonParse(req);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
 
-    if (!email || !otp) {
-      return NextResponse.json({ message: 'Email and OTP required' }, { status: 400 });
+    const validation = verifyOtpSchema.safeParse(parseResult.data);
+    if (!validation.success) {
+      return NextResponse.json(
+        { message: 'Invalid email or OTP format', details: validation.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { email, otp } = validation.data;
+
+    // Check rate limit and lockout state before processing
+    const rateCheck = await checkOtpRateLimit(email);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          message: 'Too many failed OTP verification attempts. Account locked for 15 minutes.',
+          retryAfter: rateCheck.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': rateCheck.retryAfterSeconds.toString() },
+        }
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -26,8 +59,31 @@ export async function POST(req: Request) {
     }
 
     if (user.otp !== otp) {
-      return NextResponse.json({ message: 'Invalid OTP' }, { status: 401 });
+      const failStatus = await recordFailedOtpAttempt(email);
+      if (failStatus.isLocked) {
+        return NextResponse.json(
+          {
+            message: 'Too many failed OTP verification attempts. Account locked for 15 minutes.',
+            retryAfter: failStatus.retryAfterSeconds,
+          },
+          {
+            status: 429,
+            headers: { 'Retry-After': failStatus.retryAfterSeconds.toString() },
+          }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          message: 'Invalid OTP',
+          remainingAttempts: failStatus.remainingAttempts,
+        },
+        { status: 401 }
+      );
     }
+
+    // Success: clear OTP attempts on successful verification
+    await clearOtpAttempts(email);
 
     await (prisma.user as any).update({
       where: { id: user.id },
@@ -39,6 +95,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ message: 'OTP verified successfully' }, { status: 200 });
+
   } catch (error) {
     console.error('OTP verification error:', error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

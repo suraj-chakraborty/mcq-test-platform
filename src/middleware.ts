@@ -11,6 +11,20 @@ const rateLimiterService = new RateLimiterService();
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  if (pathname.startsWith('/api/mobile')) {
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+  }
+
   if (pathname.startsWith('/api')) {
     const isProduction = process.env.NODE_ENV === 'production';
     const category = getRouteCategory(pathname);
@@ -61,6 +75,13 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
     response.headers.set('X-RateLimit-Reset', result.reset.toString());
     response.headers.set('X-RateLimit-Key-Type', isAuthenticated && userId ? 'user' : 'ip');
+
+    if (pathname.startsWith('/api/mobile')) {
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    }
+
     return response;
   }
 

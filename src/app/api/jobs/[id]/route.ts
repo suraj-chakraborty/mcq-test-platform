@@ -48,7 +48,7 @@ export async function GET(
     });
   } catch (error: any) {
     if (error?.statusCode === 403) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     console.error('[API_JOBS_STATUS] Error fetching job status:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

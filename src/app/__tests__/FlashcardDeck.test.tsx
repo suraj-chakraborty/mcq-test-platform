@@ -75,4 +75,24 @@ describe('FlashcardDeck Component', () => {
       expect(global.fetch).toHaveBeenCalledWith('/api/flashcards/fc1/review', expect.any(Object));
     });
   });
+
+  it('flips back to question when clicking flip back button', async () => {
+    render(<FlashcardDeck cards={mockCards} onComplete={jest.fn()} />);
+
+    // Reveal answer
+    const card = screen.getByText('What is the speed of light?');
+    fireEvent.click(card);
+
+    await waitFor(() => {
+      expect(screen.getByText('3x10^8 m/s')).toBeInTheDocument();
+    });
+
+    // Flip back
+    const flipBackBtn = screen.getByText(/Flip back to Question/i);
+    fireEvent.click(flipBackBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /REVEAL ANSWER/i })).toBeInTheDocument();
+    });
+  });
 });

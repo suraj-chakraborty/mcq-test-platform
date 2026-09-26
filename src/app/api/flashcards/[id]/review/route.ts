@@ -3,6 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import { calculateSM2 } from '@/app/lib/srs';
+import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
+import { z } from 'zod';
+
+const reviewSchema = z
+  .object({
+    quality: z.number().int().min(0).max(5),
+  })
+  .strict();
 
 export async function POST(
   request: Request,
@@ -14,8 +22,26 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { quality } = await request.json(); // Rating 0-5
-    const flashcardId = (await params).id;
+    const rawId = (await params).id;
+    const idValidation = objectIdSchema.safeParse(rawId);
+    if (!idValidation.success) {
+      return NextResponse.json({ error: 'Invalid flashcard ID format' }, { status: 400 });
+    }
+    const flashcardId = idValidation.data;
+
+    const parseResult = await safeJsonParse(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+
+    const schemaResult = reviewSchema.safeParse(parseResult.data);
+    if (!schemaResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid input: quality must be an integer between 0 and 5', details: schemaResult.error.format() },
+        { status: 400 }
+      );
+    }
+    const { quality } = schemaResult.data;
 
     const flashcard = await prisma.flashcard.findUnique({
       where: { id: flashcardId }
