@@ -147,10 +147,10 @@ export default function FlashcardDeck({ cards, onComplete }: FlashcardDeckProps)
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex + (isFlipped ? '-flipped' : '')}
-            initial={{ rotateY: isFlipped ? -180 : 0, opacity: 0, scale: 0.95 }}
-            animate={{ rotateY: isFlipped ? 180 : 0, opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.35, type: 'spring', damping: 22 }}
+            initial={{ rotateY: isFlipped ? -180 : 180, scale: 0.9 }}
+            animate={{ rotateY: isFlipped ? 180 : 0, scale: 1 }}
+            exit={{ rotateY: isFlipped ? 0 : -180, scale: 0.9 }}
+            transition={{ duration: 0.4, type: 'spring', damping: 20 }}
             className={`w-full min-h-[380px] sm:min-h-[420px] cursor-pointer rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-300 ${
               isFlipped
                 ? 'bg-[#15161e] border-2 border-indigo-500/40 shadow-indigo-500/5'

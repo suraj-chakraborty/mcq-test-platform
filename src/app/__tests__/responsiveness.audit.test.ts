@@ -61,7 +61,7 @@ describe('Responsive Design & Mobile Viewport Audit (320px - 2560px)', () => {
   describe('Ultrawide (2560px) Container Containment', () => {
     it('ensures descriptive writing page has max-width containment rather than unrestricted container', () => {
       const descriptiveFile = fs.readFileSync(path.join(process.cwd(), 'src/app/descriptive/page.tsx'), 'utf-8');
-      expect(descriptiveFile).toContain('max-w-4xl mx-auto');
+      expect(descriptiveFile).toContain('max-w-screen-xl mx-auto');
       expect(descriptiveFile).not.toContain('container mx-auto px-4 py-8');
     });
   });

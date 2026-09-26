@@ -10,7 +10,7 @@ export default function DescriptivePage() {
   const [showHistory, setShowHistory] = useState(false);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-5">
+    <div className="w-full max-w-screen-xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-neutral-800/80">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
