@@ -138,7 +138,7 @@ Format the response EXACTLY as a JSON object with this structure:
     }
 
     let responseText = '';
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-3.6-flash'];
+    const modelsToTry = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
 
     for (const modelName of modelsToTry) {
       try {

@@ -278,8 +278,8 @@ async function executeAIWithFallback(
   // Google Gemini (Either Custom Key or Default Multi-Key Fallback)
   const genAI = getGenAIInstance(provider === 'gemini' ? apiKey : undefined);
   const models = customModel
-    ? [customModel, 'gemini-3.8-flash', 'gemini-3.8-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
-    : ['gemini-3.8-flash', 'gemini-3.8-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    ? [customModel, 'gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.8-flash']
+    : ['gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.8-flash'];
   const contents = bufferContents || [promptText];
 
   for (const model of models) {
