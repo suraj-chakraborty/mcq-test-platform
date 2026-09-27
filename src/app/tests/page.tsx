@@ -257,6 +257,7 @@ export default function TestsPage() {
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             onClick={() => router.push(`/take-test/${test.id}`)}
+                            onMouseEnter={() => router.prefetch(`/take-test/${test.id}`)}
                             className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-indigo-500/10"
                           >
                             <span>Take Test</span>
@@ -266,6 +267,7 @@ export default function TestsPage() {
                           <Button
                             variant="outline"
                             onClick={() => router.push(`/leaderboard/${test.id}`)}
+                            onMouseEnter={() => router.prefetch(`/leaderboard/${test.id}`)}
                             className="h-11 rounded-xl border-gray-200 dark:border-neutral-700 font-bold text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center justify-center gap-1"
                           >
                             <Trophy className="w-3.5 h-3.5 text-amber-500" />

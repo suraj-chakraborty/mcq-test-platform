@@ -11,20 +11,11 @@ import PdfList from '@/app/components/PdfList';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import UserProfile from '@/app/components/UserProfile';
-import UserProfileModal from '@/app/components/UserProfileModal';
+import dynamic from 'next/dynamic';
 import { UserAvatar } from '@/app/components/UserAvatar';
-import DescriptiveWriting from '../components/DescriptiveWriting';
-import DescriptivePage from '../descriptive/page';
-import DescriptiveHistory from '../components/DescriptiveHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import TestAttempt from '@/app/components/TestAttempt';
-import TestResults from '@/app/components/TestResults';
-import BattleRoom from '@/app/components/BattleRoom';
-import FlashcardDeck from '@/app/components/FlashcardDeck';
-import MathPhotoUpload from '@/app/components/MathPhotoUpload';
 import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@/app/providers/SettingsProvider';
@@ -60,7 +51,69 @@ import {
   ChevronRight,
   LogOut
 } from 'lucide-react';
-import { Skeleton, TestCardSkeleton, StatsSkeleton } from '@/app/components/Skeleton';
+import { Skeleton, TestCardSkeleton, StatsSkeleton, PYQCardSkeleton, FlashcardSkeleton, PdfListSkeleton } from '@/app/components/Skeleton';
+
+// Code-split heavy modals and non-initial tabs to trim initial client JS bundle
+const MathPhotoUpload = dynamic(() => import('@/app/components/MathPhotoUpload'), {
+  ssr: false,
+  loading: () => (
+    <div className="p-8 text-center flex flex-col items-center justify-center space-y-4">
+      <Skeleton className="w-16 h-16 rounded-full" />
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-4 w-64" />
+    </div>
+  ),
+});
+
+const FlashcardDeck = dynamic(() => import('@/app/components/FlashcardDeck'), {
+  ssr: false,
+  loading: () => <FlashcardSkeleton />,
+});
+
+const UserProfileModal = dynamic(() => import('@/app/components/UserProfileModal'), {
+  ssr: false,
+});
+
+const BattleRoom = dynamic(() => import('@/app/components/BattleRoom'), {
+  ssr: false,
+  loading: () => (
+    <div className="p-12 text-center flex flex-col items-center justify-center space-y-4">
+      <Skeleton className="w-12 h-12 rounded-xl mx-auto" />
+      <Skeleton className="h-6 w-40 mx-auto" />
+      <Skeleton className="h-4 w-56 mx-auto" />
+    </div>
+  ),
+});
+
+const DescriptivePage = dynamic(() => import('../descriptive/page'), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-4 p-4">
+      <Skeleton className="h-10 w-48" />
+      <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  ),
+});
+
+const TestAttempt = dynamic(() => import('@/app/components/TestAttempt'), {
+  ssr: false,
+  loading: () => (
+    <div className="p-8 text-center space-y-4">
+      <Skeleton className="h-8 w-64 mx-auto" />
+      <Skeleton className="h-48 w-full rounded-xl" />
+    </div>
+  ),
+});
+
+const TestResults = dynamic(() => import('@/app/components/TestResults'), {
+  ssr: false,
+  loading: () => (
+    <div className="p-8 text-center space-y-4">
+      <Skeleton className="h-8 w-48 mx-auto" />
+      <Skeleton className="h-60 w-full rounded-xl" />
+    </div>
+  ),
+});
 
 interface CardTheme {
   badgeClass: string;
@@ -256,6 +309,15 @@ export default function Dashboard() {
   const [isStudying, setIsStudying] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('current_affair');
+  const [loadedTabs, setLoadedTabs] = useState<Record<string, boolean>>({
+    current_affair: true,
+  });
+  const loadedTabsRef = React.useRef<Record<string, boolean>>({
+    current_affair: true,
+  });
+  const [isTabLoading, setIsTabLoading] = useState<Record<string, boolean>>({});
+  const fetchingTabsRef = React.useRef<Record<string, boolean>>({});
+  const profileFetchedRef = React.useRef(false);
 
   const [userStats, setUserStats] = useState<{
     level: number;
@@ -385,19 +447,19 @@ export default function Dashboard() {
     fetchUserProfile();
   };
 
-  const fetchDueCards = async () => {
+  const fetchDueCards = useCallback(async () => {
     try {
       const res = await fetch('/api/flashcards');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setDueFlashcards(data.flashcards);
+          setDueFlashcards(data.flashcards || []);
         }
       }
     } catch (err) {
       console.error('Failed to fetch flashcards:', err);
     }
-  };
+  }, []);
 
   const createFlashcards = async (testId: string) => {
     try {
@@ -417,9 +479,9 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !profileFetchedRef.current) {
+      profileFetchedRef.current = true;
       fetchUserProfile();
-      fetchDueCards();
     }
   }, [session, fetchUserProfile]);
 
@@ -441,7 +503,10 @@ export default function Dashboard() {
       router.push('/auth/signin');
     } else if (status === 'authenticated') {
       setIsLoading(false);
-      fetchUserProfile();
+      if (!profileFetchedRef.current) {
+        profileFetchedRef.current = true;
+        fetchUserProfile();
+      }
     }
   }, [status, router, fetchUserProfile]);
 
@@ -455,7 +520,7 @@ export default function Dashboard() {
     }
   };
 
-  const fetchPDFTests = async () => {
+  const fetchPDFTests = useCallback(async () => {
     try {
       const response = await fetch('/api/pdf-tests');
       const data = await response.json();
@@ -468,10 +533,43 @@ export default function Dashboard() {
       console.error('Error fetching PDF tests:', error);
       toast.error('Failed to fetch PDF tests');
       setPDFTests([]);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, []);
+
+  const prefetchTab = useCallback(async (tabKey: string) => {
+    if (loadedTabsRef.current[tabKey] || fetchingTabsRef.current[tabKey]) return;
+
+    fetchingTabsRef.current[tabKey] = true;
+    setIsTabLoading((prev) => ({ ...prev, [tabKey]: true }));
+
+    try {
+      if (tabKey === 'study') {
+        await fetchDueCards();
+      } else if (tabKey === 'pyq-pdf') {
+        await fetchPDFTests();
+      }
+      loadedTabsRef.current[tabKey] = true;
+      setLoadedTabs((prev) => ({ ...prev, [tabKey]: true }));
+    } catch (err) {
+      console.error(`Error prefetching tab ${tabKey}:`, err);
+    } finally {
+      setIsTabLoading((prev) => ({ ...prev, [tabKey]: false }));
+      fetchingTabsRef.current[tabKey] = false;
+    }
+  }, [fetchDueCards, fetchPDFTests]);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    if (!loadedTabs[tab]) {
+      prefetchTab(tab);
+    }
+  }, [loadedTabs, prefetchTab]);
+
+  useEffect(() => {
+    if (activeTab && activeTab !== 'current_affair' && !loadedTabs[activeTab]) {
+      prefetchTab(activeTab);
+    }
+  }, [activeTab, loadedTabs, prefetchTab]);
 
   const handleTestComplete = (results: any) => {
     setCurrentResults(results);
@@ -537,8 +635,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTests();
-    fetchPDFTests();
-    fetchTestAttempts();
+    // Non-critical: defer attempts fetching off the initial render path
+    if (typeof window !== 'undefined') {
+      const win = window as any;
+      if (typeof win.requestIdleCallback === 'function') {
+        win.requestIdleCallback(() => {
+          fetchTestAttempts();
+        });
+      } else {
+        setTimeout(() => {
+          fetchTestAttempts();
+        }, 800);
+      }
+    }
   }, []);
 
   const handleDelete = async (testId: string) => {
@@ -920,7 +1029,7 @@ export default function Dashboard() {
       )}
 
       {/* Tabs Container */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         {/* DESKTOP VIEW: Top Tabs List (Hidden on mobile, smoothly accessible on desktop) */}
         <div className="hidden md:block mb-6 w-full transition-all">
           <TabsList className="w-full h-auto grid grid-cols-5 gap-1.5 p-1 bg-gray-100/80 dark:bg-neutral-900/80 rounded-xl border border-gray-200/70 dark:border-neutral-800 shadow-sm">
@@ -934,6 +1043,8 @@ export default function Dashboard() {
 
             <TabsTrigger
               value="study"
+              onMouseEnter={() => prefetchTab('study')}
+              onFocus={() => prefetchTab('study')}
               className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
             >
               <Brain className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
@@ -945,6 +1056,8 @@ export default function Dashboard() {
 
             <TabsTrigger
               value="pdf"
+              onMouseEnter={() => prefetchTab('pdf')}
+              onFocus={() => prefetchTab('pdf')}
               className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
             >
               <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
@@ -953,6 +1066,8 @@ export default function Dashboard() {
 
             <TabsTrigger
               value="pyq-pdf"
+              onMouseEnter={() => prefetchTab('pyq-pdf')}
+              onFocus={() => prefetchTab('pyq-pdf')}
               className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
             >
               <Layers className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
@@ -961,6 +1076,8 @@ export default function Dashboard() {
 
             <TabsTrigger
               value="descriptive"
+              onMouseEnter={() => prefetchTab('descriptive')}
+              onFocus={() => prefetchTab('descriptive')}
               className="h-10 rounded-lg px-3 font-semibold text-xs tracking-tight data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center gap-2 data-[state=active]:shadow-sm"
             >
               <PenTool className="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
@@ -1176,6 +1293,7 @@ export default function Dashboard() {
                           <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
                             <button
                               onClick={() => router.push(`/edit-test/${test.id}`)}
+                              onMouseEnter={() => router.prefetch(`/edit-test/${test.id}`)}
                               className="py-1.5 rounded-lg border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
                             >
                               Edit
@@ -1192,6 +1310,7 @@ export default function Dashboard() {
                           <Button
                             className={`w-full h-10 rounded-lg ${theme.btnClass} font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center`}
                             onClick={() => router.push(`/take-test/${test.id}`)}
+                            onMouseEnter={() => router.prefetch(`/take-test/${test.id}`)}
                           >
                             Take Assessment <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                           </Button>
@@ -1220,7 +1339,9 @@ export default function Dashboard() {
 
         {/* TAB 2: Study / Flashcards */}
         <TabsContent value="study" className="space-y-6">
-          {isStudying ? (
+          {isTabLoading['study'] && !loadedTabs['study'] ? (
+            <FlashcardSkeleton />
+          ) : isStudying ? (
             <FlashcardDeck
               cards={dueFlashcards}
               onComplete={() => {
@@ -1293,7 +1414,11 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {pdfTests.length > 0 ? (
+              {isTabLoading['pyq-pdf'] && !loadedTabs['pyq-pdf'] ? (
+                [1, 2, 3, 4, 5, 6].map((i) => (
+                  <PYQCardSkeleton key={i} />
+                ))
+              ) : pdfTests.length > 0 ? (
                 pdfTests.map((test) => {
                   const topic = getTestTopic(test);
                   const questionCount = test.questions?.length || 10;
@@ -1368,6 +1493,7 @@ export default function Dashboard() {
                       <div className="pt-4">
                         <Button
                           onClick={() => router.push(`/pdf-tests/${test.id}/attempt`)}
+                          onMouseEnter={() => router.prefetch(`/pdf-tests/${test.id}/attempt`)}
                           className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 group/btn cursor-pointer"
                         >
                           <span>Attempt Assessment</span>
@@ -1454,8 +1580,10 @@ export default function Dashboard() {
                       return (
                         <button
                           key={t.id}
+                          onMouseEnter={() => prefetchTab(t.id)}
+                          onTouchStart={() => prefetchTab(t.id)}
                           onClick={() => {
-                            setActiveTab(t.id);
+                            handleTabChange(t.id);
                             setIsMobileDrawerOpen(false);
                           }}
                           className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left font-bold text-xs transition-all ${

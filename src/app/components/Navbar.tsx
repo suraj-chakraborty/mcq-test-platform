@@ -68,6 +68,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={true}
                     className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold tracking-tight transition-all ${
                       active
                         ? 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-white shadow-sm border border-gray-200/70 dark:border-neutral-700'
@@ -88,6 +89,7 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/create-test"
+                  prefetch={true}
                   className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -96,6 +98,7 @@ export default function Navbar() {
 
                 <Link
                   href="/settings"
+                  prefetch={false}
                   className="p-2 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors hidden sm:flex items-center justify-center"
                   title="Settings"
                 >
@@ -146,6 +149,7 @@ export default function Navbar() {
 
                           <Link
                             href="/dashboard"
+                            prefetch={true}
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                           >
@@ -155,6 +159,7 @@ export default function Navbar() {
 
                           <Link
                             href="/upload"
+                            prefetch={true}
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                           >
@@ -164,6 +169,7 @@ export default function Navbar() {
 
                           <Link
                             href="/profile"
+                            prefetch={false}
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                           >
@@ -173,6 +179,7 @@ export default function Navbar() {
 
                           <Link
                             href="/settings"
+                            prefetch={false}
                             onClick={() => setUserDropdownOpen(false)}
                             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
                           >
@@ -256,6 +263,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
+                    prefetch={true}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
                       active
@@ -271,6 +279,7 @@ export default function Navbar() {
 
               <Link
                 href="/profile"
+                prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800/60"
               >
@@ -280,6 +289,7 @@ export default function Navbar() {
 
               <Link
                 href="/settings"
+                prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800/60"
               >
