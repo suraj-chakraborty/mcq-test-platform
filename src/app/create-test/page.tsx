@@ -122,7 +122,17 @@ export default function CreateTestPage() {
         }),
       });
 
-      const data = await response.json();
+      if (response.status === 502 || response.status === 504) {
+        throw new Error('Server timeout (502 Bad Gateway). On Netlify free tier, generation may exceed function limits. Please try with fewer pages or a smaller question count.');
+      }
+
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error(`Server returned status ${response.status}: Failed to parse server response.`);
+      }
+
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to synthesize test');
       }
