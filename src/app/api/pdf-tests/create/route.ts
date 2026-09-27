@@ -374,8 +374,8 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     const customModel = req.headers.get('x-ai-model') || undefined;
     const genAI = getGenAIInstance(customApiKey);
     const modelsToTry = customModel
-      ? [customModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']
-      : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      ? [customModel, 'gemini-3.8-flash', 'gemini-3.8-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+      : ['gemini-3.8-flash', 'gemini-3.8-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
     let aiText = '';
 
     for (const modelName of modelsToTry) {
