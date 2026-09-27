@@ -4,7 +4,3 @@
 
 [functions]
   node_bundler = "esbuild"
-  timeout = 26
-
-[functions."api/*"]
-  timeout = 26
