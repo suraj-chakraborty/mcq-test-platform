@@ -49,12 +49,35 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+    compress: true,
     devIndicators: false,
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+    },
+    experimental: {
+        optimizePackageImports: ['lucide-react', 'framer-motion', 'sonner'],
+    },
+    images: {
+        formats: ['image/avif', 'image/webp'],
+        remotePatterns: [
+            { protocol: 'https', hostname: 'res.cloudinary.com' },
+            { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+        ],
+    },
     async headers() {
         return [
             {
                 source: '/:path*',
                 headers: securityHeaders,
+            },
+            {
+                source: '/(logo.png|favicon.ico|icon.png)',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'public, max-age=31536000, immutable',
+                    },
+                ],
             },
         ];
     },

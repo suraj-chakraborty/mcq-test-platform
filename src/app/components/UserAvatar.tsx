@@ -55,6 +55,8 @@ export function UserAvatar({
       <img
         src={image}
         alt={displayName}
+        loading="lazy"
+        decoding="async"
         className={`${sizeClasses} ${roundedClassName} object-cover shadow-sm shrink-0 border border-gray-200 dark:border-neutral-700 ${className}`}
       />
     );

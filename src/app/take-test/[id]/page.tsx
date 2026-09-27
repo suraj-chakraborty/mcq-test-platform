@@ -51,6 +51,60 @@ interface Test {
   createdAt?: string;
 }
 
+interface ExamCountdownTimerProps {
+  initialSeconds: number;
+  onTimeUp: () => void;
+}
+
+const ExamCountdownTimer = React.memo(function ExamCountdownTimer({
+  initialSeconds,
+  onTimeUp,
+}: ExamCountdownTimerProps) {
+  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+  const onTimeUpRef = useRef(onTimeUp);
+  onTimeUpRef.current = onTimeUp;
+
+  useEffect(() => {
+    setSecondsLeft(initialSeconds);
+  }, [initialSeconds]);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onTimeUpRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [initialSeconds]);
+
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const isTimeCritical = minutes < 2;
+
+  return (
+    <div
+      className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-black tracking-wider transition-colors shrink-0 shadow-sm ${
+        isTimeCritical
+          ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse'
+          : 'bg-slate-800/90 text-slate-100 border border-slate-700/80'
+      }`}
+    >
+      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+      <span>
+        {minutes}:{seconds.toString().padStart(2, '0')}
+      </span>
+    </div>
+  );
+});
+
 export default function TakeTestPage() {
   const router = useRouter();
   const params = useParams();
@@ -67,7 +121,6 @@ export default function TakeTestPage() {
 
   const [visited, setVisited] = useState<Record<number, boolean>>({});
   const [markedForReview, setMarkedForReview] = useState<Record<number, boolean>>({});
-  const [timeLeft, setTimeLeft] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -167,7 +220,6 @@ export default function TakeTestPage() {
 
         const testData = data.test as Test;
         setTest(testData);
-        setTimeLeft(testData.duration * 60);
         setAnswers(new Array(testData.questions.length).fill(-1));
       } catch (err) {
         console.error('Error fetching test:', err);
@@ -182,24 +234,6 @@ export default function TakeTestPage() {
       fetchTest();
     }
   }, [session, params.id, router]);
-
-  // Global Countdown Timer
-  useEffect(() => {
-    if (!test || timeLeft <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [test?.id, handleSubmit]);
 
   const handleAnswerSelect = (optionIndex: number) => {
     const newAnswers = [...answers];
@@ -302,10 +336,6 @@ export default function TakeTestPage() {
     );
   }
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const isTimeCritical = minutes < 2;
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 dark:bg-neutral-950 text-gray-900 dark:text-white select-none">
       {/* 1. TOP HEADER (Responsive & Compact on Mobile) */}
@@ -334,18 +364,10 @@ export default function TakeTestPage() {
           {/* Right: Timer, Palette & Submit */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Live Countdown Timer */}
-            <div
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-lg text-xs font-black tracking-wider transition-colors shrink-0 shadow-sm ${
-                isTimeCritical
-                  ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50 animate-pulse'
-                  : 'bg-slate-800/90 text-slate-100 border border-slate-700/80'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5 text-indigo-400" />
-              <span>
-                {minutes}:{seconds.toString().padStart(2, '0')}
-              </span>
-            </div>
+            <ExamCountdownTimer
+              initialSeconds={test.duration * 60}
+              onTimeUp={handleSubmit}
+            />
 
             {/* Mobile Palette Drawer Trigger */}
             <Button
@@ -849,7 +871,7 @@ export default function TakeTestPage() {
           </DialogHeader>
 
           <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-xs font-semibold">
-            ⏳ Time remaining: <span className="font-mono font-black">{minutes}:{seconds.toString().padStart(2, '0')}</span> • {stats.answered} of {test.questions.length} answered
+            ⏳ Test in progress • {stats.answered} of {test.questions.length} answered
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0 pt-2">

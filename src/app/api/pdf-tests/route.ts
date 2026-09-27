@@ -30,15 +30,39 @@ export async function GET(request: Request) {
     const [tests, total] = await Promise.all([
       prisma.test.findMany({
         where,
-        include: {
-          pdfs: true,
-          questions: true
-        } as any,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          duration: true,
+          createdAt: true,
+          updatedAt: true,
+          pdfs: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          questions: {
+            select: {
+              id: true,
+              question: true,
+              options: true,
+              correctAnswer: true,
+              explanation: true,
+            },
+          },
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip,
-        take: limit
+        take: limit,
       }),
-      prisma.test.count({ where })
+      prisma.test.count({ where }),
     ]);
 
     return NextResponse.json({

@@ -52,6 +52,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { Skeleton, TestCardSkeleton, StatsSkeleton, PYQCardSkeleton, FlashcardSkeleton, PdfListSkeleton } from '@/app/components/Skeleton';
+import { clientCache, fetchWithCache } from '@/app/lib/clientCache';
 
 // Code-split heavy modals and non-initial tabs to trim initial client JS bundle
 const MathPhotoUpload = dynamic(() => import('@/app/components/MathPhotoUpload'), {
@@ -418,24 +419,21 @@ export default function Dashboard() {
 
   const fetchUserProfile = useCallback(async () => {
     try {
-      const res = await fetch('/api/users/profile');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.user) {
-          setUserProfile(data.user);
-          setUserStats({
-            level: data.user.level || 4,
-            streak: data.user.streak || 1,
-            xp: data.user.xp || 120,
-            xpInCurrentLevel: data.user.xpInCurrentLevel || 40,
-            xpNeededForNextLevel: data.user.xpNeededForNextLevel || 100,
-          });
+      const data = await fetchWithCache<{ success?: boolean; user?: any }>('/api/users/profile');
+      if (data?.success && data?.user) {
+        setUserProfile(data.user);
+        setUserStats({
+          level: data.user.level || 4,
+          streak: data.user.streak || 1,
+          xp: data.user.xp || 120,
+          xpInCurrentLevel: data.user.xpInCurrentLevel || 40,
+          xpNeededForNextLevel: data.user.xpNeededForNextLevel || 100,
+        });
 
-          if (!data.user.phone || !data.user.targetExam) {
-            setShowProfilePrompt(true);
-          } else {
-            setShowProfilePrompt(false);
-          }
+        if (!data.user.phone || !data.user.targetExam) {
+          setShowProfilePrompt(true);
+        } else {
+          setShowProfilePrompt(false);
         }
       }
     } catch (err) {
@@ -447,14 +445,11 @@ export default function Dashboard() {
     fetchUserProfile();
   };
 
-  const fetchDueCards = useCallback(async () => {
+  const fetchDueCards = useCallback(async (forceFresh = false) => {
     try {
-      const res = await fetch('/api/flashcards');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          setDueFlashcards(data.flashcards || []);
-        }
+      const data = await fetchWithCache<{ success?: boolean; flashcards?: any[] }>('/api/flashcards', { forceFresh });
+      if (data?.success) {
+        setDueFlashcards(data.flashcards || []);
       }
     } catch (err) {
       console.error('Failed to fetch flashcards:', err);
@@ -471,7 +466,8 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         toast.success(`Created ${data.count} Flashcards! Go to Study tab.`);
-        fetchDueCards();
+        clientCache.invalidate('/api/flashcards');
+        fetchDueCards(true);
       }
     } catch (err) {
       toast.error('Failed to create flashcards');
@@ -520,11 +516,10 @@ export default function Dashboard() {
     }
   };
 
-  const fetchPDFTests = useCallback(async () => {
+  const fetchPDFTests = useCallback(async (forceFresh = false) => {
     try {
-      const response = await fetch('/api/pdf-tests');
-      const data = await response.json();
-      if (data.success) {
+      const data = await fetchWithCache<{ success?: boolean; tests?: PDFFile[] }>('/api/pdf-tests', { forceFresh });
+      if (data?.success) {
         setPDFTests(data.tests || []);
       } else {
         setPDFTests([]);
@@ -590,7 +585,8 @@ export default function Dashboard() {
       if (data.success) {
         toast.success('PDF test deleted successfully');
         setTestToDelete(null);
-        fetchPDFTests();
+        clientCache.invalidate('/api/pdf-tests');
+        fetchPDFTests(true);
       } else {
         throw new Error(data.error || 'Failed to delete PDF test');
       }
@@ -605,13 +601,12 @@ export default function Dashboard() {
     setCurrentResults(null);
   };
 
-  const fetchTests = async () => {
+  const fetchTests = async (forceFresh = false) => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/tests');
-      const data = await response.json();
-      setTests(data.tests || []);
-      setAllTestsLoaded((data.tests || []).length <= 6);
+      const data = await fetchWithCache<{ tests?: any[] }>('/api/tests', { forceFresh });
+      setTests(data?.tests || []);
+      setAllTestsLoaded((data?.tests || []).length <= 6);
     } catch (error) {
       console.error('Error fetching tests:', error);
       toast.error('Failed to load tests');
@@ -796,7 +791,8 @@ export default function Dashboard() {
             contextPDF: [],
             pyqPDF: [],
           });
-          fetchPDFTests();
+          clientCache.invalidate('/api/pdf-tests');
+          fetchPDFTests(true);
         }, 1000);
       } else {
         throw new Error(data.error || 'Failed to create PDF test');
