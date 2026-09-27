@@ -14,6 +14,11 @@ jest.mock('@/app/lib/gamification', () => ({
     unlockedAchievements: [],
   }),
 }));
+jest.mock('@/app/lib/idempotency', () => ({
+  extractIdempotencyKey: jest.fn().mockReturnValue('mock-idempotency-key-test'),
+  acquireIdempotencyLock: jest.fn().mockResolvedValue(true),
+  releaseIdempotencyLock: jest.fn().mockResolvedValue(true),
+}));
 jest.mock('@/app/lib/prisma', () => ({
   prisma: {
     test: {

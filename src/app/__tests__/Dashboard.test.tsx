@@ -4,6 +4,7 @@ import Dashboard from '../dashboard/page';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner as Loading } from '../components/LoadingSpinner';
+import { clientCache } from '@/app/lib/clientCache';
 
 // Mock dependencies
 jest.mock('next-auth/react');
@@ -52,6 +53,7 @@ describe('Dashboard Component', () => {
   };
 
   beforeEach(() => {
+    clientCache.clear();
     jest.clearAllMocks();
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
     (useSession as jest.Mock).mockReturnValue({ data: mockSession, status: 'authenticated' });
