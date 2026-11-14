@@ -52,6 +52,13 @@ export async function POST(
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
+    if (test.userId !== user.id && !test.isPublic) {
+      return NextResponse.json(
+        { error: 'This assessment is private to its creator and cannot be attempted.' },
+        { status: 403 }
+      );
+    }
+
     if (test.questions.length === 0) {
       return NextResponse.json({ error: 'Test has no questions to grade' }, { status: 400 });
     }

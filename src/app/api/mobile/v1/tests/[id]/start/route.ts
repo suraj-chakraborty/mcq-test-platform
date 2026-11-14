@@ -50,6 +50,13 @@ export async function GET(
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
+    if (test.userId !== user.id && !test.isPublic) {
+      return NextResponse.json(
+        { error: 'This assessment is private to its creator and cannot be attempted.' },
+        { status: 403 }
+      );
+    }
+
     if (test.questions.length === 0) {
       return NextResponse.json({ error: 'This test does not contain any questions.' }, { status: 400 });
     }

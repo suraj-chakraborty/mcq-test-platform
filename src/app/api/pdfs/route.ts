@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
+import { getMobileAuthUser } from '@/app/lib/mobileAuth';
 import { prisma } from '@/app/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    let user = await getMobileAuthUser(req);
+    if (!user) {
+      const session = await getServerSession(authOptions);
+      if (session?.user?.id) {
+        user = session.user as any;
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -21,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     const whereClause: any = {
       test: {
-        userId: session.user.id
+        userId: user.id
       }
     };
 

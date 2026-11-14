@@ -23,23 +23,38 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
-    const filter = searchParams.get('filter') || 'all'; // 'all' | 'mine'
+    const filter = searchParams.get('filter') || 'mine'; // 'mine' | 'public' | 'all'
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {};
+    const andConditions: any[] = [];
 
-    if (filter === 'mine') {
-      whereClause.userId = user.id;
+    // Enforce privacy: users can only see their own tests, or tests explicitly made public
+    if (filter === 'public' || filter === 'community') {
+      andConditions.push({ isPublic: true });
+    } else if (filter === 'all') {
+      andConditions.push({
+        OR: [
+          { userId: user.id },
+          { isPublic: true },
+        ],
+      });
+    } else {
+      // Default: 'mine' - only tests created/uploaded by the authenticated user
+      andConditions.push({ userId: user.id });
     }
 
     if (search.trim()) {
-      whereClause.OR = [
-        { title: { contains: search.trim(), mode: 'insensitive' } },
-        { description: { contains: search.trim(), mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { title: { contains: search.trim(), mode: 'insensitive' } },
+          { description: { contains: search.trim(), mode: 'insensitive' } },
+        ],
+      });
     }
+
+    const whereClause = andConditions.length === 1 ? andConditions[0] : { AND: andConditions };
 
     const [tests, totalCount] = await Promise.all([
       prisma.test.findMany({
@@ -51,6 +66,7 @@ export async function GET(req: Request) {
           duration: true,
           createdAt: true,
           userId: true,
+          isPublic: true,
           user: {
             select: {
               name: true,
@@ -88,6 +104,7 @@ export async function GET(req: Request) {
       attemptsCount: t._count.attempts,
       author: t.user?.name || 'Academic Scholar',
       isOwner: t.userId === user?.id,
+      isPublic: Boolean(t.isPublic),
       createdAt: t.createdAt,
       documents: t.pdfs.map((p) => p.name),
     }));

@@ -27,6 +27,13 @@ export async function GET(
 
     const isOwner = test.userId === user.id;
 
+    if (!isOwner && !test.isPublic) {
+      return NextResponse.json(
+        { message: 'This assessment is private to its creator' },
+        { status: 403 }
+      );
+    }
+
     // For editing purposes, owner gets full questions with correct answers
     return NextResponse.json({
       success: true,
@@ -37,6 +44,7 @@ export async function GET(
         duration: test.duration,
         userId: test.userId,
         isOwner,
+        isPublic: Boolean(test.isPublic),
         createdAt: test.createdAt,
         questions: test.questions.map((q) => ({
           id: q.id,
@@ -68,7 +76,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, description, duration, questions } = await req.json();
+    const { title, description, duration, questions, isPublic } = await req.json();
 
     const existingTest = await prisma.test.findUnique({
       where: { id },
@@ -89,6 +97,7 @@ export async function PUT(
           ...(title ? { title: String(title).trim() } : {}),
           ...(description !== undefined ? { description: String(description).trim() } : {}),
           ...(duration ? { duration: Number(duration) } : {}),
+          ...(typeof isPublic === 'boolean' ? { isPublic } : {}),
         },
       });
 
@@ -121,6 +130,64 @@ export async function PUT(
     console.error('Mobile test update error:', error);
     return NextResponse.json(
       { error: 'Failed to update test' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const id = (await params).id;
+  try {
+    const user = await resolveAuthUser(req);
+    if (!user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+
+    const existingTest = await prisma.test.findUnique({
+      where: { id },
+    });
+
+    if (!existingTest) {
+      return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+    }
+
+    if (existingTest.userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: You do not own this test' }, { status: 403 });
+    }
+
+    const updateData: any = {};
+    if (typeof body.isPublic === 'boolean') {
+      updateData.isPublic = body.isPublic;
+    }
+    if (body.title && typeof body.title === 'string') {
+      updateData.title = body.title.trim();
+    }
+    if (typeof body.duration === 'number') {
+      updateData.duration = body.duration;
+    }
+
+    const updatedTest = await prisma.test.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Test is now ${updatedTest.isPublic ? 'Public' : 'Private'}`,
+      test: {
+        id: updatedTest.id,
+        isPublic: updatedTest.isPublic,
+      },
+    });
+  } catch (error) {
+    console.error('Mobile test patch error:', error);
+    return NextResponse.json(
+      { error: 'Failed to patch test' },
       { status: 500 }
     );
   }

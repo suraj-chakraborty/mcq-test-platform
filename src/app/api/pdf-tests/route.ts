@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
+import { getMobileAuthUser } from '@/app/lib/mobileAuth';
 import { prisma } from '@/app/lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    let user = await getMobileAuthUser(request);
+    if (!user) {
+      const session = await getServerSession(authOptions);
+      if (session?.user?.id) {
+        user = session.user as any;
+      }
+    }
+
+    if (!user || !user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -17,7 +25,7 @@ export async function GET(request: Request) {
     const skip = (page - 1) * limit;
 
     const where = {
-      userId: session.user.id,
+      userId: user.id,
       pdfs: { some: {} },
       ...(search ? {
         title: {
