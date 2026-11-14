@@ -51,6 +51,7 @@ const securityHeaders = [
 const nextConfig = {
     compress: true,
     devIndicators: false,
+    serverExternalPackages: ['pdfjs-dist'],
     compiler: {
         removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
     },

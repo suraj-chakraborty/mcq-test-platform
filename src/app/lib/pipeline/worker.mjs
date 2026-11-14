@@ -1,7 +1,16 @@
 import { parentPort, workerData } from 'worker_threads';
 
 async function parsePdf(bufferData, options = {}) {
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  let pdfjs;
+  try {
+    pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  } catch (err1) {
+    try {
+      pdfjs = await import('pdfjs-dist');
+    } catch (err2) {
+      throw new Error(`Failed to load pdfjs-dist: ${err1?.message || err1}`);
+    }
+  }
 
   const { maxPages = 500 } = options;
 

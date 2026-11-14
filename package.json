@@ -46,6 +46,7 @@
         "nodemailer": "^6.10.1",
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
+        "pdfjs-dist": "4.8.69",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
         "react-dropzone": "^14.3.8",

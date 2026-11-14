@@ -4,3 +4,5 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["pdfjs-dist", "@prisma/client", "prisma"]
+  included_files = ["src/app/lib/pipeline/worker.mjs", "node_modules/pdfjs-dist/**"]
