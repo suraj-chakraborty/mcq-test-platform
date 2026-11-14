@@ -64,14 +64,21 @@ export async function downloadCloudinaryPdf(url: string, publicId?: string): Pro
   if (!targetPublicId && url.includes('/upload/')) {
     const parts = url.split('/upload/');
     if (parts[1]) {
-      targetPublicId = parts[1].replace(/^v\d+\//, '').replace(/\.pdf$/i, '');
+      // Remove version segment (e.g. v1794506734/), but preserve the file extension for raw assets
+      targetPublicId = parts[1].replace(/^v\d+\//, '');
     }
+  }
+
+  // Ensure raw PDF assets keep their .pdf extension if present in the source URL
+  if (targetPublicId && !targetPublicId.toLowerCase().endsWith('.pdf') && url.toLowerCase().includes('.pdf')) {
+    targetPublicId = `${targetPublicId}.pdf`;
   }
 
   // 2. Try signed private download URL using Cloudinary SDK
   if (targetPublicId) {
     try {
       const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+      // For raw resources, Cloudinary expects public_id with extension and empty format
       const signedUrl = cloudinary.utils.private_download_url(targetPublicId, '', {
         resource_type: 'raw',
         type: 'upload',
@@ -82,18 +89,31 @@ export async function downloadCloudinaryPdf(url: string, publicId?: string): Pro
       if (res.ok) {
         return Buffer.from(await res.arrayBuffer());
       }
-      console.warn(`Signed private download returned ${res.status}`);
+      console.warn(`Signed private download returned ${res.status} for ${targetPublicId}`);
+
+      // Fallback: If public_id without extension + format='pdf' is needed
+      const idWithoutExt = targetPublicId.replace(/\.pdf$/i, '');
+      const signedUrlFallback = cloudinary.utils.private_download_url(idWithoutExt, 'pdf', {
+        resource_type: 'raw',
+        type: 'upload',
+        expires_at: expiresAt,
+      });
+      const resFallback = await fetch(signedUrlFallback);
+      if (resFallback.ok) {
+        return Buffer.from(await resFallback.arrayBuffer());
+      }
     } catch (e) {
       console.warn('Private download URL error:', e);
     }
 
-    // 3. Try cloudinary.url with sign_url
+    // 3. Try cloudinary.url with sign_url and analytics: false
     try {
       const signedUrl2 = cloudinary.url(targetPublicId, {
         resource_type: 'raw',
         sign_url: true,
         secure: true,
         type: 'upload',
+        analytics: false,
       });
       const res = await fetch(signedUrl2);
       if (res.ok) {

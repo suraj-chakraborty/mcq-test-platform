@@ -88,11 +88,13 @@ export async function POST(req: Request) {
       },
     });
 
-    // Revoke all previous mobile refresh tokens for security
-    await (prisma as any).mobileRefreshToken.updateMany({
-      where: { userId: user.id },
-      data: { revoked: true },
-    });
+    // Revoke all previous mobile refresh tokens for security (if table exists)
+    if ((prisma as any).mobileRefreshToken?.updateMany) {
+      await (prisma as any).mobileRefreshToken.updateMany({
+        where: { userId: user.id },
+        data: { revoked: true },
+      });
+    }
 
     return NextResponse.json(
       { message: 'Password reset successfully. You can now sign in with your new password.' },

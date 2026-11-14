@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { encode, decode } from 'next-auth/jwt';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
 import { prisma } from './prisma';
 
 const MOBILE_ACCESS_TOKEN_LIFETIME = 15 * 60; // 15 minutes in seconds
@@ -62,15 +64,21 @@ export async function createMobileTokens(
   const expiresAt = new Date(Date.now() + MOBILE_REFRESH_TOKEN_LIFETIME_DAYS * 24 * 60 * 60 * 1000);
 
   // 3. Persist refresh token hash in database
-  await (prisma as any).mobileRefreshToken.create({
-    data: {
-      userId: user.id,
-      tokenHash,
-      device: device || 'Android Mobile App',
-      expiresAt,
-      revoked: false,
-    },
-  });
+  if ((prisma as any).mobileRefreshToken?.create) {
+    try {
+      await (prisma as any).mobileRefreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          device: device || 'Android Mobile App',
+          expiresAt,
+          revoked: false,
+        },
+      });
+    } catch (err) {
+      console.warn('Could not save mobile refresh token to database:', err);
+    }
+  }
 
   return {
     accessToken,
@@ -93,6 +101,10 @@ export async function rotateMobileRefreshToken(
 
   const tokenHash = hashRefreshToken(rawRefreshToken);
 
+  if (!(prisma as any).mobileRefreshToken?.findUnique) {
+    throw new Error('Refresh token service is temporarily unavailable');
+  }
+
   const existingToken = await (prisma as any).mobileRefreshToken.findUnique({
     where: { tokenHash },
     include: { user: true },
@@ -104,10 +116,12 @@ export async function rotateMobileRefreshToken(
 
   if (existingToken.revoked) {
     // If a revoked token is re-used, possible token compromise! Revoke all tokens for this user as a safeguard.
-    await (prisma as any).mobileRefreshToken.updateMany({
-      where: { userId: existingToken.userId },
-      data: { revoked: true },
-    });
+    if ((prisma as any).mobileRefreshToken?.updateMany) {
+      await (prisma as any).mobileRefreshToken.updateMany({
+        where: { userId: existingToken.userId },
+        data: { revoked: true },
+      });
+    }
     throw new Error('Revoked token reuse detected. All sessions terminated.');
   }
 
@@ -116,10 +130,12 @@ export async function rotateMobileRefreshToken(
   }
 
   // Revoke old token
-  await (prisma as any).mobileRefreshToken.update({
-    where: { id: existingToken.id },
-    data: { revoked: true },
-  });
+  if ((prisma as any).mobileRefreshToken?.update) {
+    await (prisma as any).mobileRefreshToken.update({
+      where: { id: existingToken.id },
+      data: { revoked: true },
+    });
+  }
 
   const user = existingToken.user;
 
@@ -155,10 +171,12 @@ export async function revokeMobileRefreshToken(rawRefreshToken: string): Promise
 
   try {
     const tokenHash = hashRefreshToken(rawRefreshToken);
-    await (prisma as any).mobileRefreshToken.updateMany({
-      where: { tokenHash },
-      data: { revoked: true },
-    });
+    if ((prisma as any).mobileRefreshToken?.updateMany) {
+      await (prisma as any).mobileRefreshToken.updateMany({
+        where: { tokenHash },
+        data: { revoked: true },
+      });
+    }
     return true;
   } catch (err) {
     console.error('Error revoking mobile refresh token:', err);
@@ -194,6 +212,27 @@ export async function getMobileAuthUser(req: Request) {
       });
       return user;
     }
+  }
+
+  return null;
+}
+
+/**
+ * Universal auth resolver: tries mobile Bearer JWT first, falls back to NextAuth session cookies.
+ */
+export async function resolveAuthUser(req: Request) {
+  const mobileUser = await getMobileAuthUser(req);
+  if (mobileUser) return mobileUser;
+
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      return prisma.user.findUnique({
+        where: { id: session.user.id },
+      });
+    }
+  } catch (err) {
+    // Ignore session resolution error in purely non-browser environments
   }
 
   return null;
