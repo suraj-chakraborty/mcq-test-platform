@@ -71,6 +71,23 @@ export async function GET(
     }
 
     if (!attempt || !attempt.test) {
+      // Fallback: check if the passed param id was directly the attemptId
+      attempt = await prisma.testAttempt.findFirst({
+        where: {
+          id: testId,
+          userId: user.id,
+        },
+        include: {
+          test: {
+            include: {
+              questions: true,
+            },
+          },
+        },
+      });
+    }
+
+    if (!attempt || !attempt.test) {
       return NextResponse.json(
         { error: 'No completed attempt found for this assessment' },
         { status: 404 }

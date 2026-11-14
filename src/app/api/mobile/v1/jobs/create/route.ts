@@ -14,6 +14,7 @@ const pdfItemSchema = z.object({
   name: z.string().min(1),
   url: z.string().url('Invalid PDF URL'),
   size: z.number().optional(),
+  publicId: z.string().optional(),
 });
 
 const mobileJobCreateSchema = z.object({
