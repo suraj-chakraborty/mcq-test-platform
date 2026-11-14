@@ -289,6 +289,8 @@ export class NetlifyBackgroundRunner implements IJobRunner {
         topic,
         numQuestions,
         totalPages: totalDocumentPages,
+        customApiKey: payload.apiKey,
+        customModel: payload.model,
       });
       questions = mapReduceResult.questions;
       coverageReport = mapReduceResult.coverage;

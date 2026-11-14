@@ -26,6 +26,9 @@ const mobileJobCreateSchema = z.object({
   contextPDFs: z.array(pdfItemSchema).min(1, 'At least one context PDF is required'),
   pyqPDFs: z.array(pdfItemSchema).optional().default([]),
   idempotencyKey: z.string().optional(),
+  aiProvider: z.string().optional(),
+  apiKey: z.string().optional(),
+  model: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -67,6 +70,9 @@ export async function POST(req: Request) {
       contextPDFs,
       pyqPDFs,
       idempotencyKey: clientKey,
+      aiProvider,
+      apiKey,
+      model,
     } = validation.data;
 
     const idempotencyKey = extractIdempotencyKey(req, clientKey, {
@@ -85,6 +91,9 @@ export async function POST(req: Request) {
       numQuestions,
       contextPDFs,
       pyqPDFs,
+      aiProvider,
+      apiKey,
+      model,
     });
 
     return NextResponse.json({
