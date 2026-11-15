@@ -9,7 +9,7 @@ declare module 'pdf-parse' {
   }
 
   function PDFParse(dataBuffer: Buffer, options?: {
-    pagerender?: (pageData: any) => string;
+    pagerender?: (pageData: any) => string | Promise<string>;
     max?: number;
     version?: string;
   }): Promise<PDFData>;

@@ -111,7 +111,7 @@ async function extractWithPdfParse(
       }
     };
 
-    const parsed = await pdfParse(buffer, { max: maxPages, pagerender });
+    const parsed = await pdfParse(buffer, { max: maxPages, pagerender } as any);
     const text = (parsed.text || '').trim();
     const pageCount = parsed.numpages || (pages.length > 0 ? pages.length : 1);
     const isScanned = text.length < 50 || (pages.length > 0 && lowDensityPages.length > pageCount * 0.7);

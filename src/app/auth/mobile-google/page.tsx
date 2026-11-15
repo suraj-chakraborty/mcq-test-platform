@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 
-export default function MobileGoogleAuthBridge() {
+export const dynamic = 'force-dynamic';
+
+function MobileGoogleAuthBridgeContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const scheme = searchParams.get('scheme') || 'mcqtestplatformmobile';
@@ -100,5 +102,19 @@ export default function MobileGoogleAuthBridge() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MobileGoogleAuthBridge() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6 font-sans">
+          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <MobileGoogleAuthBridgeContent />
+    </Suspense>
   );
 }
