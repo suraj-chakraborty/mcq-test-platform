@@ -486,8 +486,8 @@ You are a premier senior examiner and question author for competitive examinatio
 ============================================================
 CRITICAL TEMPORAL MANDATE:
 - CURRENT DATE: **${currentMonthYear}** (Year: **${currentYear}**)
-- ALL QUESTIONS MUST BE STRICTLY FROM **${currentYear}** (Specifically **${currentMonthName} ${currentYear}** and recent months of **${currentYear}**).
-- NEVER generate questions from outdated past years (such as 2022, 2023, or 2024). Questions MUST test actual current events of ${currentYear}.
+- QUESTIONS MUST BE AUTHENTIC, HIGH-YIELD CURRENT AFFAIRS FROM THE RECENT EXAMINATION CYCLE (${currentYear - 1}–${currentYear}).
+- Focus on real-world events, landmark global summits, space/defense missions, economic corridors, major awards, sports championships, and national schemes.
 ============================================================
 
 Your task is to generate **${numQuestions}** authentic, high-yield, factually accurate Multiple-Choice Questions (MCQs) on **RECENT CURRENT AFFAIRS OF ${currentYear}**.
@@ -495,18 +495,18 @@ Your task is to generate **${numQuestions}** authentic, high-yield, factually ac
 ----------------------
 CURRENT AFFAIRS DOMAIN COVERAGE (Distribute questions across these areas):
 ----------------------
-1. **National & Global Summits / Geopolitics (${currentYear})**: G20, BRICS, SCO, UN General Assembly, COP climate summits, bilateral accords, current international treaties.
-2. **Science, Space & Emerging Technology (${currentYear})**: Active space missions (ISRO, NASA, ESA, Artemis, Lunar & Solar missions), latest AI models & breakthroughs, defense & missile tests, renewable energy innovations.
-3. **Economy, Banking & Trade (${currentYear})**: Current GDP rankings, latest central bank / RBI repo rates and monetary policy, budget allocations, major economic corridors and global trade agreements.
-4. **Awards, Honors & Milestones (${currentYear})**: Latest national and international awards, civilian honors, prestigious recognitions.
-5. **Sports Championships (${currentYear})**: Current sports championships, tournament winners, record milestones, Grand Slam tennis, chess olympiads.
-6. **Environment, Climate & Ecology (${currentYear})**: Current global climate milestones, new wildlife reserves, international conservation agreements.
-7. **Government Schemes & National Policy (${currentYear})**: Landmark welfare schemes, digital public infrastructure, health & education initiatives launched or active in ${currentYear}.
+1. **National & Global Summits / Geopolitics (${currentYear - 1}–${currentYear})**: G20, BRICS expansion, SCO, UN General Assembly, COP climate summits, bilateral accords, current international treaties.
+2. **Science, Space & Emerging Technology**: Active space missions (ISRO Aditya-L1, Gaganyaan, Chandrayaan-3 findings, NASA Artemis & Europa Clipper), latest AI models & breakthroughs, defense & missile tests, renewable energy innovations.
+3. **Economy, Banking & Trade**: GDP rankings, central bank/RBI monetary policy & repo rates, budget allocations, major economic corridors (such as IMEC) and global trade pacts.
+4. **Awards, Honors & Milestones**: Nobel Prizes, civilian honors, prestigious recognitions.
+5. **Sports Championships**: Summer Olympic Games, ICC World Cup championships, Grand Slam tennis, FIDE Chess Olympiad.
+6. **Environment, Climate & Ecology**: Major global climate milestones, new wildlife reserves, international conservation agreements.
+7. **Government Schemes & National Policy**: Landmark welfare schemes, digital public infrastructure (UPI), health & education initiatives.
 
 ----------------------
 STRICT GENERATION RULES:
 ----------------------
-- **REAL FACTS ONLY**: Every question MUST test real-world events, true facts, actual personalities, correct organizations, and official dates of ${currentYear}.
+- **REAL FACTS ONLY**: Every question MUST test real-world events, true facts, actual personalities, correct organizations, and official dates.
 - **NEVER generate meta-questions about "documents", "prompts", or "texts"**.
 - **Realistic Distractors**: The 3 wrong choices must be plausible, realistic alternatives (e.g. real competing countries, genuine personalities, or adjacent dates/names).
 - **Difficulty Balance**: 30% Easy, 50% Medium, 20% Hard.
@@ -519,13 +519,13 @@ MANDATORY JSON OUTPUT FORMAT
 Output ONLY a raw JSON array matching this exact schema:
 [
   {
-    "question": "Which country is hosting the major multilateral climate and economic dialogues in ${currentYear}?",
+    "question": "Which country assumed the G20 presidency focusing on global governance reform and climate finance in 2024–2025?",
     "options": ["India", "Brazil", "South Africa", "United States"],
     "correctAnswer": 1,
-    "explanation": "Brazil assumed the G20 presidency and hosted key multilateral climate and economic dialogues throughout ${currentYear}.",
+    "explanation": "Brazil assumed the G20 presidency, hosting major multilateral climate and economic dialogues throughout the cycle.",
     "difficulty": "medium",
     "pageReference": "Global Summits & Geopolitics",
-    "proofQuote": "Brazil hosts major international summit proceedings in ${currentYear}.",
+    "proofQuote": "Brazil assumed the G20 presidency leading international dialogues.",
     "citationType": "VERBATIM_PROOF"
   }
 ]
@@ -682,6 +682,196 @@ const FALLBACK_GK_BANK: MCQQuestion[] = [
     pageReference: "Chemistry",
     proofQuote: "Gold's symbol Au comes from the Latin word aurum.",
     citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which Constitutional Amendment added Fundamental Duties under Article 51A of the Indian Constitution?",
+    options: ["42nd Amendment Act, 1976", "44th Amendment Act, 1978", "86th Amendment Act, 2002", "73rd Amendment Act, 1992"],
+    correctAnswer: 0,
+    explanation: "The 42nd Constitutional Amendment Act, 1976 introduced Part IVA and Article 51A upon the recommendation of the Swaran Singh Committee.",
+    difficulty: "medium",
+    pageReference: "Indian Polity",
+    proofQuote: "Fundamental Duties were incorporated into the Constitution by the 42nd Amendment Act in 1976.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the approximate speed of light in a vacuum?",
+    options: ["300,000 km/s", "150,000 km/s", "30,000 km/s", "1,000,000 km/s"],
+    correctAnswer: 0,
+    explanation: "Light travels in vacuum at approximately 299,792 kilometers per second, commonly rounded to 300,000 km/s (3 × 10^8 m/s).",
+    difficulty: "easy",
+    pageReference: "Physics",
+    proofQuote: "The speed of light in vacuum is defined as exactly 299,792,458 m/s.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which is the largest desert in the world by total surface area?",
+    options: ["Sahara Desert", "Antarctic Polar Desert", "Gobi Desert", "Arabian Desert"],
+    correctAnswer: 1,
+    explanation: "The Antarctic Desert is the largest desert on Earth, spanning approximately 14.2 million square kilometers as a polar desert.",
+    difficulty: "medium",
+    pageReference: "World Geography",
+    proofQuote: "Antarctica is technically the world's largest desert with extremely low annual precipitation.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Who is celebrated as the Father of the Indian Space Programme?",
+    options: ["Dr. Homi Bhabha", "Dr. A.P.J. Abdul Kalam", "Dr. Vikram Sarabhai", "Satish Dhawan"],
+    correctAnswer: 2,
+    explanation: "Dr. Vikram Sarabhai initiated space research and helped establish the Indian National Committee for Space Research (later ISRO).",
+    difficulty: "easy",
+    pageReference: "Indian History & Science",
+    proofQuote: "Dr. Vikram Sarabhai is universally regarded as the father of the Indian space programme.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the SI unit of electric current?",
+    options: ["Volt", "Watt", "Ohm", "Ampere"],
+    correctAnswer: 3,
+    explanation: "The ampere (symbol: A) is the base SI unit of electric current named after French mathematician André-Marie Ampère.",
+    difficulty: "easy",
+    pageReference: "Physics",
+    proofQuote: "The ampere is the base unit of electric current in the International System of Units.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "In which year was the historic Battle of Plassey fought in Bengal?",
+    options: ["1757", "1764", "1857", "1761"],
+    correctAnswer: 0,
+    explanation: "The Battle of Plassey took place on 23 June 1757, where British East India Company forces led by Robert Clive defeated Nawab Siraj-ud-Daulah.",
+    difficulty: "medium",
+    pageReference: "Modern History",
+    proofQuote: "The Battle of Plassey was fought on 23 June 1757 in Bengal.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Through which medium does sound travel the fastest?",
+    options: ["Vacuum", "Gases (Air)", "Liquids (Water)", "Solids (Steel)"],
+    correctAnswer: 3,
+    explanation: "Because molecules in solids are densely packed, acoustic mechanical vibrations transmit significantly faster through solids like steel than liquids or air.",
+    difficulty: "easy",
+    pageReference: "General Science",
+    proofQuote: "Sound waves travel fastest through dense solids due to tightly packed molecular bonds.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which vitamin plays an essential physiological role in blood coagulation (clotting)?",
+    options: ["Vitamin A", "Vitamin C", "Vitamin K", "Vitamin D"],
+    correctAnswer: 2,
+    explanation: "Vitamin K is a cofactor required for the hepatic synthesis of prothrombin and clotting factors VII, IX, and X.",
+    difficulty: "easy",
+    pageReference: "Human Biology",
+    proofQuote: "Vitamin K is essential for blood clotting and synthesis of prothrombin.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the pH value of pure distilled water at 25°C?",
+    options: ["5.5", "7.0", "8.5", "0.0"],
+    correctAnswer: 1,
+    explanation: "Pure water has equal concentrations of hydrogen and hydroxide ions at 25°C, yielding a neutral pH of exactly 7.0.",
+    difficulty: "easy",
+    pageReference: "Chemistry",
+    proofQuote: "Pure water at standard temperature has a neutral pH of 7.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which Indian state was the first to implement the three-tier Panchayati Raj system in 1959?",
+    options: ["Gujarat", "Rajasthan", "Andhra Pradesh", "Uttar Pradesh"],
+    correctAnswer: 1,
+    explanation: "The Panchayati Raj system was first inaugurated in Nagaur district, Rajasthan on October 2, 1959 by Prime Minister Jawaharlal Nehru.",
+    difficulty: "medium",
+    pageReference: "Indian Polity",
+    proofQuote: "Rajasthan became the first state in India to launch Panchayati Raj in Nagaur in 1959.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which mountain peak is the highest point situated within sovereign Indian territory?",
+    options: ["Mount Everest", "Kanchenjunga", "Nanda Devi", "Kamet"],
+    correctAnswer: 1,
+    explanation: "Kanchenjunga stands at 8,586 meters on the India-Nepal border in Sikkim and is the highest peak in India and third highest on Earth.",
+    difficulty: "medium",
+    pageReference: "Indian Geography",
+    proofQuote: "Kanchenjunga at 8,586 m is the highest mountain peak in India.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "In which city is the international headquarters of UNESCO located?",
+    options: ["Geneva", "Paris", "New York", "Vienna"],
+    correctAnswer: 1,
+    explanation: "The United Nations Educational, Scientific and Cultural Organization (UNESCO) has its headquarters in Paris, France.",
+    difficulty: "easy",
+    pageReference: "International Organizations",
+    proofQuote: "UNESCO is headquartered in Paris, France.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "In which year did Mahatma Gandhi lead the historic Dandi Salt March?",
+    options: ["1920", "1930", "1942", "1919"],
+    correctAnswer: 1,
+    explanation: "The Salt Satyagraha began with the 24-day march from Sabarmati Ashram to Dandi from 12 March to 6 April 1930.",
+    difficulty: "easy",
+    pageReference: "Modern History",
+    proofQuote: "The Salt March took place from March to April 1930.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which gas constitutes the greatest percentage of Earth's atmosphere by volume?",
+    options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Argon"],
+    correctAnswer: 2,
+    explanation: "Nitrogen comprises approximately 78.08% of Earth's atmosphere, followed by oxygen at approximately 20.95%.",
+    difficulty: "easy",
+    pageReference: "Earth Science",
+    proofQuote: "Nitrogen gas makes up approximately 78% of dry atmospheric air.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What instrument is used to measure earthquake seismic wave magnitude?",
+    options: ["Barometer", "Seismograph", "Anemometer", "Hygrometer"],
+    correctAnswer: 1,
+    explanation: "A seismograph records the vibrations and motion of the ground caused by seismic waves during an earthquake.",
+    difficulty: "easy",
+    pageReference: "Earth Science",
+    proofQuote: "Seismographs are instruments used to record the motion of the ground during an earthquake.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Who was the first Indian woman to serve as President of the Indian National Congress?",
+    options: ["Sarojini Naidu", "Annie Besant", "Sucheta Kripalani", "Vijaya Lakshmi Pandit"],
+    correctAnswer: 0,
+    explanation: "Sarojini Naidu presided over the Kanpur session of the Indian National Congress in 1925 as its first Indian woman president (Annie Besant was the first non-Indian woman in 1917).",
+    difficulty: "medium",
+    pageReference: "Modern History",
+    proofQuote: "Sarojini Naidu became the first Indian woman President of the Congress in 1925.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "How many states in India does the Tropic of Cancer pass through?",
+    options: ["6", "7", "8", "9"],
+    correctAnswer: 2,
+    explanation: "The Tropic of Cancer passes through 8 Indian states: Gujarat, Rajasthan, Madhya Pradesh, Chhattisgarh, Jharkhand, West Bengal, Tripura, and Mizoram.",
+    difficulty: "medium",
+    pageReference: "Indian Geography",
+    proofQuote: "The Tropic of Cancer divides India into almost two equal halves, passing across 8 states.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the primary function of white blood cells (leukocytes) in human blood?",
+    options: ["Oxygen transport", "Immune defense and fighting infection", "Blood clotting", "Nutrient absorption"],
+    correctAnswer: 1,
+    explanation: "Leukocytes are the immune cells of the circulatory system that defend the body against infectious disease and foreign invaders.",
+    difficulty: "easy",
+    pageReference: "Biology",
+    proofQuote: "White blood cells defend the human body against infections and foreign pathogens.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Who authored the classical economic treatise 'The Wealth of Nations' published in 1776?",
+    options: ["John Maynard Keynes", "Karl Marx", "Adam Smith", "David Ricardo"],
+    correctAnswer: 2,
+    explanation: "Scottish philosopher Adam Smith published 'The Wealth of Nations', considered the foundational magnum opus of classical economics.",
+    difficulty: "easy",
+    pageReference: "Economics",
+    proofQuote: "Adam Smith published The Wealth of Nations in 1776.",
+    citationType: "VERBATIM_PROOF"
   }
 ];
 
@@ -785,6 +975,196 @@ const FALLBACK_CA_BANK: MCQQuestion[] = [
     difficulty: "medium",
     pageReference: "Economy & Trade",
     proofQuote: "The India-Middle East-Europe Economic Corridor (IMEC) connects commercial ports across Asia and Europe.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Who was awarded the 2024 Nobel Prize in Physics for foundational discoveries enabling machine learning with artificial neural networks?",
+    options: ["John J. Hopfield and Geoffrey E. Hinton", "Roger Penrose and Reinhard Genzel", "Syukuro Manabe and Klaus Hasselmann", "Alain Aspect and John Clauser"],
+    correctAnswer: 0,
+    explanation: "John J. Hopfield and Geoffrey E. Hinton were awarded the 2024 Nobel Prize in Physics for foundational discoveries and inventions that enable machine learning with artificial neural networks.",
+    difficulty: "medium",
+    pageReference: "Awards & Science",
+    proofQuote: "Hopfield and Hinton were awarded the 2024 Nobel Prize in Physics for artificial neural network research.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which scientific team shared the 2024 Nobel Prize in Chemistry for breakthroughs in computational protein design and AlphaFold structure prediction?",
+    options: ["David Baker, Demis Hassabis, and John Jumper", "Emmanuelle Charpentier and Jennifer Doudna", "Carolyn Bertozzi and Morten Meldal", "Moungi Bawendi and Louis Brus"],
+    correctAnswer: 0,
+    explanation: "David Baker won half the prize for computational protein design, and Demis Hassabis and John M. Jumper shared the other half for protein structure prediction using AlphaFold.",
+    difficulty: "medium",
+    pageReference: "Science & AI",
+    proofQuote: "Baker, Hassabis, and Jumper were awarded the 2024 Nobel Prize in Chemistry for protein structure advances.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which country achieved a historic double gold medal sweep in both Open and Women's sections at the 45th FIDE Chess Olympiad in Budapest?",
+    options: ["India", "United States", "China", "Uzbekistan"],
+    correctAnswer: 0,
+    explanation: "India made history at the 45th FIDE Chess Olympiad in Budapest by winning gold medals in both the Open (led by D Gukesh) and Women's team sections.",
+    difficulty: "easy",
+    pageReference: "Sports Championships",
+    proofQuote: "India won double gold at the 45th Chess Olympiad in Budapest.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which five countries formally joined the BRICS grouping as new members during its landmark expansion summit?",
+    options: ["Egypt, Ethiopia, Iran, Saudi Arabia, and UAE", "Argentina, Turkey, Nigeria, Mexico, and Indonesia", "Kenya, Vietnam, Thailand, Malaysia, and Chile", "Poland, Qatar, Norway, New Zealand, and Singapore"],
+    correctAnswer: 0,
+    explanation: "BRICS formally inducted five new members: Egypt, Ethiopia, Iran, Saudi Arabia, and the United Arab Emirates (UAE).",
+    difficulty: "medium",
+    pageReference: "Geopolitics",
+    proofQuote: "BRICS expanded to include Egypt, Ethiopia, Iran, Saudi Arabia, and UAE as full members.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the primary target of NASA's Europa Clipper spacecraft launched to investigate planetary habitability?",
+    options: ["Jupiter's icy moon Europa", "Saturn's moon Titan", "Mars polar ice caps", "Venusian clouds"],
+    correctAnswer: 0,
+    explanation: "NASA's Europa Clipper mission is on a journey to Jupiter's ocean moon Europa to determine whether places below its icy crust could support life.",
+    difficulty: "easy",
+    pageReference: "Space Exploration",
+    proofQuote: "Europa Clipper was launched to explore Jupiter's moon Europa and its subsurface ocean.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which iconic global landmark in Paris enabled Indian tourists to make instant payments using India's Unified Payments Interface (UPI)?",
+    options: ["Eiffel Tower", "Louvre Museum", "Notre-Dame Cathedral", "Arc de Triomphe"],
+    correctAnswer: 0,
+    explanation: "India's UPI payment system was formally launched at the iconic Eiffel Tower in Paris, enabling Indian tourists to purchase tickets through QR code scans.",
+    difficulty: "easy",
+    pageReference: "Economy & Technology",
+    proofQuote: "UPI was officially launched at the Eiffel Tower in France.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the official name of the lunar south pole landing point of India's Chandrayaan-3 lander approved by the IAU?",
+    options: ["Shiv Shakti Point", "Tiranga Point", "Jawahar Point", "Atal Point"],
+    correctAnswer: 0,
+    explanation: "The landing site of Chandrayaan-3's Vikram lander near the Moon's south pole was officially named 'Shiv Shakti Point' by the International Astronomical Union.",
+    difficulty: "easy",
+    pageReference: "Science & Space Tech",
+    proofQuote: "The Chandrayaan-3 touchdown site on the Moon is named Shiv Shakti Point.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which Indian public welfare scheme was launched with a ₹75,000 crore outlay to provide rooftop solar electricity for 1 crore households?",
+    options: ["PM Surya Ghar: Muft Bijli Yojana", "PM KUSUM Yojana", "Ujala Scheme", "National Solar Mission"],
+    correctAnswer: 0,
+    explanation: "PM Surya Ghar: Muft Bijli Yojana provides substantial financial subsidies to install residential rooftop solar power systems for up to 10 million households.",
+    difficulty: "easy",
+    pageReference: "Government Schemes",
+    proofQuote: "PM Surya Ghar: Muft Bijli Yojana provides rooftop solar systems for one crore households.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Where was the world's highest railway arch bridge, the Chenab Bridge standing 359 meters above the river bed, constructed?",
+    options: ["Reasi, Jammu & Kashmir", "Shimla, Himachal Pradesh", "Dehradun, Uttarakhand", "Tawang, Arunachal Pradesh"],
+    correctAnswer: 0,
+    explanation: "The Chenab Rail Bridge in the Reasi district of Jammu and Kashmir spans 359 meters above the river bed, making it the highest railway bridge in the world.",
+    difficulty: "easy",
+    pageReference: "Infrastructure & National",
+    proofQuote: "The Chenab Bridge in Jammu and Kashmir is the highest railway bridge in the world.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which global alliance was launched at the G20 New Delhi Summit by India, the USA, and Brazil to foster adoption of sustainable biofuels?",
+    options: ["Global Biofuels Alliance (GBA)", "International Solar Alliance (ISA)", "Clean Hydrogen Coalition", "Global Methane Pledge"],
+    correctAnswer: 0,
+    explanation: "The Global Biofuels Alliance (GBA) was launched on the sidelines of the G20 Leaders' Summit to promote trade in clean biofuels and advance net-zero goals.",
+    difficulty: "medium",
+    pageReference: "Energy & Environment",
+    proofQuote: "The Global Biofuels Alliance was launched by India, the US, and Brazil at the G20 Summit.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which Indian state has emerged as a key semiconductor manufacturing hub with Tata Electronics and Micron establishing mega chip fabrication/assembly plants?",
+    options: ["Gujarat", "Karnataka", "Tamil Nadu", "Maharashtra"],
+    correctAnswer: 0,
+    explanation: "Sanand and Dholera in Gujarat have become premier centers for India's semiconductor fabrication and advanced packaging under the India Semiconductor Mission.",
+    difficulty: "medium",
+    pageReference: "Economy & Industry",
+    proofQuote: "Gujarat hosts major semiconductor fabrication and testing facilities under the India Semiconductor Mission.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which country won the Men's ICC Cricket World Cup 2023 held across India?",
+    options: ["Australia", "India", "South Africa", "New Zealand"],
+    correctAnswer: 0,
+    explanation: "Australia defeated India in the final at Ahmedabad to win their sixth Men's Cricket World Cup championship.",
+    difficulty: "easy",
+    pageReference: "Sports Championships",
+    proofQuote: "Australia won the ICC Men's Cricket World Cup 2023 title.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the mission objective of ISRO's NISAR satellite developed collaboratively with NASA?",
+    options: ["Dual-frequency radar mapping of Earth's ecosystems and ice masses", "Deep space asteroid redirection", "Direct solar coronal mass emission sampling", "Lunar water extraction verification"],
+    correctAnswer: 0,
+    explanation: "NISAR (NASA-ISRO Synthetic Aperture Radar) uses dual L-band and S-band radar to track subtle changes in Earth's land surfaces, glaciers, and ecosystems.",
+    difficulty: "medium",
+    pageReference: "Science & Space Tech",
+    proofQuote: "NISAR is a joint NASA-ISRO mission for high-resolution radar Earth observation.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which international organization declared 2025 as the International Year of Quantum Science and Technology (IYQ)?",
+    options: ["United Nations (UN)", "World Economic Forum (WEF)", "International Science Council (ISC)", "OECD"],
+    correctAnswer: 0,
+    explanation: "The United Nations General Assembly officially proclaimed 2025 as the International Year of Quantum Science and Technology to celebrate 100 years of quantum mechanics.",
+    difficulty: "medium",
+    pageReference: "International Milestones",
+    proofQuote: "The UN declared 2025 as the International Year of Quantum Science and Technology.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which country hosted the 2024 Olympic Games with competitions in breakdancing and events in Tahiti for surfing?",
+    options: ["France", "Japan", "Australia", "United Kingdom"],
+    correctAnswer: 0,
+    explanation: "France hosted the 2024 Paris Summer Olympics, which featured breakdancing in Paris and surfing competitions at Teahupo'o in Tahiti.",
+    difficulty: "easy",
+    pageReference: "Sports & Global Events",
+    proofQuote: "France hosted the 2024 Olympic Games with events held across metropolitan France and Tahiti.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which Indian public initiative connects all panchayats with high-speed optical fiber digital connectivity?",
+    options: ["BharatNet", "Digital India BHASHINI", "National Knowledge Network", "PM WANI"],
+    correctAnswer: 0,
+    explanation: "BharatNet is the government's flagship project creating an ultra-fast optical fiber broadband network connecting over 250,000 gram panchayats.",
+    difficulty: "easy",
+    pageReference: "National Policy & Tech",
+    proofQuote: "BharatNet delivers high-speed broadband to rural gram panchayats across India.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "What is the name of the multi-nation military exercise hosted by India featuring air forces from countries including the US, UK, France, and Germany?",
+    options: ["Tarang Shakti", "Yudh Abhyas", "Garuda", "Malabar"],
+    correctAnswer: 0,
+    explanation: "Exercise Tarang Shakti was India's largest multilateral air exercise, bringing together air forces from over 30 countries in two phases.",
+    difficulty: "medium",
+    pageReference: "Defense & Security",
+    proofQuote: "Exercise Tarang Shakti is the largest multilateral air exercise conducted by the Indian Air Force.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which prominent Indian classical singer from the Kirana gharana was posthumously awarded the Bharat Ratna in 2024?",
+    options: ["Dr. Bhupen Hazarika", "Pandit Bhimsen Joshi", "Karpoori Thakur and L.K. Advani alongside MS Swaminathan, PV Narasimha Rao & Charan Singh were honored", "M.S. Subbulakshmi"],
+    correctAnswer: 2,
+    explanation: "In 2024, the Bharat Ratna was conferred on Karpoori Thakur, L.K. Advani, P.V. Narasimha Rao, Chaudhary Charan Singh, and agricultural scientist M.S. Swaminathan.",
+    difficulty: "medium",
+    pageReference: "Awards & Honors",
+    proofQuote: "Five distinguished personalities were conferred the Bharat Ratna in 2024.",
+    citationType: "VERBATIM_PROOF"
+  },
+  {
+    question: "Which country hosted the United Nations Biodiversity Conference COP16 in 2024 focusing on the Kunming-Montreal Global Biodiversity Framework?",
+    options: ["Colombia (Cali)", "Canada (Montreal)", "Egypt (Sharm el-Sheikh)", "Costa Rica (San Jose)"],
+    correctAnswer: 0,
+    explanation: "The UN Biodiversity Conference COP16 was held in Cali, Colombia, focusing on implementing global targets to halt biodiversity loss by 2030.",
+    difficulty: "medium",
+    pageReference: "Environment & Ecology",
+    proofQuote: "Cali, Colombia hosted the 2024 UN Biodiversity Conference COP16.",
     citationType: "VERBATIM_PROOF"
   }
 ];

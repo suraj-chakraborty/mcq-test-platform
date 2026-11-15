@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/app/lib/auth';
+import { getMobileAuthUser } from '@/app/lib/mobileAuth';
 import { prisma } from '@/app/lib/prisma';
 import { generateKnowledgeMCQs } from '@/app/lib/ai';
 import { objectIdSchema, safeJsonParse } from '@/app/lib/validations/common';
@@ -66,9 +67,15 @@ async function generateCurrentAffairsQuestions(count: number = 10, customConfig?
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    let user = await getMobileAuthUser(request);
+    if (!user) {
+      const session = await getServerSession(authOptions);
+      if (session?.user?.id) {
+        user = session.user as any;
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!user || !user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -111,7 +118,7 @@ export async function POST(request: Request) {
               id: { in: pdfIds }
             }
           },
-          userId: session.user.id
+          userId: user.id
         },
         include: {
           questions: true,
@@ -144,7 +151,7 @@ export async function POST(request: Request) {
     // Save as a new Test record in Prisma
     const test = await prisma.test.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         isPublic: false, // Strictly private to creator by default
         title: testData.title,
         description: testData.description,
