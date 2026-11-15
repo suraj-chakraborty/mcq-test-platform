@@ -333,6 +333,7 @@ export class NetlifyBackgroundRunner implements IJobRunner {
         description: `Generated from ${contextPDFs.map((f) => f.name).join(', ')}`,
         duration: Math.max(10, questions.length * 2),
         userId,
+        isPublic: false, // Strictly private to creator by default
         idempotencyKey: payload.idempotencyKey,
         questions: {
           create: questions.map((q) => ({

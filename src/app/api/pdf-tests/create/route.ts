@@ -423,6 +423,7 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     const test = await prisma.test.create({
       data: {
         userId: session.user.id,
+        isPublic: false, // Strictly private to creator by default
         title,
         description,
         duration: 60,

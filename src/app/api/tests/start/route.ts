@@ -145,6 +145,7 @@ export async function POST(request: Request) {
     const test = await prisma.test.create({
       data: {
         userId: session.user.id,
+        isPublic: false, // Strictly private to creator by default
         title: testData.title,
         description: testData.description,
         duration: testData.duration,

@@ -118,6 +118,7 @@ Format the response EXACTLY as a JSON object with this structure:
     const test = await prisma.test.create({
       data: {
         userId: session.user.id,
+        isPublic: false, // Strictly private to creator by default
         title: parsed.title || 'Math Practice Test',
         description: parsed.description || 'Practice questions based on an uploaded image.',
         duration: 30,

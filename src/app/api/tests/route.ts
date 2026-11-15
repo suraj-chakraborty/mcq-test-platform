@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         title,
         duration,
         userId: session.user.id,
+        isPublic: false, // Strictly private to creator by default
         questions: {
           create: questions.map((q) => ({
             question: q.question,
