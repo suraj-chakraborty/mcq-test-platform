@@ -107,7 +107,12 @@ export default function TestAttempt({ test, onComplete, onQuestionChange, onExit
 
   const handleSubmit = React.useCallback(async () => {
     if (isSubmitting) return;
+
+    const totalDuration = (test.timeLimit || test.duration || 30) * 60;
+    const finalTimeTaken = Math.max(1, totalDuration - timeLeft);
+
     setIsSubmitting(true);
+    setShowSubmitModal(false);
 
     try {
       const currentAnswers = answersRef.current;
@@ -123,6 +128,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange, onExit
         body: JSON.stringify({
           id: test.id,
           answers: answersArray,
+          timeTakenSeconds: finalTimeTaken,
         }),
       });
 
@@ -138,11 +144,12 @@ export default function TestAttempt({ test, onComplete, onQuestionChange, onExit
       toast.error(error instanceof Error ? error.message : 'Failed to submit test');
     } finally {
       setIsSubmitting(false);
-      setShowSubmitModal(false);
     }
-  }, [test.id, test.questions.length, isSubmitting, onComplete]);
+  }, [test.id, test.questions.length, test.timeLimit, test.duration, timeLeft, isSubmitting, onComplete]);
 
   useEffect(() => {
+    if (isSubmitting) return;
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -155,7 +162,7 @@ export default function TestAttempt({ test, onComplete, onQuestionChange, onExit
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [handleSubmit]);
+  }, [handleSubmit, isSubmitting]);
 
   const handleAnswerSelect = (qIdx: number, optIdx: number) => {
     setAnswers((prev) => {
