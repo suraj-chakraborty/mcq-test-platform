@@ -8,6 +8,7 @@ export default function MobileGoogleAuthBridge() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const scheme = searchParams.get('scheme') || 'mcqtestplatformmobile';
+  const customRedirectUri = searchParams.get('redirect_uri');
   const [error, setError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
@@ -26,7 +27,9 @@ export default function MobileGoogleAuthBridge() {
           return res.json();
         })
         .then((data) => {
-          const appDeepLink = `${scheme}://auth/callback?accessToken=${encodeURIComponent(
+          const baseRedirect = customRedirectUri || `${scheme}://auth/callback`;
+          const joinChar = baseRedirect.includes('?') ? '&' : '?';
+          const appDeepLink = `${baseRedirect}${joinChar}accessToken=${encodeURIComponent(
             data.accessToken
           )}&refreshToken=${encodeURIComponent(data.refreshToken)}&user=${encodeURIComponent(
             JSON.stringify(data.user)
@@ -40,7 +43,7 @@ export default function MobileGoogleAuthBridge() {
           setError(err.message || 'Authentication failed');
         });
     }
-  }, [status, scheme]);
+  }, [status, scheme, customRedirectUri]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 font-sans">
