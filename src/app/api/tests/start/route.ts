@@ -11,9 +11,11 @@ const startTestSchema = z.object({
   type: z.enum(['current-affairs', 'general-knowledge']).optional(),
   pdfIds: z.array(objectIdSchema).max(20).optional(),
   count: z.union([z.number().int().min(1).max(50), z.string()]).optional(),
+  topic: z.string().optional(),
+  difficulty: z.string().optional(),
   customConfig: z.record(z.string(), z.any()).optional(),
-}).strict().refine((data) => Boolean(data.type || (data.pdfIds && data.pdfIds.length > 0)), {
-  message: 'Either type or at least one valid pdfId is required',
+}).passthrough().refine((data) => Boolean(data.type || data.topic || (data.pdfIds && data.pdfIds.length > 0)), {
+  message: 'Either type, topic, or at least one valid pdfId is required',
 });
 
 const predefinedTests = {
@@ -92,25 +94,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const { type, pdfIds, count, customConfig } = validation.data;
+    const { type, pdfIds, count, customConfig, topic, difficulty } = validation.data;
     const parsedCount = count ? (typeof count === 'number' ? count : parseInt(count, 10)) : 10;
     const finalCount = Math.min(50, Math.max(1, isNaN(parsedCount) ? 10 : parsedCount));
 
+    const effectiveType = type || (
+      topic?.toLowerCase().includes('current affair') || topic?.toLowerCase().includes('ca')
+        ? 'current-affairs'
+        : topic?.toLowerCase().includes('general knowledge') || topic?.toLowerCase().includes('gk')
+        ? 'general-knowledge'
+        : undefined
+    );
 
     let testData: any;
 
-    if (type === 'current-affairs') {
+    if (effectiveType === 'current-affairs') {
       testData = await generateCurrentAffairsQuestions(finalCount, customConfig);
-    } else if (type === 'general-knowledge') {
+    } else if (effectiveType === 'general-knowledge') {
       testData = await generateGeneralKnowledgeQuestions(finalCount, customConfig);
+    } else if (topic) {
+      const mcqs = await generateKnowledgeMCQs(topic, finalCount, customConfig);
+      testData = {
+        title: `${topic} Practice Assessment`,
+        description: `AI-generated practice test on ${topic}.`,
+        duration: Math.max(10, Math.round(finalCount * 1.5)),
+        questions: mcqs,
+      };
     } else if (type && (type as string) in predefinedTests) {
       testData = predefinedTests[type as keyof typeof predefinedTests];
     } else if (pdfIds && Array.isArray(pdfIds) && pdfIds.length > 0) {
-
-      // Handle PDF-based test (finding existing tests with these PDFs)
-      // Actually the original logic seemed to assume `Pdf` model had `mcqs`.
-      // In our new schema, `Test` has `questions` and `pdfs`.
-      // So we probably want to find the Tests that have these PDF IDs.
       const tests = await prisma.test.findMany({
         where: {
           pdfs: {
@@ -161,7 +173,8 @@ export async function POST(request: Request) {
             question: q.question,
             options: q.options,
             correctAnswer: q.correctAnswer,
-            explanation: q.explanation || ''
+            explanation: q.explanation || 'Verified answer.',
+            difficulty: q.difficulty || difficulty || 'medium',
           }))
         }
       }
@@ -172,6 +185,16 @@ export async function POST(request: Request) {
       testId: test.id,
       title: test.title,
       questionCount: testData.questions.length,
+      test: {
+        id: test.id,
+        title: test.title,
+        description: test.description,
+        duration: test.duration,
+        questionCount: testData.questions.length,
+        isOwner: true,
+        isPublic: false,
+        createdAt: test.createdAt,
+      },
     });
   } catch (error) {
     console.error('Test creation error:', error);

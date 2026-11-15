@@ -278,8 +278,8 @@ async function executeAIWithFallback(
   // Google Gemini (Either Custom Key or Default Multi-Key Fallback)
   const genAI = getGenAIInstance(provider === 'gemini' ? apiKey : undefined);
   const models = customModel
-    ? [customModel, 'gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.8-flash']
-    : ['gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.8-flash'];
+    ? [customModel, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
+    : ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
   const contents = bufferContents || [promptText];
 
   for (const model of models) {
@@ -1177,7 +1177,13 @@ export async function generateKnowledgeMCQs(
   const prompt = KNOWLEDGE_PROMPT_TEMPLATE(topic, numQuestions);
 
   try {
-    const text = await executeAIWithFallback(prompt, undefined, customConfig);
+    // Enforce 7.5s timeout on AI generation to guarantee Netlify serverless functions never time out
+    const aiPromise = executeAIWithFallback(prompt, undefined, customConfig);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('AI generation timed out (fast fallback)')), 7500)
+    );
+    const text = await Promise.race([aiPromise, timeoutPromise]);
+
     const rawArray = safeParseJSONArray(text);
     const validated = mcqSchema.safeParse(rawArray);
 
@@ -1196,12 +1202,15 @@ export async function generateKnowledgeMCQs(
       }
     }
   } catch (err) {
-    console.warn(`[generateKnowledgeMCQs] AI generation error for ${topic}:`, err);
+    console.warn(`[generateKnowledgeMCQs] AI generation error or timeout for ${topic}:`, err);
   }
 
   // Graceful Fallback to Curated High-Yield Bank
   console.log(`[generateKnowledgeMCQs] Using curated high-yield question bank for ${topic}`);
-  const isCA = topic.toLowerCase().includes('current affair') || topic.toLowerCase().includes('current event');
+  const isCA =
+    topic.toLowerCase().includes('current affair') ||
+    topic.toLowerCase().includes('current event') ||
+    topic.toLowerCase().includes('ca');
   const bank = isCA ? FALLBACK_CA_BANK : FALLBACK_GK_BANK;
 
   // Shuffle and return requested count
