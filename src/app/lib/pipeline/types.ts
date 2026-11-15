@@ -84,6 +84,9 @@ export interface EnqueueJobPayload {
     sha256?: string;
   }[];
   metadata?: Record<string, any>;
+  aiProvider?: string;
+  apiKey?: string;
+  model?: string;
 }
 
 export interface JobStateUpdate {

@@ -1,5 +1,6 @@
 import path from 'path';
 import { Worker } from 'worker_threads';
+import pdfParse from 'pdf-parse';
 import { prisma } from '@/app/lib/prisma';
 import { sanitizePdfBuffer } from './sanitizer';
 import { ExtractedDocumentResult, ERROR_CODES } from './types';
@@ -56,6 +57,89 @@ function runWorkerExtraction(
       }
     });
   });
+}
+
+async function extractWithPdfParse(
+  buffer: Buffer,
+  maxPages = 500
+): Promise<{
+  text: string;
+  pageCount: number;
+  pages: { pageNumber: number; text: string; charCount: number; isLowDensity: boolean }[];
+  isScanned: boolean;
+  needsOcr: boolean;
+  lowDensityPages: number[];
+}> {
+  try {
+    const pages: { pageNumber: number; text: string; charCount: number; isLowDensity: boolean }[] = [];
+    const lowDensityPages: number[] = [];
+    let currentPage = 1;
+
+    const pagerender = async (pageData: any) => {
+      try {
+        const textContent = await pageData.getTextContent({
+          normalizeWhitespace: false,
+          disableCombineTextItems: false,
+        });
+        let lastY: any, pageText = '';
+        if (textContent && Array.isArray(textContent.items)) {
+          for (const item of textContent.items) {
+            if (lastY === item.transform[5] || !lastY) {
+              pageText += item.str || '';
+            } else {
+              pageText += '\n' + (item.str || '');
+            }
+            lastY = item.transform[5];
+          }
+        }
+        const cleanPageText = pageText.trim();
+        const charCount = cleanPageText.length;
+        const isLowDensity = charCount < 50;
+        if (isLowDensity) {
+          lowDensityPages.push(currentPage);
+        }
+        pages.push({
+          pageNumber: currentPage,
+          text: cleanPageText,
+          charCount,
+          isLowDensity,
+        });
+        currentPage++;
+        return cleanPageText;
+      } catch {
+        return '';
+      }
+    };
+
+    const parsed = await pdfParse(buffer, { max: maxPages, pagerender });
+    const text = (parsed.text || '').trim();
+    const pageCount = parsed.numpages || (pages.length > 0 ? pages.length : 1);
+    const isScanned = text.length < 50 || (pages.length > 0 && lowDensityPages.length > pageCount * 0.7);
+
+    if (pages.length === 0 && text) {
+      pages.push({
+        pageNumber: 1,
+        text,
+        charCount: text.length,
+        isLowDensity: text.length < 50,
+      });
+    }
+
+    return {
+      text,
+      pageCount,
+      pages,
+      isScanned,
+      needsOcr: isScanned,
+      lowDensityPages,
+    };
+  } catch (parseErr: any) {
+    const msg = (parseErr?.message || '').toLowerCase();
+    if (msg.includes('password') || msg.includes('encrypt')) {
+      throw new EncryptedPdfError();
+    }
+    throw new CorruptPdfError(`Failed to parse PDF document: ${parseErr?.message || parseErr}`);
+  }
 }
 
 /**
@@ -115,15 +199,33 @@ export async function extractTextFromPdfResilient(
     }
   }
 
-  // 3. Sandboxed Worker Thread Execution
+  // 3. Resilient Extraction (In-process or Worker thread)
   let workerResult: any;
-  try {
-    workerResult = await runWorkerExtraction(buffer, { maxPages }, timeoutMs);
-  } catch (err: any) {
-    if (err instanceof PipelineTimeoutError || err instanceof PipelineError) {
-      throw err;
+  const isServerless = Boolean(
+    process.env.NETLIFY ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.VERCEL ||
+    process.env.LAMBDA_TASK_ROOT
+  );
+
+  if (isServerless) {
+    const parsedData = await extractWithPdfParse(buffer, maxPages);
+    workerResult = { success: true, ...parsedData };
+  } else {
+    try {
+      workerResult = await runWorkerExtraction(buffer, { maxPages }, timeoutMs);
+    } catch (err: any) {
+      console.warn('[PDF_EXTRACTOR] Worker execution failed, falling back to in-process extraction:', err?.message || err);
+      try {
+        const parsedData = await extractWithPdfParse(buffer, maxPages);
+        workerResult = { success: true, ...parsedData };
+      } catch (fallbackErr: any) {
+        if (err instanceof PipelineTimeoutError || err instanceof PipelineError) {
+          throw err;
+        }
+        throw new CorruptPdfError(`Worker execution failed: ${err?.message || String(err)}`);
+      }
     }
-    throw new CorruptPdfError(`Worker execution failed: ${err?.message || String(err)}`);
   }
 
   if (workerResult.error === 'ENCRYPTED') {

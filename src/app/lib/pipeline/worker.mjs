@@ -8,7 +8,25 @@ async function parsePdf(bufferData, options = {}) {
     try {
       pdfjs = await import('pdfjs-dist');
     } catch (err2) {
-      throw new Error(`Failed to load pdfjs-dist: ${err1?.message || err1}`);
+      try {
+        const pdfParseModule = await import('pdf-parse');
+        const pdfParse = pdfParseModule.default || pdfParseModule;
+        const parsed = await pdfParse(Buffer.from(bufferData));
+        const fullText = (parsed.text || '').trim();
+        const pageCount = parsed.numpages || 1;
+        const isLowDensity = fullText.length < 50;
+        return {
+          success: true,
+          text: fullText,
+          pageCount,
+          pages: [{ pageNumber: 1, text: fullText, charCount: fullText.length, isLowDensity }],
+          isScanned: isLowDensity,
+          needsOcr: isLowDensity,
+          lowDensityPages: isLowDensity ? [1] : [],
+        };
+      } catch (err3) {
+        throw new Error(`Failed to load pdf parser: ${err1?.message || err1}`);
+      }
     }
   }
 
