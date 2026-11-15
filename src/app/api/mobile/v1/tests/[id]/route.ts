@@ -193,6 +193,13 @@ export async function PATCH(
   }
 }
 
+export async function POST(
+  req: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  return PATCH(req, props);
+}
+
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
