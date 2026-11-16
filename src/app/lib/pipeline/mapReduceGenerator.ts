@@ -6,6 +6,8 @@ import { ERROR_CODES } from './types';
 
 export interface MapReduceGenerationParams {
   documentText: string;
+  pyqText?: string;
+  examPattern?: string;
   topic?: string;
   numQuestions?: number;
   totalPages?: number;
@@ -140,7 +142,13 @@ export async function executeWithBackoffAndFallback(
 /**
  * Builds the map-phase question generation prompt for a specific document chunk.
  */
-function buildChunkPrompt(chunk: DocumentChunk, topic: string, targetQuestions: number): string {
+function buildChunkPrompt(
+  chunk: DocumentChunk,
+  topic: string,
+  targetQuestions: number,
+  pyqText?: string,
+  examPattern?: string
+): string {
   const envelope = buildSecureDocumentEnvelope(chunk.text);
 
   return `
@@ -152,7 +160,25 @@ Your goal: Synthesize **${targetQuestions}** high-yield, pedagogically sound MCQ
 STUDY MATERIAL (EXCLUSIVELY TEST FACTUAL KNOWLEDGE FROM INSIDE THIS ENVELOPE)
 ----------------------
 ${envelope.wrappedContent}
+${
+  pyqText
+    ? `
+----------------------
+PYQ (PREVIOUS YEAR QUESTIONS) STRUCTURAL BLUEPRINT
+----------------------
+The following past year questions serve as your stylistic blueprint and exam format guide:
+${pyqText.slice(0, 6000)}
 
+EXAM BLUEPRINT MANDATE (${examPattern || 'Official Benchmark Exam'}):
+- Analyze the diverse question formats present in the PYQ reference and REPLICATE THOSE QUESTION ARCHETYPES for concepts found in the Study Material:
+  * Multi-Statement Evaluation ("Consider the following statements... Which is/are correct? 1 only, 1 and 2 only, etc.")
+  * Assertion-Reasoning (A/R) ("Assertion (A)... Reason (R)...")
+  * Match List-I with List-II (4x4 Matrix Matching)
+  * Negative Logic / Fact-Check ("Which one of the following statements is INCORRECT / NOT correct?")
+  * Analytical Scenario / Case Application
+`
+    : ''
+}
 ----------------------
 STRICT GENERATION MANDATES
 ----------------------
@@ -189,6 +215,8 @@ export async function generateMCQsMapReduce(
 ): Promise<MapReduceGenerationResult> {
   const {
     documentText,
+    pyqText,
+    examPattern,
     topic = 'General',
     numQuestions = 10,
     totalPages = 1,
@@ -215,7 +243,7 @@ export async function generateMCQsMapReduce(
     const chunkBatch = chunks.slice(i, i + concurrency);
 
     const batchPromises = chunkBatch.map(async (chunk) => {
-      const prompt = buildChunkPrompt(chunk, topic, questionsPerChunk);
+      const prompt = buildChunkPrompt(chunk, topic, questionsPerChunk, pyqText, examPattern);
       try {
         const rawResponse = await executeWithBackoffAndFallback(prompt, {
           customApiKey,
@@ -255,7 +283,7 @@ export async function generateMCQsMapReduce(
       text: documentText.slice(0, 40000),
       charCount: Math.min(documentText.length, 40000),
     };
-    const fallbackPrompt = buildChunkPrompt(fallbackChunk, topic, numQuestions);
+    const fallbackPrompt = buildChunkPrompt(fallbackChunk, topic, numQuestions, pyqText, examPattern);
     const rawResponse = await executeWithBackoffAndFallback(fallbackPrompt, {
       customApiKey,
       customModel,

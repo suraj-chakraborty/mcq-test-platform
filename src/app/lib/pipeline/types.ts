@@ -84,6 +84,7 @@ export interface EnqueueJobPayload {
     sha256?: string;
   }[];
   metadata?: Record<string, any>;
+  examPattern?: string;
   aiProvider?: string;
   apiKey?: string;
   model?: string;

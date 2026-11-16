@@ -185,6 +185,7 @@ export class NetlifyBackgroundRunner implements IJobRunner {
     });
 
     let combinedContextText = '';
+    let combinedPyqText = '';
     let totalDocumentPages = 1;
     const collectedBuffers: { name: string; buffer: Buffer; url?: string }[] = [];
 
@@ -242,6 +243,37 @@ export class NetlifyBackgroundRunner implements IJobRunner {
       }
     }
 
+    // Process PYQ Reference PDFs if provided
+    if (payload.pyqPDFs && payload.pyqPDFs.length > 0) {
+      for (const pyqItem of payload.pyqPDFs) {
+        if (await checkCancelled()) return;
+
+        let buffer: Buffer | null = null;
+        if (pyqItem.bufferBase64) {
+          buffer = Buffer.from(pyqItem.bufferBase64, 'base64');
+        } else if (pyqItem.url) {
+          buffer = await downloadCloudinaryPdf(pyqItem.url, pyqItem.publicId);
+        }
+
+        if (!buffer && pyqItem.text && pyqItem.text.length >= 50) {
+          combinedPyqText += `\n--- PYQ Reference Paper: ${pyqItem.name} ---\n${pyqItem.text}\n`;
+          continue;
+        }
+
+        if (buffer) {
+          const sanitized = sanitizePdfBuffer(buffer);
+          collectedBuffers.push({ name: pyqItem.name, buffer: sanitized.buffer, url: pyqItem.url });
+          const extraction = await extractTextFromPdfResilient(sanitized.buffer, {
+            checkCache: true,
+            saveToCache: true,
+          });
+          if (extraction.text && extraction.text.length >= 50) {
+            combinedPyqText += `\n--- PYQ Reference Paper: ${pyqItem.name} ---\n${extraction.text}\n`;
+          }
+        }
+      }
+    }
+
     // Step 3: OCR (if needed)
     if (anyNeedsOcr && (!combinedContextText || combinedContextText.length < 50)) {
       if (await checkCancelled()) return;
@@ -286,6 +318,8 @@ export class NetlifyBackgroundRunner implements IJobRunner {
     if (combinedContextText && combinedContextText.length >= 50) {
       const mapReduceResult = await generateMCQsMapReduce({
         documentText: combinedContextText,
+        pyqText: combinedPyqText,
+        examPattern: payload.examPattern,
         topic,
         numQuestions,
         totalPages: totalDocumentPages,
@@ -330,7 +364,9 @@ export class NetlifyBackgroundRunner implements IJobRunner {
     const test = await prisma.test.create({
       data: {
         title,
-        description: `Generated from ${contextPDFs.map((f) => f.name).join(', ')}`,
+        description: payload.type === 'pyq'
+          ? `PYQ Benchmark Assessment generated from ${contextPDFs.map((f) => f.name).join(', ')}${payload.pyqPDFs?.length ? ` with ${payload.pyqPDFs.map((f) => f.name).join(', ')} format blueprint` : ''}`
+          : `Generated from ${contextPDFs.map((f) => f.name).join(', ')}`,
         duration: Math.max(10, questions.length * 2),
         userId,
         isPublic: false, // Strictly private to creator by default
