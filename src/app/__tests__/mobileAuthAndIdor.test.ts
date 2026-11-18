@@ -16,6 +16,19 @@ jest.mock('@/app/lib/send-mail', () => ({
   sendEmail: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/app/lib/rateLimiter', () => ({
+  RateLimiterService: jest.fn().mockImplementation(() => ({
+    checkLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 10, limit: 10, reset: 0 }),
+    checkAccountLoginLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 5, limit: 5, reset: 0 }),
+    checkHeavyDailyQuota: jest.fn().mockResolvedValue({ allowed: true, remaining: 50, limit: 50, reset: 0 }),
+  })),
+  rateLimiter: {
+    checkLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 10, limit: 10, reset: 0 }),
+    checkAccountLoginLimit: jest.fn().mockResolvedValue({ allowed: true, remaining: 5, limit: 5, reset: 0 }),
+  },
+  getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+}));
+
 jest.mock('@/app/lib/prisma', () => ({
   prisma: {
     user: {
