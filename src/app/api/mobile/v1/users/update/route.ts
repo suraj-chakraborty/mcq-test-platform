@@ -17,7 +17,7 @@ export async function PUT(request: Request) {
     const institution = typeof body.institution === 'string' ? body.institution.trim() : undefined;
     const academicLevel = typeof body.academicLevel === 'string' ? body.academicLevel.trim() : undefined;
     const bio = typeof body.bio === 'string' ? body.bio.trim() : undefined;
-    const image = typeof body.image === 'string' ? body.image.trim() : undefined;
+    const image = typeof body.image === 'string' ? body.image.trim() : body.image === null ? null : undefined;
 
     if (name !== undefined && (name.length < 2 || name.length > 50)) {
       return NextResponse.json({ error: 'Name must be between 2 and 50 characters' }, { status: 400 });
