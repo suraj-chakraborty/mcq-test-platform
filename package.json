@@ -11,6 +11,9 @@
         "test": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
+        "test:smoke": "jest \"(profileAvatar|drawerNavigation|mobileV1Auth|api.tests.start)\" --bail",
+        "test:sanity": "jest \"(profileAvatar|userProfileUpdate|drawerNavigation)\"",
+        "test:regression": "jest --runInBand",
         "postinstall": "prisma generate"
     },
     "prisma": {
