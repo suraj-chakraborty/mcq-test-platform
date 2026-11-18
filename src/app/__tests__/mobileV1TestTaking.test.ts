@@ -46,6 +46,7 @@ describe('Phase 4: Mobile v1 Test Taking, Results & Leaderboard Endpoints', () =
     description: 'Fundamental rights, preamble, and landmark cases',
     duration: 15,
     userId: 'u-author-456',
+    isPublic: true,
     createdAt: new Date('2026-03-01T00:00:00.000Z'),
     user: {
       name: 'Constitution Scholar',
@@ -168,6 +169,8 @@ describe('Phase 4: Mobile v1 Test Taking, Results & Leaderboard Endpoints', () =
         title: mockTestWithAnswers.title,
         description: mockTestWithAnswers.description,
         duration: mockTestWithAnswers.duration,
+        userId: 'u-scholar-123',
+        isPublic: true,
         questions: sanitizedQuestionsMock,
       });
 

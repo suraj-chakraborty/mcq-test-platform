@@ -30,9 +30,14 @@ jest.mock('@/app/lib/prisma', () => ({
   },
 }));
 
+import { Redis } from '@upstash/redis';
+
 describe('Idempotency & Replay Protection (Step 4)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    if (typeof (Redis as any).clear === 'function') {
+      (Redis as any).clear();
+    }
   });
 
   describe('Concurrent Double-Submit Protection', () => {
@@ -118,7 +123,10 @@ describe('Idempotency & Replay Protection (Step 4)', () => {
 
       const req = new Request('http://localhost:3000/api/tests/test_rep_1/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-idempotency-key': 'idemp_key_rep_unique_99',
+        },
         body: JSON.stringify({
           testId: 'test_rep_1',
           answers: [0],
