@@ -1,4 +1,4 @@
-import { getGenAIInstance, safeParseJSONArray, MCQQuestion, mcqSchema } from '@/app/lib/ai';
+import { getGenAIInstance, safeParseJSONArray, MCQQuestion, mcqSchema, DEFAULT_GEMINI_MODELS } from '@/app/lib/ai';
 import { chunkDocumentSectionAware, calculateMultiPageCoverage, DocumentChunk, CoverageReport } from './chunker';
 import { buildSecureDocumentEnvelope, SECURE_SYSTEM_INSTRUCTION } from './promptSecurity';
 import { PipelineError } from './errors';
@@ -59,13 +59,7 @@ export class TokenBucketRateLimiter {
 
 const globalRateLimiter = new TokenBucketRateLimiter(6, 2);
 
-const FALLBACK_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.8-flash',
-  'gemini-2.5-flash',
-  'gemini-3.8-flash',
-  'gemini-3.8-flash.5-pro',
-];
+const FALLBACK_MODELS = DEFAULT_GEMINI_MODELS;
 
 /**
  * Executes a Gemini model call with exponential backoff, jitter, and automated model fallback.

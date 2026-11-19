@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 import { safeJsonParse } from '@/app/lib/validations/common';
 import { z } from 'zod';
 
@@ -75,7 +75,12 @@ Assess the answer across these dimensions:
 `;
     const genAI = getGenAIInstance();
     let text = '';
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
     for (const modelName of modelsToTry) {
       try {
         const aiResult = await genAI.models.generateContent({
@@ -100,10 +105,20 @@ Assess the answer across these dimensions:
 
     let evaluation;
     try {
-      evaluation = JSON.parse(text);
-    } catch (err) {
-      console.error("Failed to parse evaluation JSON:", err);
-      throw new Error("Gemini returned invalid JSON. Raw response:\n" + text);
+      const cleanJson = text.replace(/```json|```/g, '').trim();
+      evaluation = JSON.parse(cleanJson);
+    } catch {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          evaluation = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Invalid JSON format');
+        }
+      } catch (err) {
+        console.error("Failed to parse evaluation JSON:", err);
+        throw new Error("Gemini returned invalid JSON. Raw response:\n" + text);
+      }
     }
 
     // Save the test result

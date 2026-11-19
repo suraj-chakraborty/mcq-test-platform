@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 import { safeJsonParse } from '@/app/lib/validations/common';
 import { z } from 'zod';
 
@@ -59,7 +59,12 @@ Provide only the improved answer without any additional comments or explanations
 
     const genAI = getGenAIInstance();
     let improvedAnswer = '';
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
     for (const modelName of modelsToTry) {
       try {
         const aiResult = await genAI.models.generateContent({
@@ -67,7 +72,7 @@ Provide only the improved answer without any additional comments or explanations
           contents: prompt,
         });
         if (aiResult.text) {
-          improvedAnswer = aiResult.text;
+          improvedAnswer = aiResult.text.replace(/```(?:markdown|text)?\n?([\s\S]*?)```/g, '$1').trim();
           break;
         }
       } catch (err) {

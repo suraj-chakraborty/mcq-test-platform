@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 import { safeJsonParse } from '@/app/lib/validations/common';
 import { z } from 'zod';
 
@@ -66,7 +66,12 @@ Provide a strict JSON response matching:
 `;
 
     let responseText = '';
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash', 'gemini-2.5-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
     for (const modelName of modelsToTry) {
       try {
         const response = await ai.models.generateContent({

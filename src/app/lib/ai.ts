@@ -48,6 +48,20 @@ export const getGenAIInstance = (customKey?: string) => {
   return new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 };
 
+export const DEFAULT_GEMINI_MODELS: string[] = [
+  'gemini-3.8-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+  'gemini-3.6-flash',
+];
+
+export const getGeminiModelsToTry = (customModel?: string): string[] => {
+  if (customModel) {
+    return [customModel, ...DEFAULT_GEMINI_MODELS.filter((m) => m !== customModel)];
+  }
+  return [...DEFAULT_GEMINI_MODELS];
+};
+
 const PROMPT_TEMPLATE = (context: string, topic: string, numQuestions: number, isBufferMode: boolean) => `
 You are a master pedagogical assessment architect and subject-matter expert for competitive examinations.
 
@@ -277,9 +291,7 @@ async function executeAIWithFallback(
 
   // Google Gemini (Either Custom Key or Default Multi-Key Fallback)
   const genAI = getGenAIInstance(provider === 'gemini' ? apiKey : undefined);
-  const models = customModel
-    ? [customModel, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
-    : ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+  const models = getGeminiModelsToTry(customModel);
   const contents = bufferContents || [promptText];
 
   for (const model of models) {

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { safeJsonParse } from '@/app/lib/validations/common';
 
@@ -75,7 +75,12 @@ Format the response EXACTLY as a JSON object with this structure:
 `;
 
     let responseText = '';
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.6-flash', 'gemini-3.6-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
     for (const modelName of modelsToTry) {
       try {
         const response = await ai.models.generateContent({

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { resolveAuthUser } from '@/app/lib/mobileAuth';
 import { prisma } from '@/app/lib/prisma';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 
 export async function POST(request: Request) {
   try {
@@ -64,7 +64,12 @@ Evaluate across these 4 core dimensions:
 
     const genAI = getGenAIInstance();
     let text = '';
-    const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
 
     for (const modelName of modelsToTry) {
       try {
@@ -90,44 +95,59 @@ Evaluate across these 4 core dimensions:
 
     let evaluation: any;
     try {
-      evaluation = JSON.parse(text);
-    } catch (err) {
-      console.error('Failed to parse AI evaluation JSON:', err);
-      throw new Error('AI returned invalid JSON');
+      const cleanJson = text.replace(/```json|```/g, '').trim();
+      evaluation = JSON.parse(cleanJson);
+    } catch {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          evaluation = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('AI returned invalid JSON format');
+        }
+      } catch (err) {
+        console.error('Failed to parse AI evaluation JSON:', err);
+        throw new Error('AI returned invalid JSON');
+      }
     }
 
-    // Persist evaluation in database
-    const savedRecord = await (prisma as any).descriptiveTest.create({
-      data: {
-        userId: user.id,
-        examName,
-        question,
-        answer,
-        wordCount,
-        timeLimit,
-        timeTaken,
-        score: Number(evaluation.score) || 0,
-        feedback: evaluation.feedback || '',
-        strengths: evaluation.strengths || [],
-        areasToImprove: evaluation.areasToImprove || [],
-        suggestions: evaluation.suggestions || [],
-      },
-    });
+    // Persist evaluation in database (gracefully fallback if DB write fails)
+    let savedRecord: any = null;
+    try {
+      savedRecord = await (prisma as any).descriptiveTest.create({
+        data: {
+          userId: user.id,
+          examName,
+          question,
+          answer,
+          wordCount,
+          timeLimit,
+          timeTaken,
+          score: Number(evaluation.score) || 0,
+          feedback: evaluation.feedback || '',
+          strengths: evaluation.strengths || [],
+          areasToImprove: evaluation.areasToImprove || [],
+          suggestions: evaluation.suggestions || [],
+        },
+      });
+    } catch (dbErr) {
+      console.warn('[mobile-evaluate] DB persistence failed, returning AI evaluation directly:', dbErr);
+    }
 
     return NextResponse.json({
       success: true,
       evaluation: {
-        id: savedRecord.id,
-        score: evaluation.score,
-        grammarScore: evaluation.grammarScore || Math.round(evaluation.score * 0.95),
-        depthScore: evaluation.depthScore || Math.round(evaluation.score * 0.9),
-        coherenceScore: evaluation.coherenceScore || Math.round(evaluation.score * 0.92),
-        feedback: evaluation.feedback,
-        strengths: evaluation.strengths,
-        areasToImprove: evaluation.areasToImprove,
-        suggestions: evaluation.suggestions,
-        modelAnswer: evaluation.modelAnswerExcerpt,
-        createdAt: savedRecord.createdAt,
+        id: savedRecord?.id || `eval_${Date.now()}`,
+        score: Number(evaluation.score) || 0,
+        grammarScore: Number(evaluation.grammarScore) || Math.round((Number(evaluation.score) || 0) * 0.95),
+        depthScore: Number(evaluation.depthScore) || Math.round((Number(evaluation.score) || 0) * 0.9),
+        coherenceScore: Number(evaluation.coherenceScore) || Math.round((Number(evaluation.score) || 0) * 0.92),
+        feedback: evaluation.feedback || 'Evaluation completed successfully.',
+        strengths: evaluation.strengths || [],
+        areasToImprove: evaluation.areasToImprove || [],
+        suggestions: evaluation.suggestions || [],
+        modelAnswer: evaluation.modelAnswerExcerpt || evaluation.modelAnswer || '',
+        createdAt: savedRecord?.createdAt || new Date().toISOString(),
       },
       test: savedRecord,
     });

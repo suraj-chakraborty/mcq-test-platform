@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolveAuthUser } from '@/app/lib/mobileAuth';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 
 export async function POST(request: Request) {
   try {
@@ -54,7 +54,12 @@ Focus on:
 
     const genAI = getGenAIInstance();
     let text = '';
-    const modelsToTry = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-3.6-flash',
+    ];
 
     for (const modelName of modelsToTry) {
       try {
@@ -78,7 +83,23 @@ Focus on:
       throw new Error('AI service returned empty response');
     }
 
-    const result = JSON.parse(text);
+    let result: any = {};
+    try {
+      const cleanJson = text.replace(/```json|```/g, '').trim();
+      result = JSON.parse(cleanJson);
+    } catch {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+        } else {
+          result = { improvedAnswer: text, suggestions: [] };
+        }
+      } catch (err) {
+        console.error('Failed to parse AI improvement JSON:', err);
+        result = { improvedAnswer: text, suggestions: [] };
+      }
+    }
 
     return NextResponse.json({
       success: true,

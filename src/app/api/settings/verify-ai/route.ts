@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { RateLimiterService } from '@/app/lib/rateLimiter';
 import { GoogleGenAI } from '@google/genai';
-import { getGenAIInstance } from '@/app/lib/ai';
+import { getGenAIInstance, getGeminiModelsToTry } from '@/app/lib/ai';
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,11 +37,32 @@ export async function POST(req: NextRequest) {
 
     if (provider === 'default') {
       const ai = getGenAIInstance();
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: 'Respond with the exact word: "READY"',
-      });
-      const text = response.text || '';
+      const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry() : null) || [
+        'gemini-3.8-flash',
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-3.6-flash',
+      ];
+      let text = '';
+      let lastError: any = null;
+      for (const m of modelsToTry) {
+        try {
+          const response = await ai.models.generateContent({
+            model: m,
+            contents: 'Respond with the exact word: "READY"',
+          });
+          if (response.text) {
+            text = response.text;
+            break;
+          }
+        } catch (e) {
+          lastError = e;
+          console.warn(`[verify-ai] Model ${m} failed, trying next:`, e);
+        }
+      }
+      if (!text) {
+        throw new Error(lastError?.message || 'Failed to connect to any Gemini model');
+      }
       return NextResponse.json({
         success: true,
         message: 'System Gemini connection verified successfully!',
@@ -58,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     if (provider === 'gemini') {
       const ai = new GoogleGenAI({ apiKey });
-      const chosenModel = model || 'gemini-2.5-flash';
+      const chosenModel = model || 'gemini-3.8-flash';
       const response = await ai.models.generateContent({
         model: chosenModel,
         contents: 'Respond with the exact word: "READY"',

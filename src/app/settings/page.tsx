@@ -90,14 +90,14 @@ export default function SettingsPage() {
       id: 'default',
       name: 'Platform Default (Google Gemini)',
       desc: 'Built-in high-performance multimodal Gemini engine. Zero configuration required.',
-      defaultModel: 'gemini-2.5-flash',
+      defaultModel: 'gemini-3.8-flash',
       badge: 'Zero Config',
     },
     {
       id: 'gemini',
       name: 'Google Gemini (Personal Key)',
-      desc: 'Use your own Google AI Studio API key with Gemini 2.5 Flash / Pro quotas.',
-      defaultModel: 'gemini-2.5-flash',
+      desc: 'Use your own Google AI Studio API key with Gemini 3.8 / 3.5 Flash quotas.',
+      defaultModel: 'gemini-3.8-flash',
       badge: 'BYOK',
     },
     {
@@ -374,7 +374,7 @@ export default function SettingsPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Model Name / Alias</Label>
                   <Input
-                    placeholder="e.g. gpt-4o-mini, gemini-2.5-flash, claude-3-5-haiku"
+                    placeholder="e.g. gpt-4o-mini, gemini-3.8-flash, claude-3-5-haiku"
                     value={aiModel}
                     onChange={(e) => setAiModel(e.target.value)}
                     className="h-10 rounded-lg bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 text-xs font-mono"

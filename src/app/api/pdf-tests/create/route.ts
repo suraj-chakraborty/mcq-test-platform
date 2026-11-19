@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
-import { getGenAIInstance, safeParseJSONArray, isMetaOrAdministrativeQuestion } from '@/app/lib/ai';
+import { getGenAIInstance, safeParseJSONArray, isMetaOrAdministrativeQuestion, getGeminiModelsToTry } from '@/app/lib/ai';
 import { generatedMCQSchema } from '@/app/lib/validations/test';
 import { extractTextFromPdf } from '@/app/utils/pdfUtils';
 import { saveFile } from '@/app/lib/fileStorage';
@@ -373,9 +373,11 @@ Format the response EXACTLY as a JSON array of question objects (do not wrap in 
     const customApiKey = req.headers.get('x-ai-key') || undefined;
     const customModel = req.headers.get('x-ai-model') || undefined;
     const genAI = getGenAIInstance(customApiKey);
-    const modelsToTry = customModel
-      ? [customModel, 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash']
-      : ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+    const modelsToTry = (typeof getGeminiModelsToTry === 'function' ? getGeminiModelsToTry(customModel) : null) || (
+      customModel
+        ? [customModel, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash']
+        : ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-3.6-flash']
+    );
     let aiText = '';
 
     for (const modelName of modelsToTry) {
